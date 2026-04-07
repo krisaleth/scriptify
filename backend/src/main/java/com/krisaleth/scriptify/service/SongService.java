@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -64,10 +65,10 @@ public class SongService {
             MultipartFile imageFile
     ) {
         if (title == null || title.isBlank()) {
-            throw new ResponseStatusException(400, "Song title is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Song title is required");
         }
         if (musicFile == null || musicFile.isEmpty()) {
-            throw new ResponseStatusException(400, "musicFile is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "musicFile is required");
         }
 
         String savedMusicFileName;
@@ -90,7 +91,7 @@ public class SongService {
         Album album = null;
         if (albumId != null) {
             album = albumRepository.findById(albumId)
-                    .orElseThrow(() -> new ResponseStatusException(404, "Album not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Album not found"));
         }
 
         Song song = new Song();
@@ -113,7 +114,7 @@ public class SongService {
             MultipartFile imageFile
     ) {
         Song existing = songRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(404, "Song not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
 
         if (title != null && !title.isBlank()) {
             existing.setTitle(title);
@@ -124,7 +125,7 @@ public class SongService {
 
         if (albumId != null) {
             Album album = albumRepository.findById(albumId)
-                    .orElseThrow(() -> new ResponseStatusException(404, "Album not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Album not found"));
             existing.setAlbum(album);
         } else {
             existing.setAlbum(null);
@@ -154,7 +155,7 @@ public class SongService {
     @Transactional
     public void deleteSong(Long id) {
         if (!songRepository.existsById(id)) {
-            throw new ResponseStatusException(404, "Song not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found");
         }
         songRepository.deleteById(id);
     }
@@ -162,7 +163,7 @@ public class SongService {
     @Transactional(readOnly = true)
     public Song getSong(Long id) {
         return songRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(404, "Song not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
     }
 
     @Transactional(readOnly = true)
@@ -210,7 +211,7 @@ public class SongService {
     @Transactional(readOnly = true)
     public List<Song> songsByArtistId(Long artistId) {
         if (artistId == null) {
-            throw new ResponseStatusException(400, "artistId is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "artistId is required");
         }
         return songRepository.findByAlbum_Artist_Id(artistId);
     }
@@ -218,19 +219,19 @@ public class SongService {
     @Transactional
     public Song incrementViewCount(Long id) {
         if (id == null) {
-            throw new ResponseStatusException(400, "id is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "id is required");
         }
         if (!songRepository.existsById(id)) {
-            throw new ResponseStatusException(404, "Song not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found");
         }
         songRepository.incrementViewCount(id);
-        return songRepository.findById(id).orElseThrow(() -> new ResponseStatusException(404, "Song not found"));
+        return songRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
     }
 
     @Transactional(readOnly = true)
     public Integer getTotalDurationByAlbumId(Long albumId) {
         if (albumId == null) {
-            throw new ResponseStatusException(400, "albumId is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "albumId is required");
         }
         return songRepository.getTotalDurationByAlbumId(albumId);
     }

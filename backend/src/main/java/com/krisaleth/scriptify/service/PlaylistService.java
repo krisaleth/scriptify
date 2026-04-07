@@ -29,17 +29,12 @@ public class PlaylistService {
         if (user == null || user.getId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user is required");
         }
-        Long userId = user.getId();
-        return playlistRepository.findAll().stream()
-                .filter(p -> p.getUser() != null && p.getUser().getId() != null && p.getUser().getId().equals(userId))
-                .toList();
+        return playlistRepository.findByUser_Id(user.getId());
     }
 
     @Transactional(readOnly = true)
     public List<Playlist> listPublicPlaylists() {
-        return playlistRepository.findAll().stream()
-                .filter(Playlist::getIsPublic)
-                .toList();
+        return playlistRepository.findByIsPublicTrue();
     }
 
     @Transactional(readOnly = true)
