@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -43,6 +44,16 @@ public class Users implements UserDetails {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "display_name")
+    private String displayName;
+
+    @Column(name = "avatar_url")
+    private String avatarUrl = "default-avatar.png";
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     public Users() {
 
     }
@@ -55,7 +66,8 @@ public class Users implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of( new SimpleGrantedAuthority("ROLE_" + this.role.name()) );
+        Role resolvedRole = this.role == null ? Role.USER : this.role;
+        return List.of(new SimpleGrantedAuthority("ROLE_" + resolvedRole.name()));
     }
 
     @Override
