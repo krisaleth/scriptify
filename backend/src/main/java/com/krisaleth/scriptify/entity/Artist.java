@@ -1,5 +1,6 @@
 package com.krisaleth.scriptify.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,5 +25,6 @@ public class Artist {
     private String imageUrl;
 
     @OneToMany(mappedBy = "artist")
+    @JsonIgnoreProperties("artist")
     private List<Album> albums;
 }

@@ -1,7 +1,7 @@
 package com.krisaleth.scriptify.service;
 
-import com.krisaleth.scriptify.dto.LoginUserDto;
-import com.krisaleth.scriptify.dto.RegisterUserDto;
+import com.krisaleth.scriptify.dto.UserLoginDto;
+import com.krisaleth.scriptify.dto.UserRegisterDto;
 import com.krisaleth.scriptify.dto.VerifyUserDto;
 import com.krisaleth.scriptify.entity.Role;
 import com.krisaleth.scriptify.entity.Users;
@@ -14,6 +14,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -41,17 +47,59 @@ public class AuthenticationService {
     }
 
     @Transactional
-    public Users signUp(RegisterUserDto input) {
-        Users users = new Users(input.getUsername(), input.getEmail(), passwordEncoder.encode(input.getPassword()));
+    public Users signUp(UserRegisterDto input) {
+        // 1. Khởi tạo đối tượng User với các thông tin cơ bản
+        Users users = new Users();
+        users.setUsername(input.getUsername());
+        users.setEmail(input.getEmail());
+        users.setDisplayName(input.getDisplayName());
+        users.setPassword(passwordEncoder.encode(input.getPassword()));
+
         users.setRole(Role.USER);
         users.setVerificationCode(generateVerificationCode());
         users.setVerificationExpiration(LocalDateTime.now().plusMinutes(10));
         users.setEnabled(false);
+
+        // 2. Xử lý lưu Avatar (nếu có)
+        if (input.getAvatarFile() != null && !input.getAvatarFile().isEmpty()) {
+            try {
+                // Lấy đường dẫn gốc của project để tránh mkdirs bị ignore hoặc tạo sai chỗ
+                String projectDir = System.getProperty("user.dir");
+
+                // Thống nhất dùng folder "uploads/avatars" bên trong project
+                String relativePath = "uploads" + File.separator + "avatars";
+                File dir = new File(projectDir, relativePath);
+
+                // Tạo thư mục nếu chưa tồn tại (tạo cả folder cha nếu cần)
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+
+                // Tạo tên file duy nhất
+                String fileName = System.currentTimeMillis() + "_" + input.getAvatarFile().getOriginalFilename();
+
+                // Lưu file vật lý dùng resolve để tự động xử lý dấu gạch chéo
+                Path filePath = dir.toPath().resolve(fileName);
+                Files.copy(input.getAvatarFile().getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                // LƯU Ý: Set đường dẫn vào DB khớp với pattern của WebConfig
+                // WebConfig bồ config là /uploads/** nên ở đây phải bắt đầu bằng /uploads/
+                users.setAvatarUrl("/uploads/avatars/" + fileName);
+
+            } catch (IOException e) {
+                throw new RuntimeException("Lỗi khi lưu file ảnh: " + e.getMessage());
+            }
+        } else {
+            // Ảnh mặc định - bồ nhớ bỏ 1 file default-avatar.png vào folder uploads/avatars nhé
+            users.setAvatarUrl("/uploads/avatars/default-avatar.png");
+        }
+
+        // 3. Gửi mail và lưu vào DB
         sendVerificationEmail(users);
         return usersRepository.save(users);
     }
 
-    public Users authenticate(LoginUserDto input) {
+    public Users authenticate(UserLoginDto input) {
         Users users = usersRepository.findByEmail(input.getEmail()).orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!users.isEnabled()) {

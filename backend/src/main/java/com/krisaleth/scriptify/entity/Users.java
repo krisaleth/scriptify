@@ -1,7 +1,10 @@
 package com.krisaleth.scriptify.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -10,15 +13,19 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
 @Setter
 @Table(name = "users")
+@AllArgsConstructor
+@NoArgsConstructor
 public class Users implements UserDetails {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Dùng IDENTITY cho MySQL
     private Long id;
 
     @Column(unique = true, nullable = false)
@@ -54,9 +61,17 @@ public class Users implements UserDetails {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public Users() {
+    @OneToMany(mappedBy = "user")
+    @JsonIgnore
+    private List<Playlist> playlists;
 
-    }
+    @ManyToMany
+    @JoinTable(
+            name = "user_favourites", // Hibernate tự tạo bảng tên này
+            joinColumns = @JoinColumn(name = "user_id"), // Cột nối tới bảng Users
+            inverseJoinColumns = @JoinColumn(name = "song_id") // Cột nối tới bảng Songs
+    )
+    private Set<Song> favoriteSongs = new HashSet<>();
 
     public Users(String username, String email, String password) {
         this.username = username;
@@ -68,6 +83,11 @@ public class Users implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Role resolvedRole = this.role == null ? Role.USER : this.role;
         return List.of(new SimpleGrantedAuthority("ROLE_" + resolvedRole.name()));
+    }
+
+    @Override
+    public String getUsername() {
+        return this.email;
     }
 
     @Override
@@ -89,4 +109,9 @@ public class Users implements UserDetails {
     public boolean isEnabled() {
         return enabled;
     }
+
+    public boolean getEnabled() {
+        return enabled;
+    }
+
 }

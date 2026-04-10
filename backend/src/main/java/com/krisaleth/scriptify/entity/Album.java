@@ -1,5 +1,6 @@
 package com.krisaleth.scriptify.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,9 +17,11 @@ public class Album {
     private Long id;
     private String title;
     private Integer releaseYear;
+    private String coverImageUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "artist_id")
+    @JsonIgnoreProperties("albums")
     private Artist artist;
 
     @OneToMany(mappedBy = "album")

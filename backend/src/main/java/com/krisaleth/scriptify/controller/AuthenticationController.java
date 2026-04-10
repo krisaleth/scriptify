@@ -1,43 +1,51 @@
 package com.krisaleth.scriptify.controller;
 
-import com.krisaleth.scriptify.dto.LoginUserDto;
-import com.krisaleth.scriptify.dto.RegisterUserDto;
+import com.krisaleth.scriptify.dto.UserLoginDto;
+import com.krisaleth.scriptify.dto.UserRegisterDto;
 import com.krisaleth.scriptify.dto.VerifyUserDto;
 import com.krisaleth.scriptify.entity.Users;
+import com.krisaleth.scriptify.response.LoginResponse;
 import com.krisaleth.scriptify.service.AuthenticationService;
 import com.krisaleth.scriptify.service.JwtService;
+import lombok.Builder;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.krisaleth.scriptify.response.LoginResponse;
 
-@RequestMapping("/auth")
 @RestController
+@RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthenticationController {
-    private final JwtService jwtService;
 
+    private final JwtService jwtService;
     private final AuthenticationService authenticationService;
 
-    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService) {
-        this.jwtService = jwtService;
-        this.authenticationService = authenticationService;
+    // 1. ĐĂNG KÝ (SIGNUP)
+    @PostMapping("/register")
+    public ResponseEntity<Users> register(@ModelAttribute UserRegisterDto registerUserDto) {
+        Users registeredUser = authenticationService.signUp(registerUserDto);
+        return ResponseEntity.ok(registeredUser);
     }
 
-    @PostMapping("/signup")
-    public ResponseEntity<Users> register(@RequestBody RegisterUserDto registerUserDto) {
-        Users registeredUsers = authenticationService.signUp(registerUserDto);
-        return ResponseEntity.ok(registeredUsers);
-    }
-
+    // 2. ĐĂNG NHẬP (LOGIN) -> Trả về Token và Expiration
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDto loginUserDto) {
+    public ResponseEntity<LoginResponse> authenticate(@RequestBody UserLoginDto loginUserDto) {
+        // Gọi Service để check email/pass
         Users authenticatedUser = authenticationService.authenticate(loginUserDto);
+
+        // Tạo JWT Token
         String jwtToken = jwtService.generateToken(authenticatedUser);
+        System.out.println("DEBUG - Token sinh ra: " + jwtToken);
+
+        // Trả về Response Object (đẹp và chuyên nghiệp hơn Map)
         LoginResponse loginResponse = new LoginResponse(jwtToken, jwtService.getExpirationTime());
+
         return ResponseEntity.ok(loginResponse);
     }
 
+    // 3. XÁC THỰC EMAIL
     @PostMapping("/verify")
-    public ResponseEntity<?> verifyUser(@RequestBody VerifyUserDto verifyUserDto) {
+    public ResponseEntity<?> verifyUser(VerifyUserDto verifyUserDto) {
         try {
             authenticationService.verifyUser(verifyUserDto);
             return ResponseEntity.ok("Account verified successfully");
@@ -46,15 +54,14 @@ public class AuthenticationController {
         }
     }
 
+    // 4. GỬI LẠI MÃ XÁC THỰC
     @PostMapping("/resend")
     public ResponseEntity<?> resendVerificationCode(@RequestParam String email) {
         try {
             authenticationService.resendVerificationCode(email);
             return ResponseEntity.ok("Verification code sent");
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
 }
