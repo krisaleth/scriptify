@@ -1,18 +1,57 @@
+version: '3.8'
+
 services:
+  # 1. DATABASE: MySQL
   mysql:
-    container_name: mysql
     image: mysql:8.0
+    container_name: scriptify-db
     restart: always
     ports:
-      - 3306:3306
-    expose:
-      - '3306'
-    volumes:
-      - mysql-data:/var/lib/mysql
+      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_USER: ${MYSQL_USERNAME}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USERNAME}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - scriptify-network
+
+  # 2. BACKEND: Spring Boot
+  backend:
+    build: ./backend # Trỏ đến thư mục chứa Dockerfile của BE
+    container_name: scriptify-be
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+    environment:
+      # QUAN TRỌNG: URL phải dùng tên service 'mysql' thay vì 'localhost'
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - ./backend/uploads:/app/uploads # Lưu trữ nhạc/ảnh bên ngoài container
+    networks:
+      - scriptify-network
+
+  # 3. FRONTEND: React (Vite/Nginx)
+  frontend:
+    build: ./frontend # Trỏ đến thư mục chứa Dockerfile của FE
+    container_name: scriptify-fe
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - scriptify-network
+
+networks:
+  scriptify-network:
+    driver: bridge
+
 volumes:
   mysql-data:
