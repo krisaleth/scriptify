@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   # 1. DATABASE: MySQL
@@ -32,6 +31,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      EMAIL_USERNAME: ${EMAIL_USERNAME}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
     volumes:
       - ./backend/uploads:/app/uploads # Lưu trữ nhạc/ảnh bên ngoài container
     networks:

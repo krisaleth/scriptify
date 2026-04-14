@@ -16,11 +16,12 @@ export function OTPForm() {
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
 
   // Nếu truy cập trực tiếp vào trang này mà không có email, đá về trang đăng ký
   useEffect(() => {
     if (!email) {
-      navigate("/register");
+      navigate("/register", {replace: true});
     }
   }, [email, navigate]);
 
@@ -30,8 +31,6 @@ export function OTPForm() {
     setError(null);
 
     try {
-      // 2. Gọi API Verify của Backend
-      // URL khớp với Backend bồ làm: /api/auth/verify?email=...&verificationCode=...
       const response = await fetch(
         `http://localhost:8080/api/auth/verify?email=${encodeURIComponent(email)}&verificationCode=${otp}`,
         { method: "POST" }
@@ -52,10 +51,31 @@ export function OTPForm() {
     }
   };
 
-  const handleResendCode = async () => {
-    // Logic gửi lại mã (nếu Backend bồ có endpoint này)
-    alert("Hệ thống đang gửi lại mã mới đến: " + email);
-  };
+  const handleResendCode = async (email: string): Promise<void> => {
+    if (isResending) return;
+    setIsResending(true);
+    try {
+        const params = new URLSearchParams({ email });
+
+        const response = await fetch(`http://localhost:8080/api/auth/resend?${params.toString()}`, {
+            method: 'POST',
+        });
+
+        const data = await response.text();
+
+        if (response.ok) {
+            alert("Mã OTP đã được gửi! Bồ hãy kiểm tra email của mình nhé!");
+        } else {
+            alert(`Lỗi từ Server: ${data}`);
+        }
+    } catch (error) {
+        console.error("Lỗi kết nối:", error);
+        alert("Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng!");
+    }
+    finally {
+      setIsResending(false);
+    }
+};
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-black p-4 sm:p-6">
@@ -107,11 +127,12 @@ export function OTPForm() {
               <p className="text-zinc-400">
                 Chưa nhận được mã?{" "}
                 <button 
-                  onClick={handleResendCode}
+                  onClick={() => handleResendCode(email)}
+                  disabled={isResending}
                   type="button" 
                   className="text-green-400 font-medium underline-offset-4 hover:underline hover:text-green-300"
                 >
-                  Gửi lại mã
+                  {isResending ? "Đang gửi" : "Gửi lại mã"}
                 </button>
               </p>
               <Link
