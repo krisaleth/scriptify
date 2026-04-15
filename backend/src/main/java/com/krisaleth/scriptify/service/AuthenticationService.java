@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -50,9 +49,20 @@ public class AuthenticationService {
     public Users signUp(UserRegisterDto input) {
         // 1. Khởi tạo đối tượng User với các thông tin cơ bản
         Users users = new Users();
-        users.setUsername(input.getUsername());
+        String nickname = input.getNickname();
+        if (nickname == null || nickname.isBlank()) {
+            nickname = input.getEmail().split("@")[0];
+        }
+        if (usersRepository.existsByNickname(nickname)) {
+            nickname = nickname + System.currentTimeMillis() % 1000;
+        }
+        users.setNickname(nickname);
+
+        if (usersRepository.findByEmail(input.getEmail()).isPresent()) {
+            throw new RuntimeException("Email này đã được sử dụng rồi bồ ơi!");
+        }
         users.setEmail(input.getEmail());
-        users.setDisplayName(input.getDisplayName());
+
         users.setPassword(passwordEncoder.encode(input.getPassword()));
 
         users.setRole(Role.USER);
@@ -102,14 +112,16 @@ public class AuthenticationService {
     public Users authenticate(UserLoginDto input) {
         Users users = usersRepository.findByEmail(input.getEmail()).orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!users.isEnabled()) {
-            throw new RuntimeException("Account not verified!");
-        }
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         input.getEmail(), input.getPassword()
                 )
         );
+
+        if (!users.isEnabled()) {
+            throw new RuntimeException("Account not verified!");
+        }
+
         return users;
     }
 

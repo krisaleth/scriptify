@@ -27,11 +27,19 @@ export function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
     setError(null);
 
     const form = e.currentTarget;
     const formData = new FormData(form);
+
+    const password = formData.get("password")?.toString();
+    const confirmPassword = formData.get("confirm_password")?.toString();
+
+    if (password !== confirmPassword) {
+      setError("Mật khẩu xác nhận không khớp. Bồ kiểm tra lại nhé!");
+      return;
+    }
+    setIsLoading(true);
     
     // Lấy email từ FormData để truyền sang trang OTP sau khi đăng ký thành công
     const email = formData.get("email")?.toString();
@@ -39,10 +47,9 @@ export function RegisterForm() {
     try {
       const response = await fetch("http://localhost:8080/api/auth/register", {
         method: "POST",
-        body: formData, // FormData tự động xử lý multipart/form-data
+        body: formData,
       });
 
-      // Kiểm tra xem response có dữ liệu JSON không trước khi parse
       const contentType = response.headers.get("content-type");
       let data;
       if (contentType && contentType.includes("application/json")) {
@@ -51,15 +58,14 @@ export function RegisterForm() {
 
       if (response.ok) {
         setIsSuccess(true);
-        // Đợi 2 giây để user kịp thấy icon xanh thành công cho "phê"
         setTimeout(() => {
           navigate("/verify-otp", { state: { email: email } });
         }, 2000);
       } else {
-        setError(data?.message || "Đăng ký thất bại. Email hoặc Username có thể đã tồn tại!");
+        setError(data?.message || "Đăng ký thất bại. Email hoặc Tên đăng nhập có thể đã tồn tại!");
       }
     } catch (err) {
-      setError("Không thể kết nối tới server");
+      setError("Không thể kết nối tới máy chủ");
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +88,7 @@ export function RegisterForm() {
       <Card className="w-full max-w-md border-zinc-800 bg-zinc-900 text-white shadow-2xl">
         <CardHeader className="space-y-1 text-center sm:text-left">
           <CardTitle className="text-2xl font-bold tracking-tight">
-            Sign up for Scriptify
+            Đăng ký Scriptify
           </CardTitle>
           {error && (
             <div className="mt-2 rounded-md bg-red-500/10 p-3 text-sm text-red-500 border border-red-500/20 animate-in slide-in-from-top-1">
@@ -93,12 +99,11 @@ export function RegisterForm() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="register-username" className="text-zinc-300">Username</Label>
+              <Label htmlFor="register-nickname" className="text-zinc-300">Tên đăng nhập</Label>
               <Input
-                id="register-username"
-                name="username"
-                required
-                placeholder="Choose a username"
+                id="register-nickname"
+                name="nickname"
+                placeholder="Nhập tên đăng nhập của bồ"
                 className="border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-green-500"
               />
             </div>
@@ -109,22 +114,12 @@ export function RegisterForm() {
                 name="email"
                 type="email"
                 required
-                placeholder="name@example.com"
+                placeholder="ten@vi-du.com"
                 className="border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-green-500"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="register-display-name" className="text-zinc-300">Display name</Label>
-              <Input
-                id="register-display-name"
-                name="displayName"
-                required
-                placeholder="How should we call you?"
-                className="border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-green-500"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="register-avatar" className="text-zinc-300">Upload Avatar</Label>
+              <Label htmlFor="register-avatar" className="text-zinc-300">Ảnh đại diện</Label>
               <Input
                 id="register-avatar"
                 name="avatarFile"
@@ -137,7 +132,7 @@ export function RegisterForm() {
                 <div className="mt-3 flex items-center gap-3 rounded-md border border-zinc-800 bg-black/50 p-2">
                   <img
                     src={avatarPreview}
-                    alt="Avatar preview"
+                    alt="Xem trước ảnh"
                     className="h-10 w-10 rounded-full object-cover border border-zinc-700 shadow-sm"
                   />
                   <p className="text-xs text-zinc-400">Avatar trông "bánh cuốn" đấy!</p>
@@ -145,13 +140,24 @@ export function RegisterForm() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="register-password" className="text-zinc-300">Password</Label>
+              <Label htmlFor="register-password" className="text-zinc-300">Mật khẩu</Label>
               <Input
                 id="register-password"
                 name="password"
                 type="password"
                 required
-                placeholder="Create a strong password"
+                placeholder="Tạo mật khẩu mạnh nè"
+                className="border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-green-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password" className="text-zinc-300">Xác nhận mật khẩu</Label>
+              <Input
+                id="confirm-password"
+                name="confirm_password"
+                type="password"
+                required
+                placeholder="Nhập lại mật khẩu cho chắc"
                 className="border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-green-500"
               />
             </div>
@@ -168,16 +174,16 @@ export function RegisterForm() {
                   Đang tạo tài khoản...
                 </>
               ) : (
-                "Sign Up"
+                "Đăng Ký Ngay"
               )}
             </Button>
             <p className="text-zinc-400 text-center text-sm">
-              Already have an account?{" "}
+              Đã có tài khoản rồi?{" "}
               <Link
                 to="/login"
                 className="text-green-400 font-medium underline-offset-4 hover:underline hover:text-green-300 transition-colors"
               >
-                Sign in
+                Đăng nhập
               </Link>
             </p>
           </CardFooter>

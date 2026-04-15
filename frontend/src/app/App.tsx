@@ -28,7 +28,7 @@ export default function App() {
       {/* Các route con của MusicApp */}
       <Route path="/" element={<MusicApp />}>
         <Route index element={<HomeView />} />
-        <Route path="home" element={<HomeView />} />
+        <Route path="/" element={<HomeView />} />
         <Route path="albums" element={<AlbumsView />} />
         <Route path="album/:id" element={<AlbumDetailView />} />
         <Route path="artists" element={<ArtistsView />} />
