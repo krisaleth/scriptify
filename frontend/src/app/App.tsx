@@ -16,8 +16,6 @@ import { ArtistsView } from "./components/user/artists-view";
 import { FavoritesView } from "./components/user/favorites-view";
 
 export default function App() {
-
-  
   return (
     <Routes>
       <Route path="/login" element={<LoginForm />} />

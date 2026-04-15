@@ -190,7 +190,7 @@ export function AdminDashboard() {
                         onError={(e) => e.currentTarget.src = "/default.png"}
                       />
                     </TableCell>
-                    <TableCell className="font-bold text-zinc-200">{item.title || item.name || item.displayName}</TableCell>
+                    <TableCell className="font-bold text-zinc-200">{item.title || item.name || item.nickname}</TableCell>
                     <TableCell className="text-zinc-400 text-xs italic">
                         {mainTab === 'user' ? item.email : (item.artist?.name || "Single / N/A")}
                     </TableCell>

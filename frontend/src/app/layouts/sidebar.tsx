@@ -64,8 +64,12 @@ export function Sidebar({ onPlayTrack }: SidebarProps) {
   useEffect(() => {
     fetchProfile();
     fetchFavs();
+    window.addEventListener('favoriteUpdate', fetchFavs);
     window.addEventListener('focus', fetchFavs);
-    return () => window.removeEventListener('focus', fetchFavs);
+    return () => {
+      window.addEventListener('favoriteUpdate', fetchFavs);
+      window.addEventListener('focus', fetchFavs);
+    };
   }, [token]);
 
   const handleLogout = () => {
@@ -154,7 +158,6 @@ export function Sidebar({ onPlayTrack }: SidebarProps) {
                 favouriteTracks.slice(0, 20).map((track) => (
                   <button
                     key={track.id}
-                    // SỬ DỤNG PROPS: Gọi hàm onPlayTrack nhận từ MusicApp
                     onClick={() => onPlayTrack(track.id)}
                     className="flex items-center gap-3 text-sm text-zinc-500 hover:text-white transition-all w-full p-2 px-3 rounded-md text-left group hover:bg-zinc-800/30"
                   >

@@ -1,4 +1,4 @@
-# Bước 1: Build React app
+# Stage 1: Build React
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
@@ -6,12 +6,14 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Bước 2: Serve với Nginx
+# Stage 2: Serve với Nginx
 FROM nginx:stable-alpine
-# Copy file build từ bước 1 sang thư mục của Nginx
+
+# COPY FILE CONFIG NÀY VÀO ĐÂY
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy thư mục build từ Stage 1 (Vite dùng 'dist', Create React App dùng 'build')
 COPY --from=build /app/dist /usr/share/nginx/html
-# Copy file cấu hình nginx (nếu bồ có route react-router-dom)
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

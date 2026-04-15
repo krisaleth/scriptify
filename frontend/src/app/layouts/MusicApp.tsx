@@ -96,11 +96,12 @@ export default function MusicApp() {
   };
 
   const formatTime = (time: number) => {
-    if (!time || isNaN(time)) return "0:00";
-    const mins = Math.floor(time / 60);
-    const secs = Math.floor(time % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
+  if (!time || isNaN(time)) return "0:00";
+  const totalSeconds = Math.floor(time);
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+};
 
   return (
     <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden font-sans select-none">
@@ -116,7 +117,7 @@ export default function MusicApp() {
         {/* QUAN TRỌNG: Truyền hàm handlePlayTrack trực tiếp qua props cho Sidebar */}
         <Sidebar onPlayTrack={handlePlayTrack} />
         
-        <main className="flex-1 overflow-y-auto bg-gradient-to-b from-zinc-900 to-black custom-scrollbar">
+        <main className="flex-1 flex flex-col overflow-y-auto bg-gradient-to-b from-zinc-900 to-black custom-scrollbar">
           <Outlet context={{ 
             handlePlayTrack, 
             currentTrackId, 
@@ -180,26 +181,49 @@ export default function MusicApp() {
           </div>
 
           {/* Thanh Tiến Độ */}
-          <div className="flex items-center gap-2 w-full">
-            <span className="text-[10px] text-zinc-500 font-mono w-10 text-right">{formatTime(currentTime)}</span>
+          <div className="flex items-center gap-2 w-full group">
+            <span className="text-[10px] text-zinc-500 font-mono w-10 text-right">
+              {formatTime(currentTime)}
+            </span>
+            
             <input
-              type="range" min="0" max={duration || 100} value={currentTime}
+              type="range"
+              min="0"
+              max={duration || 100}
+              value={currentTime}
               onChange={handleSeek}
-              className="flex-1 h-1 accent-green-500 bg-zinc-800 rounded-full appearance-none cursor-pointer hover:h-1.5 transition-all"
+              className="progress-slider flex-1 h-1 rounded-full appearance-none cursor-pointer bg-zinc-800"
+              style={{
+                // Tính toán % chính xác để vẽ màu xanh
+                backgroundImage: `linear-gradient(to right, #22c55e ${(currentTime / (duration || 100)) * 100}%, transparent ${(currentTime / (duration || 100)) * 100}%)`,
+              }}
             />
-            <span className="text-[10px] text-zinc-500 font-mono w-10">{formatTime(duration)}</span>
+            
+            <span className="text-[10px] text-zinc-500 font-mono w-10">
+              {formatTime(duration)}
+            </span>
           </div>
         </div>
 
         {/* Cụm âm lượng */}
-        <div className="flex items-center justify-end gap-3 w-[30%]">
+        <div className="flex items-center justify-end gap-3 w-[30%] group/volume">
           <button onClick={() => setVolume(volume === 0 ? 0.7 : 0)} className="text-zinc-400 hover:text-white transition">
             {volume === 0 ? <VolumeX size={18} className="text-red-500" /> : volume < 0.5 ? <Volume1 size={18} /> : <Volume2 size={18} />}
           </button>
+          
           <input
-            type="range" min="0" max="1" step="0.01" value={volume}
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={volume}
             onChange={(e) => setVolume(parseFloat(e.target.value))}
-            className="w-24 h-1 accent-white bg-zinc-800 appearance-none rounded-full cursor-pointer hover:accent-green-500"
+            className="progress-slider w-24 h-1 rounded-full appearance-none cursor-pointer bg-zinc-800"
+            style={{
+              backgroundImage: `linear-gradient(to right, #22c55e ${volume * 100}%, transparent ${volume * 100}%)`,
+              backgroundSize: '100% 100%',
+              backgroundRepeat: 'no-repeat'
+            }}
           />
         </div>
       </footer>
