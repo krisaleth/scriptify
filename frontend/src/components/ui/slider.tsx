@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
-
 import { cn } from "./utils";
 
 function Slider({
@@ -14,13 +13,8 @@ function Slider({
   ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root>) {
   const _values = React.useMemo(
-    () =>
-      Array.isArray(value)
-        ? value
-        : Array.isArray(defaultValue)
-          ? defaultValue
-          : [min, max],
-    [value, defaultValue, min, max],
+    () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min]),
+    [value, defaultValue, min]
   );
 
   return (
@@ -31,29 +25,43 @@ function Slider({
       min={min}
       max={max}
       className={cn(
-        "relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col",
-        className,
+        "relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50 h-4 group",
+        className
       )}
       {...props}
     >
       <SliderPrimitive.Track
         data-slot="slider-track"
-        className={cn(
-          "bg-zinc-700 relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5",
-        )}
+        className="bg-zinc-800 relative grow rounded-full h-[3px] w-full"
       >
         <SliderPrimitive.Range
           data-slot="slider-range"
-          className={cn(
-            "bg-white absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full",
-          )}
+          className="bg-green-500 absolute h-full rounded-full transition-colors"
         />
       </SliderPrimitive.Track>
-      {Array.from({ length: _values.length }, (_, index) => (
+      
+      {_values.map((_, index) => (
         <SliderPrimitive.Thumb
-          data-slot="slider-thumb"
           key={index}
-          className="bg-white block size-3 shrink-0 rounded-full shadow-sm transition-transform hover:scale-125 focus-visible:scale-125 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+          data-slot="slider-thumb"
+          className={cn(
+            // Ép cứng kích thước size-3 (12px), xóa sạch ring/outline
+            "block !size-3 shrink-0 rounded-full transition-all shadow-none",
+            "focus:outline-none focus:ring-0 focus-visible:ring-0 focus:ring-offset-0", 
+            "hover:scale-110 active:scale-100 cursor-grab active:cursor-grabbing border-none",
+            "data-[disabled]:opacity-0 data-[disabled]:scale-0",
+            "absolute"
+          )}
+          style={{ 
+            // VŨ KHÍ TỐI THƯỢNG: Đè bạt CSS Variables của Radix bằng inline style
+            backgroundColor: '#ffffff', 
+            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+            transform: 'translate(-50%, -50%)',
+            top: '50%',
+            left: `${(((_values[index] - min) / (max - min)) * 100)}%`,
+            outline: 'none',
+            border: 'none'
+          }}
         />
       ))}
     </SliderPrimitive.Root>
