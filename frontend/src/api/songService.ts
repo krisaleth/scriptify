@@ -1,5 +1,4 @@
-// services/songService.ts
-import { Song } from "@/types/Song";
+import { Song } from "@/types/song";
 
 export const searchSongs = async (query: string): Promise<Song[]> => {
   const token = localStorage.getItem('token'); // Lấy JWT Token đã lưu khi Login
