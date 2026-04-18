@@ -31,9 +31,8 @@ public class UserController {
 
         return ResponseEntity.ok(new UserResponse(
                 user.getId(),
-                user.getUsername(),
+                user.getNickname(),
                 user.getEmail(),
-                user.getDisplayName(),
                 user.getRole().name(),
                 user.getAvatarUrl()
         ));

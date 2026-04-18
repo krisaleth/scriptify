@@ -16,8 +16,6 @@ import { ArtistsView } from "./components/user/artists-view";
 import { FavoritesView } from "./components/user/favorites-view";
 
 export default function App() {
-
-  
   return (
     <Routes>
       <Route path="/login" element={<LoginForm />} />
@@ -28,7 +26,7 @@ export default function App() {
       {/* Các route con của MusicApp */}
       <Route path="/" element={<MusicApp />}>
         <Route index element={<HomeView />} />
-        <Route path="home" element={<HomeView />} />
+        <Route path="/" element={<HomeView />} />
         <Route path="albums" element={<AlbumsView />} />
         <Route path="album/:id" element={<AlbumDetailView />} />
         <Route path="artists" element={<ArtistsView />} />

@@ -25,7 +25,6 @@ export function FavoritesView() {
       });
       if (response.ok) {
         const data = await response.json();
-        // Backend trả về Set<Song>, lên FE nó là mảng các object Song
         setFavouriteTracks(data);
       } else {
         setError("Không thể tải danh sách yêu thích");
@@ -44,14 +43,13 @@ export function FavoritesView() {
   const removeFavourite = async (musicId: number) => {
     const token = localStorage.getItem("token");
     try {
-      // Gọi đúng endpoint bồ đã build ở backend
       const response = await fetch(`${API_BASE}/favorites/${musicId}`, {
         method: 'POST',
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (response.ok) {
-        // Cập nhật UI: Lọc bỏ bài vừa click "bỏ thích"
         setFavouriteTracks((prev) => prev.filter((track) => track.id !== musicId));
+        window.dispatchEvent(new Event("favoriteUpdate"));
       }
     } catch (err) {
       console.error("Lỗi khi xóa yêu thích", err);
@@ -60,7 +58,6 @@ export function FavoritesView() {
 
   const filteredFavourites = useMemo(() => {
     return favouriteTracks.filter((track) => {
-      // Dùng dữ liệu thật từ Backend (track.title và track.artist.name)
       const titleMatch = track.title?.toLowerCase().includes(searchQuery.toLowerCase());
       const artistMatch = track.artist?.name?.toLowerCase().includes(searchQuery.toLowerCase());
       return titleMatch || artistMatch;
@@ -120,7 +117,6 @@ export function FavoritesView() {
           {filteredFavourites.map((track) => (
             <div key={track.id} className="bg-zinc-900/40 p-4 rounded-xl hover:bg-zinc-800/60 transition-all group relative border border-transparent hover:border-zinc-700 shadow-lg">
               <div className="relative mb-4 aspect-square">
-                {/* Nối API_BASE vào path ảnh */}
                 <img 
                   src={track.imageUrl ? `${API_BASE}${track.imageUrl}` : "/default-cover.png"} 
                   alt={track.title} 

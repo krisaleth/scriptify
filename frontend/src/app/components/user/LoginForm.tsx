@@ -39,8 +39,15 @@ export function LoginForm() {
         // 3. Chuyển hướng về trang chủ
         navigate("/");
       } else {
-        // Xử lý lỗi từ Backend (ví dụ: Sai mật khẩu)
-        setError(data.message || "Email hoặc mật khẩu không chính xác");
+        if (data.code === "ACCOUNT_NOT_VERIFIED") {
+          navigate("/verify-otp", {
+            state: {email: email}
+          });
+        }
+        else {
+          setError(data.message || "Email hoặc mật khẩu không chính xác");
+        }
+        
       }
     } catch (err) {
       setError("Không thể kết nối tới máy chủ");

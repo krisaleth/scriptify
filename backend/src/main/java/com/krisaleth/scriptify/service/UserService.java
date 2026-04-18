@@ -23,10 +23,6 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final SongRepository songRepository;
 
-    /**
-     * LẤY DANH SÁCH BÀI HÁT YÊU THÍCH
-     * Cần @Transactional để tránh lỗi Lazy Loading
-     */
     @Transactional(readOnly = true)
     public Set<Song> getFavouriteSongs(String email) {
         Users user = usersRepository.findByEmail(email)
@@ -58,9 +54,9 @@ public class UserService {
     }
 
     @Transactional
-    public Users updateProfile(Long userId, String displayName, String avatarUrl) {
+    public Users updateProfile(Long userId, String userName, String avatarUrl) {
         Users existingUser = getUserById(userId);
-        if (displayName != null && !displayName.isBlank()) existingUser.setDisplayName(displayName);
+        if (userName != null && !userName.isBlank()) existingUser.setNickname(userName);
         if (avatarUrl != null && !avatarUrl.isBlank()) existingUser.setAvatarUrl(avatarUrl);
         return usersRepository.save(existingUser);
     }

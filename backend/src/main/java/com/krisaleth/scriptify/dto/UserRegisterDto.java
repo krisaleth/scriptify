@@ -8,10 +8,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Setter
 public class UserRegisterDto {
     private String email;
-    private String username;
+    private String nickname;
     private String password;
-
-    private String displayName;
 
     private MultipartFile avatarFile;
 }

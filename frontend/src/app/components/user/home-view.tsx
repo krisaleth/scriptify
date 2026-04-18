@@ -86,6 +86,7 @@ export function HomeView() {
         fetch(`${API_BASE}/favorites`, {
           headers: { "Authorization": `Bearer ${token}` }
         }).then(r => r.json()).then(data => setFavourites(data.map((s: any) => s.id)));
+        window.dispatchEvent(new Event("favoriteUpdate"));
       }
     } catch (err) {
       console.error("Lỗi toggle tim:", err);

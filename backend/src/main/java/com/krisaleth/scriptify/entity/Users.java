@@ -1,6 +1,7 @@
 package com.krisaleth.scriptify.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,10 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Getter
@@ -29,7 +27,7 @@ public class Users implements UserDetails {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String username;
+    private String nickname;
 
     @Column(unique = true, nullable = false)
     private String email;
@@ -51,9 +49,6 @@ public class Users implements UserDetails {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "display_name")
-    private String displayName;
-
     @Column(name = "avatar_url")
     private String avatarUrl = "default-avatar.png";
 
@@ -63,9 +58,10 @@ public class Users implements UserDetails {
 
     @OneToMany(mappedBy = "user")
     @JsonIgnore
-    private List<Playlist> playlists;
+    private List<Playlist> playlists = new ArrayList<>();
 
     @ManyToMany
+    @JsonIgnoreProperties
     @JoinTable(
             name = "user_favourites", // Hibernate tự tạo bảng tên này
             joinColumns = @JoinColumn(name = "user_id"), // Cột nối tới bảng Users
@@ -73,8 +69,8 @@ public class Users implements UserDetails {
     )
     private Set<Song> favoriteSongs = new HashSet<>();
 
-    public Users(String username, String email, String password) {
-        this.username = username;
+    public Users(String nickname, String email, String password) {
+        this.nickname = nickname;
         this.email = email;
         this.password = password;
     }
@@ -85,6 +81,7 @@ public class Users implements UserDetails {
         return List.of(new SimpleGrantedAuthority("ROLE_" + resolvedRole.name()));
     }
 
+    @JsonIgnore
     @Override
     public String getUsername() {
         return this.email;

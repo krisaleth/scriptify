@@ -3,7 +3,7 @@ import { Home, Library, Heart, User, Music2, LogOut, Mic2, ShieldCheck } from 'l
 import { useState, useEffect } from 'react';
 
 interface UserProfile {
-  displayName: string;
+  username: string;
   avatarUrl: string;
   role: string;
 }
@@ -64,8 +64,12 @@ export function Sidebar({ onPlayTrack }: SidebarProps) {
   useEffect(() => {
     fetchProfile();
     fetchFavs();
+    window.addEventListener('favoriteUpdate', fetchFavs);
     window.addEventListener('focus', fetchFavs);
-    return () => window.removeEventListener('focus', fetchFavs);
+    return () => {
+      window.addEventListener('favoriteUpdate', fetchFavs);
+      window.addEventListener('focus', fetchFavs);
+    };
   }, [token]);
 
   const handleLogout = () => {
@@ -104,7 +108,7 @@ export function Sidebar({ onPlayTrack }: SidebarProps) {
               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-black rounded-full shadow-lg"></div>
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-white font-black truncate text-sm uppercase tracking-tighter">{user.displayName}</p>
+              <p className="text-white font-black truncate text-sm uppercase tracking-tighter">{user.username}</p>
               <button 
                 onClick={handleLogout}
                 className="text-[10px] text-zinc-500 hover:text-red-500 flex items-center gap-1 mt-1 transition-all uppercase font-bold"
@@ -119,7 +123,7 @@ export function Sidebar({ onPlayTrack }: SidebarProps) {
       {/* Main Navigation */}
       <div className="p-3 flex-1 overflow-y-auto custom-scrollbar space-y-6">
         <nav className="space-y-1">
-          <NavLink to="/home" className={navLinkClass}>
+          <NavLink to="/" className={navLinkClass}>
             <Home className="w-5 h-5" />
             <span className="text-sm tracking-wide">Trang chủ</span>
           </NavLink>
@@ -154,7 +158,6 @@ export function Sidebar({ onPlayTrack }: SidebarProps) {
                 favouriteTracks.slice(0, 20).map((track) => (
                   <button
                     key={track.id}
-                    // SỬ DỤNG PROPS: Gọi hàm onPlayTrack nhận từ MusicApp
                     onClick={() => onPlayTrack(track.id)}
                     className="flex items-center gap-3 text-sm text-zinc-500 hover:text-white transition-all w-full p-2 px-3 rounded-md text-left group hover:bg-zinc-800/30"
                   >
