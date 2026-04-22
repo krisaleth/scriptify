@@ -4,11 +4,11 @@ import { RegisterForm } from "@/components/user/RegisterForm";
 import { OTPForm } from "@/components/user/OTPForm";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import MusicApp from "./layouts/MusicApp";
-import { HomeView } from "@/components/user/home-view";
-import { AlbumsView } from "@/components/user/albums-view";
-import { AlbumDetailView } from "@/components/user/album-detail-view";
-import { ArtistsView } from "@/components/user/artists-view";
-import { FavoritesView } from "@/components/user/favorites-view";
+import { HomeView } from "@/components/user/HomeView";
+import { AlbumsView } from "@/components/user/AlbumsView";
+import { AlbumDetailView } from "@/components/user/AlbumDetailView";
+import { ArtistsView } from "@/components/user/ArtistsView";
+import { FavoritesView } from "@/components/user/FavoritesView";
 import { Toaster } from "sonner";
 import { GlobalAuthModal } from "@/components/auth/GlobalAuthModal";
 

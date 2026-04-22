@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { Sidebar } from "./sidebar";
-import { MusicPlayer } from "./music-player";
+import { Sidebar } from "./Sidebar";
+import { MusicPlayer } from "./MusicPlayer";
 import { getResourceUrl } from "@/utils/urlHelper";
 import { useAuthStore } from "@/store/useAuthStore"; // Lấy token từ store
 
