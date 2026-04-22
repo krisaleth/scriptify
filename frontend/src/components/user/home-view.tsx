@@ -1,9 +1,10 @@
-import { Play, Heart, Search, Loader2, LogIn } from 'lucide-react';
+import { Play, Heart, Search, Loader2 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
-import { useOutletContext, useNavigate } from 'react-router-dom';
+import { useOutletContext } from 'react-router-dom';
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
+import { getResourceUrl } from '@/utils/urlHelper';
 
 const API_BASE = "http://localhost:8080/api";
 
@@ -22,42 +23,46 @@ export interface Song {
 
 export function HomeView() {
   const { handlePlayTrack } = useOutletContext<MusicContextType>();
-  const openAuthModal = useAuthStore((state) => state.openAuthModal);
-  
-  // 1. LẤY TOKEN TỪ STORE (Để tự động cập nhật UI khi vừa Login xong)
-  const token = useAuthStore((state) => state.token);
-  
-  const navigate = useNavigate();
+  const { token, openAuthModal } = useAuthStore();
 
   const [songs, setSongs] = useState<Song[]>([]);
   const [favorites, setFavorites] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // 2. FETCH DỮ LIỆU (Sẽ tự chạy lại mỗi khi token thay đổi)
+  // 1. Hàm fetch danh sách yêu thích riêng biệt để đồng bộ
+  const fetchOnlyFavorites = async () => {
+    if (!token) {
+      setFavorites([]);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/favorites`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const favData = await res.json();
+        // Lưu mảng ID để check includes nhanh hơn
+        setFavorites(favData.map((s: any) => s.id));
+      }
+    } catch (err) {
+      console.error("Lỗi đồng bộ danh sách tim:", err);
+    }
+  };
+
+  // 2. Init dữ liệu lần đầu
   useEffect(() => {
     const initData = async () => {
       try {
         setIsLoading(true);
-        const headers: any = token ? { "Authorization": `Bearer ${token}` } : {};
-        
-        const [songsRes, favsRes] = await Promise.all([
-          fetch(`${API_BASE}/songs?size=100`),
-          token ? fetch(`${API_BASE}/favorites`, { headers }) : Promise.resolve(null)
-        ]);
-
+        // Load danh sách bài hát (Public)
+        const songsRes = await fetch(`${API_BASE}/songs?size=100`);
         if (songsRes.ok) {
           const data = await songsRes.json();
           setSongs(data.content || (Array.isArray(data) ? data : []));
         }
-
-        if (favsRes?.ok) {
-          const favData = await favsRes.json();
-          setFavorites(favData.map((s: any) => s.id));
-        } else {
-          // Nếu không có token hoặc lỗi fav, reset danh sách tim
-          setFavorites([]);
-        }
+        // Load danh sách yêu thích (Private)
+        await fetchOnlyFavorites();
       } catch (err) {
         console.error("Lỗi kết nối server:", err);
       } finally {
@@ -67,10 +72,17 @@ export function HomeView() {
     initData();
   }, [token]);
 
-  // 2. Logic Thả tim (Dùng Global Auth Modal)
+  // 3. Lắng nghe sự kiện để đồng bộ tim xanh từ các trang khác (Sidebar, FavoritesView)
+  useEffect(() => {
+    const handleAutoUpdate = () => fetchOnlyFavorites();
+    window.addEventListener("favoriteUpdate", handleAutoUpdate);
+    return () => window.removeEventListener("favoriteUpdate", handleAutoUpdate);
+  }, [token]);
+
+  // 4. Xử lý Like/Unlike
   const toggleFavourite = async (musicId: number) => {
     if (!token) {
-      openAuthModal(); // Hiện Popup đăng nhập toàn cục
+      openAuthModal();
       return;
     }
 
@@ -88,22 +100,20 @@ export function HomeView() {
       });
 
       if (res.ok) {
-        toast.success(isCurrentlyFav ? "Đã bỏ yêu thích" : "Đã thêm vào yêu thích", {
-          style: { background: '#18181b', border: '1px solid #22c55e', color: '#fff' }
-        });
-        // Bắn event để Sidebar cập nhật
+        toast.success(isCurrentlyFav ? "Đã bỏ yêu thích" : "Đã thêm vào yêu thích");
+        // Bắn event thông báo cho các component khác
         window.dispatchEvent(new Event("favoriteUpdate"));
       } else {
         throw new Error();
       }
     } catch (err) {
-      // Hoàn tác nếu lỗi
+      // Hoàn tác nếu API lỗi
       setFavorites(prev => isCurrentlyFav ? [...prev, musicId] : prev.filter(id => id !== musicId));
-      toast.error("Lỗi hệ thống khi cập nhật yêu thích");
+      toast.error("Không thể cập nhật yêu thích");
     }
   };
 
-  // 3. Logic Tìm kiếm & Phân loại
+  // Logic lọc và sắp xếp
   const filteredMusic = useMemo(() => {
     return songs.filter((track) => 
       track.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -112,7 +122,7 @@ export function HomeView() {
   }, [songs, searchQuery]);
 
   const popularTracks = useMemo(() => {
-    return [...songs].sort((a, b) => b.viewCount - a.viewCount).slice(0, 6);
+    return [...songs].sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0)).slice(0, 6);
   }, [songs]);
 
   const greeting = useMemo(() => {
@@ -131,9 +141,9 @@ export function HomeView() {
   return (
     <div className="flex-1 overflow-y-auto bg-gradient-to-b from-zinc-900 to-black pb-32 custom-scrollbar">
       
-      {/* HEADER & SEARCH */}
+      {/* Search & Greeting Section */}
       <div className="bg-gradient-to-b from-green-900/30 to-transparent pt-12 pb-8 px-8">
-        <h2 className="text-4xl font-black text-white mb-2 tracking-tighter italic">{greeting}</h2>
+        <h2 className="text-4xl font-black text-white mb-2 tracking-tighter italic uppercase">{greeting}</h2>
         <div className="relative mt-8 max-w-lg group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 group-focus-within:text-white transition-colors" />
           <input
@@ -141,14 +151,17 @@ export function HomeView() {
             placeholder="Tìm kiếm bài hát, nghệ sĩ..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-zinc-800/60 hover:bg-zinc-800 text-white rounded-full py-3.5 pl-12 pr-6 focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-zinc-500 border-none"
+            className="w-full bg-zinc-800/60 hover:bg-zinc-800 text-white rounded-full py-4 pl-12 pr-6 focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-zinc-600 border-none shadow-2xl"
           />
         </div>
       </div>
 
-      {/* SECTION: ĐANG THỊNH HÀNH */}
+      {/* Popular Section */}
       <div className="px-8 mb-12">
-        <h3 className="text-2xl font-bold text-white mb-6">Đang thịnh hành</h3>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-white italic tracking-tight uppercase">Đang thịnh hành</h3>
+          <div className="h-[1px] flex-1 bg-white/5 ml-6"></div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {popularTracks.map((track) => (
             <TrackCardHorizontal 
@@ -162,9 +175,12 @@ export function HomeView() {
         </div>
       </div>
 
-      {/* SECTION: DÀNH CHO BỒ */}
+      {/* All Music Section */}
       <div className="px-8">
-        <h3 className="text-2xl font-bold text-white mb-6">Dành cho bồ</h3>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-white italic tracking-tight uppercase">Dành cho bồ</h3>
+          <div className="h-[1px] flex-1 bg-white/5 ml-6"></div>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {filteredMusic.map((track) => (
             <TrackCardVertical 
@@ -181,29 +197,34 @@ export function HomeView() {
   );
 }
 
-// --- COMPONENTS HIỂN THỊ (Gộp chung trong 1 file để bồ dễ dùng) ---
+// --- SUB-COMPONENTS ---
 
 function TrackCardHorizontal({ track, isFav, onPlay, onToggleFav }: any) {
   return (
-    <div className="bg-zinc-900/40 rounded-md p-2 hover:bg-zinc-800/60 transition group flex items-center gap-4 cursor-pointer">
+    <div 
+      onClick={onPlay}
+      className="bg-zinc-900/40 rounded-xl p-3 hover:bg-zinc-800/60 transition-all group flex items-center gap-4 cursor-pointer border border-transparent hover:border-zinc-800 shadow-lg"
+    >
       <div className="relative w-16 h-16 flex-shrink-0">
-        <img src={`${API_BASE}${track.imageUrl}`} className="w-full h-full object-cover rounded shadow-lg" alt={track.title} />
-        <button 
-          onClick={(e) => { e.stopPropagation(); onPlay(); }}
-          className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded shadow-xl"
-        >
+        <img 
+          src={getResourceUrl(track.imageUrl)} 
+          className="w-full h-full object-cover rounded-lg shadow-md" 
+          alt={track.title}
+          onError={(e) => (e.currentTarget.src = "/assets/default-cover.png")}
+        />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
           <Play className="w-8 h-8 text-white fill-current" />
-        </button>
+        </div>
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className="text-white font-bold truncate text-sm">{track.title}</h4>
-        <p className="text-xs text-zinc-400 truncate">{track.artist?.name}</p>
+        <h4 className="text-white font-bold truncate text-sm uppercase italic tracking-tight">{track.title}</h4>
+        <p className="text-[11px] text-zinc-500 truncate font-medium">{track.artist?.name}</p>
       </div>
       <button 
         onClick={(e) => { e.stopPropagation(); onToggleFav(); }} 
         className={cn(
-          "mr-4 transition-all active:scale-125",
-          isFav ? "text-green-500" : "text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100"
+          "mr-4 transition-all active:scale-150 p-2",
+          isFav ? "text-green-500 scale-110" : "text-zinc-600 hover:text-white opacity-0 group-hover:opacity-100"
         )}
       >
         <Heart className={cn("w-5 h-5", isFav && "fill-current")} />
@@ -214,28 +235,35 @@ function TrackCardHorizontal({ track, isFav, onPlay, onToggleFav }: any) {
 
 function TrackCardVertical({ track, isFav, onPlay, onToggleFav }: any) {
   return (
-    <div className="bg-zinc-900/40 p-4 rounded-xl hover:bg-zinc-800/60 transition group cursor-pointer border border-transparent hover:border-zinc-800">
-      <div className="relative aspect-square mb-4">
-        <img src={`${API_BASE}${track.imageUrl}`} className="w-full h-full object-cover rounded-lg shadow-2xl" alt={track.title} />
-        <button 
-          onClick={(e) => { e.stopPropagation(); onPlay(); }}
-          className="absolute bottom-2 right-2 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all shadow-2xl hover:scale-105"
-        >
+    <div 
+      onClick={onPlay}
+      className="bg-zinc-900/40 p-4 rounded-2xl hover:bg-zinc-800/60 transition-all group cursor-pointer border border-transparent hover:border-zinc-700/30 flex flex-col h-full shadow-xl"
+    >
+      <div className="relative aspect-square mb-4 overflow-hidden rounded-xl">
+        <img 
+          src={getResourceUrl(track.imageUrl)} 
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 shadow-2xl" 
+          alt={track.title}
+          onError={(e) => (e.currentTarget.src = "/assets/default-cover.png")}
+        />
+        <div className="absolute bottom-3 right-3 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all shadow-2xl hover:scale-110 shadow-green-500/40">
           <Play className="w-6 h-6 text-black fill-current ml-1" />
-        </button>
+        </div>
       </div>
-      <h4 className="text-white font-bold truncate mb-1">{track.title}</h4>
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-zinc-400 truncate">{track.artist?.name}</p>
-        <button 
-          onClick={(e) => { e.stopPropagation(); onToggleFav(); }} 
-          className={cn(
-            "transition-all active:scale-125",
-            isFav ? "text-green-500" : "text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100"
-          )}
-        >
-          <Heart className={cn("w-5 h-5", isFav && "fill-current")} />
-        </button>
+      <div className="flex-1 min-w-0">
+        <h4 className="text-white font-bold truncate mb-1 text-base uppercase italic tracking-tighter">{track.title}</h4>
+        <div className="flex justify-between items-center mt-2">
+          <p className="text-xs text-zinc-500 truncate font-medium">{track.artist?.name}</p>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onToggleFav(); }} 
+            className={cn(
+              "transition-all active:scale-150 p-1",
+              isFav ? "text-green-500" : "text-zinc-600 hover:text-white opacity-0 group-hover:opacity-100"
+            )}
+          >
+            <Heart className={cn("w-4 h-4", isFav && "fill-current")} />
+          </button>
+        </div>
       </div>
     </div>
   );

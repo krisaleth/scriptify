@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner"; 
 
 export function RegisterForm() {
   const navigate = useNavigate();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   React.useEffect(() => () => {
     if (avatarPreview) URL.revokeObjectURL(avatarPreview);
@@ -34,16 +34,17 @@ export function RegisterForm() {
 
     const password = formData.get("password")?.toString();
     const confirmPassword = formData.get("confirm_password")?.toString();
-
-    if (password !== confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp. Bồ kiểm tra lại nhé!");
-      return;
-    }
-    setIsLoading(true);
-    
-    // Lấy email từ FormData để truyền sang trang OTP sau khi đăng ký thành công
     const email = formData.get("email")?.toString();
 
+    if (password !== confirmPassword) {
+      const msg = "Mật khẩu xác nhận không khớp bồ ơi!";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    setIsLoading(true);
+    
     try {
       const response = await fetch("http://localhost:8080/api/auth/register", {
         method: "POST",
@@ -57,134 +58,115 @@ export function RegisterForm() {
       }
 
       if (response.ok) {
-        setIsSuccess(true);
+        toast.success("Đăng ký thành công! Kiểm tra mail nhận mã nhé.");
         setTimeout(() => {
-          navigate("/verify-otp", { state: { email: email } });
-        }, 2000);
+          navigate("/verify-otp", { state: { email: email }, replace: true });
+        }, 1500);
       } else {
-        setError(data?.message || "Đăng ký thất bại. Email hoặc Tên đăng nhập có thể đã tồn tại!");
+        const serverError = data?.message || "Đăng ký thất bại rồi!";
+        setError(serverError);
+        toast.error(serverError);
       }
     } catch (err) {
-      setError("Không thể kết nối tới máy chủ");
+      setError("Lỗi kết nối server");
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isSuccess) {
-    return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-black p-4">
-        <div className="text-center animate-in fade-in zoom-in duration-300">
-          <CheckCircle2 className="mx-auto h-20 w-20 text-green-500 mb-6 animate-bounce" />
-          <h2 className="text-3xl font-bold text-white mb-2">Đăng ký thành công!</h2>
-          <p className="text-zinc-400">Đang chuẩn bị gửi mã OTP đến email của bồ...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-black p-4 sm:p-6">
-      <Card className="w-full max-w-md border-zinc-800 bg-zinc-900 text-white shadow-2xl">
-        <CardHeader className="space-y-1 text-center sm:text-left">
-          <CardTitle className="text-2xl font-bold tracking-tight">
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-black p-4">
+      <Card className="w-full max-w-md border-zinc-800 bg-zinc-900 text-white shadow-2xl rounded-2xl">
+        <CardHeader className="space-y-1 pt-8">
+          <CardTitle className="text-3xl font-black italic tracking-tighter text-green-500 uppercase">
             Đăng ký Scriptify
           </CardTitle>
-          {error && (
-            <div className="mt-2 rounded-md bg-red-500/10 p-3 text-sm text-red-500 border border-red-500/20 animate-in slide-in-from-top-1">
-              {error}
-            </div>
-          )}
+          <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em]">Khởi đầu hành trình âm nhạc của bồ</p>
         </CardHeader>
+        
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5 px-8">
+            {/* Nickname */}
             <div className="space-y-2">
-              <Label htmlFor="register-nickname" className="text-zinc-300">Tên đăng nhập</Label>
+              <Label className="text-zinc-400 font-bold text-[10px] uppercase">Nickname</Label>
               <Input
-                id="register-nickname"
                 name="nickname"
-                placeholder="Nhập tên đăng nhập của bồ"
-                className="border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-green-500"
+                placeholder="Scriptify"
+                className="border-zinc-700 bg-zinc-800 h-11 focus-visible:ring-green-500"
               />
             </div>
+
+            {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="register-email" className="text-zinc-300">Email</Label>
+              <Label className="text-zinc-400 font-bold text-[10px] uppercase">Email xác thực</Label>
               <Input
-                id="register-email"
                 name="email"
                 type="email"
                 required
                 placeholder="ten@vi-du.com"
-                className="border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-green-500"
+                className="border-zinc-700 bg-zinc-800 h-11 focus-visible:ring-green-500"
               />
             </div>
+
+            {/* Avatar - Bỏ (Cloud R2) */}
             <div className="space-y-2">
-              <Label htmlFor="register-avatar" className="text-zinc-300">Ảnh đại diện</Label>
+              <Label className="text-zinc-400 font-bold text-[10px] uppercase">Ảnh đại diện</Label>
               <Input
-                id="register-avatar"
                 name="avatarFile"
                 type="file"
                 accept="image/*"
                 onChange={onAvatarChange}
-                className="cursor-pointer border-zinc-700 bg-zinc-800 text-zinc-300 file:me-3 file:rounded-md file:border-0 file:bg-zinc-700 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white focus-visible:ring-green-500"
+                className="cursor-pointer border-zinc-700 bg-zinc-800 file:bg-zinc-700 file:text-white"
               />
               {avatarPreview && (
-                <div className="mt-3 flex items-center gap-3 rounded-md border border-zinc-800 bg-black/50 p-2">
-                  <img
-                    src={avatarPreview}
-                    alt="Xem trước ảnh"
-                    className="h-10 w-10 rounded-full object-cover border border-zinc-700 shadow-sm"
-                  />
-                  <p className="text-xs text-zinc-400">Avatar trông "bánh cuốn" đấy!</p>
+                <div className="mt-3 flex items-center gap-3 rounded-xl border border-zinc-800 bg-black/30 p-2 animate-in fade-in slide-in-from-left-2">
+                  <img src={avatarPreview} className="h-10 w-10 rounded-full object-cover" />
+                  <p className="text-[10px] text-zinc-500 italic">Avatar trông ổn đấy sếp!</p>
                 </div>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="register-password" className="text-zinc-300">Mật khẩu</Label>
-              <Input
-                id="register-password"
-                name="password"
-                type="password"
-                required
-                placeholder="Tạo mật khẩu mạnh nè"
-                className="border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-green-500"
-              />
+
+            {/* Password Row - Sửa chữ "Xác nhận mật khẩu" */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-zinc-400 font-bold text-[10px] uppercase tracking-tighter">Mật khẩu</Label>
+                <Input
+                  name="password"
+                  type="password"
+                  required
+                  className="border-zinc-700 bg-zinc-800"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-zinc-400 font-bold text-[10px] uppercase tracking-tighter">Xác nhận mật khẩu</Label>
+                <Input
+                  name="confirm_password"
+                  type="password"
+                  required
+                  className="border-zinc-700 bg-zinc-800"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password" className="text-zinc-300">Xác nhận mật khẩu</Label>
-              <Input
-                id="confirm-password"
-                name="confirm_password"
-                type="password"
-                required
-                placeholder="Nhập lại mật khẩu cho chắc"
-                className="border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-green-500"
-              />
-            </div>
+
+            {error && (
+              <div className="mt-2 text-[10px] font-bold text-red-500 uppercase italic">
+                ⚠️ {error}
+              </div>
+            )}
           </CardContent>
-          <CardFooter className="flex flex-col gap-4 pt-2">
+
+          {/* Giãn khoảng cách từ phần mật khẩu xuống nút bằng cách dùng pt-10 và pb-10 */}
+          <CardFooter className="flex flex-col gap-4 pb-10 px-8 pt-10">
             <Button 
               type="submit" 
               disabled={isLoading}
-              className="w-full bg-green-500 text-black hover:bg-green-600 font-bold text-base transition-all"
+              className="w-full bg-green-500 text-black hover:bg-green-400 font-black uppercase italic h-14 rounded-2xl shadow-xl shadow-green-500/10 active:scale-95 transition-transform"
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Đang tạo tài khoản...
-                </>
-              ) : (
-                "Đăng Ký Ngay"
-              )}
+              {isLoading ? <Loader2 className="animate-spin" /> : "Bắt đầu ngay"}
             </Button>
-            <p className="text-zinc-400 text-center text-sm">
-              Đã có tài khoản rồi?{" "}
-              <Link
-                to="/login"
-                className="text-green-400 font-medium underline-offset-4 hover:underline hover:text-green-300 transition-colors"
-              >
-                Đăng nhập
-              </Link>
+            <p className="text-zinc-500 text-center text-xs">
+              Đã có tài khoản?{" "}
+              <Link to="/login" className="text-green-500 hover:underline font-bold">Đăng nhập</Link>
             </p>
           </CardFooter>
         </form>

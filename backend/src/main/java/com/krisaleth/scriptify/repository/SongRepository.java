@@ -1,6 +1,7 @@
 package com.krisaleth.scriptify.repository;
 
 import com.krisaleth.scriptify.entity.Song;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -35,6 +36,7 @@ public interface SongRepository extends JpaRepository<Song, Long> {
 
     // Add view counter
     @Modifying(clearAutomatically = true)
+    @Transactional
     @Query("UPDATE Song s SET s.viewCount = s.viewCount + 1 WHERE s.id = :id")
     int incrementViewCount(@Param("id") Long id);
 

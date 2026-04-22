@@ -3,14 +3,15 @@ package com.krisaleth.scriptify.controller;
 import com.krisaleth.scriptify.entity.Song;
 import com.krisaleth.scriptify.service.SongService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.net.URI;
 
 @RestController
 @RequestMapping("/songs")
@@ -19,17 +20,29 @@ import org.springframework.web.multipart.MultipartFile;
 public class SongController {
     private final SongService songService;
 
-    // --- STREAMING NHẠC ---
+    @Value("${r2.public-url}")
+    private String publicUrl;
+
+    /**
+     * PHÁT NHẠC (REDIRECT STREAMING)
+     * Thay vì trả về Resource, ta Redirect tới link R2 để tối ưu băng thông
+     */
     @GetMapping("/{id}/play")
-    public ResponseEntity<Resource> playSong(@PathVariable Long id) {
-        Resource audioFile = songService.playSong(id);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + audioFile.getFilename() + "\"")
-                .contentType(MediaType.parseMediaType("audio/mpeg")) // Dùng parse để an toàn hơn
-                .body(audioFile);
+    public ResponseEntity<Void> playSong(@PathVariable Long id) {
+        Song song = songService.getSong(id);
+
+        // 1. Tăng lượt nghe (Logic thống kê của bồ vẫn giữ nguyên)
+        songService.incrementViewCount(id);
+
+        String cloudUrl = publicUrl + "/" + song.getFilePath();
+
+        // 3. Trả về mã 302 (Found) để Player tự động tìm tới link nhạc trên mây
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(cloudUrl))
+                .build();
     }
 
-    // --- CREATE: THÊM NHẠC ---
+    // --- THÊM NHẠC ---
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Song> createSong(
             @RequestParam("title") String title,
@@ -38,13 +51,12 @@ public class SongController {
             @RequestParam("songFile") MultipartFile musicFile,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
 
-        System.out.println("Backend: Đang tạo bài hát mới - " + title);
-
+        System.out.println("Backend: Đang upload bài hát lên R2 - " + title);
         Song savedSong = songService.createSong(title, artistId, albumId, musicFile, imageFile);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedSong);
     }
 
-    // --- UPDATE: SỬA NHẠC ---
+    // --- CẬP NHẬT NHẠC ---
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Song> updateSong(
             @PathVariable Long id,
@@ -54,13 +66,12 @@ public class SongController {
             @RequestParam(value = "songFile", required = false) MultipartFile musicFile,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
 
-        System.out.println("Backend: Đang cập nhật bài hát ID: " + id);
-
+        System.out.println("Backend: Cập nhật bài hát trên R2 ID: " + id);
         Song updatedSong = songService.updateSong(id, title, artistId, albumId, musicFile, imageFile);
         return ResponseEntity.ok(updatedSong);
     }
 
-    // --- CÁC API CƠ BẢN ---
+    // --- TÌM KIẾM & PHÂN TRANG ---
     @GetMapping
     public ResponseEntity<Page<Song>> searchSongs(
             @RequestParam(required = false) String title,
@@ -79,11 +90,5 @@ public class SongController {
     public ResponseEntity<Void> deleteSong(@PathVariable Long id) {
         songService.deleteSong(id);
         return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping("/{id}/view")
-    public ResponseEntity<Void> incrementViewCount(@PathVariable Long id) {
-        songService.incrementViewCount(id);
-        return ResponseEntity.ok().build();
     }
 }

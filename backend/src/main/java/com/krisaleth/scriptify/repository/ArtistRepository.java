@@ -1,6 +1,7 @@
 package com.krisaleth.scriptify.repository;
 
 import com.krisaleth.scriptify.entity.Artist;
+import com.krisaleth.scriptify.projection.ArtistProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,4 +29,8 @@ public interface ArtistRepository extends JpaRepository<Artist, Long> {
     // Get ramdom artist
     @Query(value = "select * from Artist order by rand() limit :limit", nativeQuery = true)
     List<Artist> findRandomArtist(@Param("limit") int limit);
+
+
+    @Query("SELECT DISTINCT a FROM Artist a LEFT JOIN FETCH a.songs")
+    List<Artist> findAllWithSongsFetch();
 }

@@ -1,0 +1,4 @@
+- [] Thêm tìm kiếm, lọc và sắp xếp cho các danh mục trên admin.
+- [] Thêm Light Mode / Dark Mode.
+- [] Thêm số lượt like lên giao diện.
+- [] Thêm hệ thống đưa vào playlist cho user.

@@ -2,6 +2,7 @@ package com.krisaleth.scriptify.service;
 
 import com.krisaleth.scriptify.entity.Artist;
 import com.krisaleth.scriptify.repository.ArtistRepository;
+import com.krisaleth.scriptify.response.ArtistResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -14,12 +15,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,33 +28,39 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ArtistService {
     private final ArtistRepository artistRepository;
+    private final S3Client s3Client; // Inject S3Client đã config
 
-    @Value("${app.upload.image-dir}")
-    private String imageDir;
+    @Value("${r2.bucket-name}")
+    private String bucketName;
 
-    // --- HÀM HỖ TRỢ LƯU FILE ---
-    private String saveImage(MultipartFile file) throws IOException {
-        if (file == null || file.isEmpty()) return "default-artist.png";
+    // --- HÀM HỖ TRỢ LƯU FILE LÊN R2 ---
+    private String uploadImageToR2(MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) return "assets/default-artist.png";
 
-        Path uploadPath = Paths.get(imageDir);
-        if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+        // Lưu vào folder artists trên R2
+        String fileName = "artists/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
 
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Path targetPath = uploadPath.resolve(fileName);
-        Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(fileName)
+                .contentType(file.getContentType())
+                .build();
+
+        s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
         return fileName;
     }
 
-    private void deletePhysicalFile(String dbPath) {
+    private void deleteFromR2(String relativePath) {
         // Tránh xóa ảnh mặc định của hệ thống
-        if (dbPath != null && !dbPath.contains("default-artist.png") && !dbPath.contains("default.png")) {
+        if (relativePath != null && !relativePath.contains("default-artist.png") && !relativePath.contains("assets/")) {
             try {
-                // Bóc tách tên file từ đường dẫn lưu trong DB (ví dụ: /uploads/images/abc.jpg)
-                Path path = Paths.get(dbPath);
-                String fileName = path.getFileName().toString();
-                Files.deleteIfExists(Paths.get(imageDir).resolve(fileName));
-            } catch (IOException e) {
-                System.err.println("Lỗi xóa file ảnh nghệ sĩ: " + dbPath);
+                DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                        .bucket(bucketName)
+                        .key(relativePath)
+                        .build();
+                s3Client.deleteObject(deleteObjectRequest);
+            } catch (Exception e) {
+                System.err.println("Lỗi xóa file ảnh trên R2: " + relativePath);
             }
         }
     }
@@ -67,16 +74,15 @@ public class ArtistService {
         }
 
         try {
-            String savedFileName = saveImage(imageFile);
+            String relativePath = uploadImageToR2(imageFile);
             Artist artist = new Artist();
             artist.setName(name.trim());
             artist.setBio(bio != null ? bio.trim() : "");
-            // LƯU PATH ĐỒNG BỘ: /uploads/images/filename
-            artist.setImageUrl("/uploads/images/" + savedFileName);
+            artist.setImageUrl(relativePath); // Lưu path: artists/uuid_name.jpg
 
             return artistRepository.save(artist);
         } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi lưu ảnh nghệ sĩ");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi lưu ảnh lên Cloud");
         }
     }
 
@@ -89,12 +95,12 @@ public class ArtistService {
 
         if (imageFile != null && !imageFile.isEmpty()) {
             try {
-                // Dọn dẹp ảnh cũ trước khi thay ảnh mới
-                deletePhysicalFile(existing.getImageUrl());
-                String savedFileName = saveImage(imageFile);
-                existing.setImageUrl("/uploads/images/" + savedFileName);
+                // Dọn dẹp ảnh cũ trên Cloud
+                deleteFromR2(existing.getImageUrl());
+                String relativePath = uploadImageToR2(imageFile);
+                existing.setImageUrl(relativePath);
             } catch (IOException e) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi cập nhật ảnh");
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi cập nhật ảnh lên Cloud");
             }
         }
         return artistRepository.save(existing);
@@ -104,22 +110,55 @@ public class ArtistService {
     public void delete(Long id) {
         Artist artist = getById(id);
         try {
-            // Lưu path ảnh trước khi xóa bản ghi trong DB
             String imageUrl = artist.getImageUrl();
             artistRepository.delete(artist);
-            // Xóa bản ghi thành công thì mới xóa file vật lý
-            deletePhysicalFile(imageUrl);
+            deleteFromR2(imageUrl); // Xóa trên Cloud sau khi xóa DB thành công
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "Không thể xóa nghệ sĩ này vì họ vẫn còn Album hoặc Bài hát gắn liền. Hãy xóa dữ liệu liên quan trước nhé bồ!"
+                    "Không thể xóa nghệ sĩ này vì họ vẫn còn Album hoặc Bài hát gắn liền bồ ơi!"
             );
         }
     }
 
     @Transactional(readOnly = true)
+    public List<ArtistResponse> getAllWithViews() {
+        List<Artist> artists = artistRepository.findAllWithSongsFetch();
+
+        return artists.stream().map(artist -> {
+            long totalViews = artist.getSongs().stream()
+                    .mapToLong(s -> s.getViewCount() != null ? s.getViewCount() : 0L)
+                    .sum();
+
+            int songCount = artist.getSongs().size();
+
+            List<ArtistResponse.SongShortResponse> topSongs = artist.getSongs().stream()
+                    .sorted((s1, s2) -> Long.compare(
+                            s2.getViewCount() != null ? s2.getViewCount() : 0L,
+                            s1.getViewCount() != null ? s1.getViewCount() : 0L))
+                    .limit(5)
+                    .map(s -> ArtistResponse.SongShortResponse.builder()
+                            .id(s.getId())
+                            .title(s.getTitle())
+                            .viewCount(s.getViewCount())
+                            .imageUrl(s.getImageUrl())
+                            .build())
+                    .toList();
+
+            return ArtistResponse.builder()
+                    .id(artist.getId())
+                    .name(artist.getName())
+                    .bio(artist.getBio())
+                    .imageUrl(artist.getImageUrl()) // Trả về Relative Path
+                    .totalViews(totalViews)
+                    .songCount(songCount)
+                    .topSongs(topSongs)
+                    .build();
+        }).toList();
+    }
+
+    @Transactional(readOnly = true)
     public Page<Artist> search(String name, int page, int size) {
-        // Sắp xếp theo ID giảm dần để nghệ sĩ mới nhất hiện lên đầu danh sách Admin
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         if (name == null || name.isBlank()) {
             return artistRepository.findAll(pageable);

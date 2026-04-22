@@ -27,4 +27,7 @@ public class Artist {
     @OneToMany(mappedBy = "artist")
     @JsonIgnoreProperties("artist")
     private List<Album> albums;
+
+    @OneToMany(mappedBy = "artist")
+    private List<Song> songs;
 }

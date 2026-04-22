@@ -7,22 +7,24 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // Quan trọng để FE gọi API không bị block
+@CrossOrigin(origins = "*")
 public class UserController {
 
     private final UserService userService;
 
     /**
-     * LẤY THÔNG TIN CÁ NHÂN (Dùng cho User đang đăng nhập)
+     * LẤY THÔNG TIN CÁ NHÂN
      */
     @GetMapping("/me")
     public ResponseEntity<UserResponse> authenticatedUser() {
@@ -39,8 +41,7 @@ public class UserController {
     }
 
     /**
-     * LẤY TOÀN BỘ USER (Dùng cho Admin Dashboard)
-     * Endpoint: GET /api/user/all
+     * LẤY TOÀN BỘ USER (Admin Dashboard)
      */
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/all")
@@ -52,22 +53,26 @@ public class UserController {
     }
 
     /**
-     * CẬP NHẬT PROFILE (Dành cho User)
+     * CẬP NHẬT PROFILE
+     * Chuyển sang nhận MultipartFile để upload lên R2
      */
-    @PutMapping("/profile")
+    @PutMapping(value = "/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Users> updateProfile(
-            @RequestParam(required = false) String displayName,
-            @RequestParam(required = false) String avatarUrl,
+            @RequestParam(value = "displayName", required = false) String displayName,
+            @RequestParam(value = "avatar", required = false) MultipartFile avatarFile,
             Authentication authentication) {
 
         String email = authentication.getName();
         Users currentUser = userService.getUserByEmail(email);
-        return ResponseEntity.ok(userService.updateProfile(currentUser.getId(), displayName, avatarUrl));
+
+        // Gọi Service đã sửa để xử lý logic R2
+        Users updatedUser = userService.updateProfile(currentUser.getId(), displayName, avatarFile);
+
+        return ResponseEntity.ok(updatedUser);
     }
 
     /**
      * XÓA NGƯỜI DÙNG (Chỉ Admin)
-     * Dùng cho nút Thùng rác trong Admin Dashboard
      */
     @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/{id}")

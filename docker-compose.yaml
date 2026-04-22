@@ -1,6 +1,5 @@
-
 services:
-  # 1. DATABASE: MySQL
+  # 1. DATABASE
   mysql:
     image: mysql:8.0
     container_name: scriptify-db
@@ -8,40 +7,54 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USERNAME}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: scriptify
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
       - scriptify-network
+    # Thêm healthcheck để Backend biết khi nào DB thực sự sẵn sàng
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
-  # 2. BACKEND: Spring Boot
+  # 2. BACKEND
   backend:
-    build: ./backend # Trỏ đến thư mục chứa Dockerfile của BE
+    build: ./backend
     container_name: scriptify-be
     restart: always
     ports:
       - "8080:8080"
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy # Chỉ chạy khi DB đã khoẻ mạnh
     environment:
-      # QUAN TRỌNG: URL phải dùng tên service 'mysql' thay vì 'localhost'
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      EMAIL_USERNAME: ${EMAIL_USERNAME}
-      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
-    volumes:
-      - ./backend/uploads:/app/uploads # Lưu trữ nhạc/ảnh bên ngoài container
+      # LƯU Ý: Trong Docker network, bồ thay 'localhost' bằng 'mysql'
+      - SPRING_DATASOURCE_URL=${DB_URL}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET_KEY=${JWT_SECRET}
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
+      - R2_BUCKET_NAME=${R2_BUCKET_NAME}
+      - R2_PUBLIC_URL=${R2_PUBLIC_URL}
+      - EMAIL_USERNAME=${EMAIL_USERNAME}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+
     networks:
       - scriptify-network
 
-  # 3. FRONTEND: React (Vite/Nginx)
+  # 3. FRONTEND
   frontend:
-    build: ./frontend # Trỏ đến thư mục chứa Dockerfile của FE
+    build: 
+      context: ./frontend
+      args:
+        # Truyền URL R2 và Backend vào lúc build Vite
+        - VITE_R2_PUBLIC_URL=${VITE_R2_PUBLIC_URL}
     container_name: scriptify-fe
     restart: always
     ports:
