@@ -1,21 +1,31 @@
 package com.krisaleth.scriptify.response;
 
+import com.krisaleth.scriptify.entity.Users; // Import entity User của bồ
+
 public class LoginResponse {
     private String token;
     private Long expiresIn;
+    private Users user; // ✅ Thêm trường này để Sidebar có data nạp ngay
 
-    // Constructor mặc định (Bắt buộc phải có để Jackson làm việc)
     public LoginResponse() {
     }
 
-    public LoginResponse(String token, Long expiresIn) {
+    // Constructor đầy đủ
+    public LoginResponse(String token, Long expiresIn, Users user) {
         this.token = token;
         this.expiresIn = expiresIn;
+        this.user = user;
     }
 
-    // Viết tay Getter (Đừng dùng @Data lúc này để test)
+    // Getter/Setter cho Token
     public String getToken() { return token; }
     public void setToken(String token) { this.token = token; }
+
+    // Getter/Setter cho Expiration
     public Long getExpiresIn() { return expiresIn; }
     public void setExpiresIn(Long expiresIn) { this.expiresIn = expiresIn; }
+
+    // ✅ Getter/Setter cho User
+    public Users getUser() { return user; }
+    public void setUser(Users user) { this.user = user; }
 }

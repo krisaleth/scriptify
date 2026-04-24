@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { Loader2, Music, User, Album, Calendar, FileAudio, ImageIcon, X } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Loader2, Music, User, Album, Calendar, FileAudio, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-const API_BASE = "http://localhost:8080/api";
-const inputClasses = "border-zinc-800 bg-zinc-950 text-white focus-visible:ring-green-500 focus-visible:border-green-800 rounded-xl h-12 transition-all placeholder:text-zinc-700";
+// ✅ Dùng đường dẫn tương đối để đi xuyên qua Proxy nội bộ Docker
+const API_BASE = "/api"; 
+const inputClasses = "border-white/5 bg-zinc-950 text-white focus-visible:ring-green-500/30 focus-visible:border-green-500/20 rounded-2xl h-14 transition-all placeholder:text-zinc-800 italic text-sm";
 
 interface EntityDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  type: string; // 'music' | 'artists' | 'albums'
+  type: string; 
   editItem: any | null;
   onSuccess: () => void;
 }
@@ -27,23 +28,36 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
   });
   const [files, setFiles] = useState<{ song?: File; image?: File }>({});
 
-  const token = localStorage.getItem("token");
+  // 1. Hàm load Options (Nghệ sĩ/Album) qua Proxy
+  const loadOptions = useCallback(async () => {
+    const fetchOptions = {
+      credentials: "include" as const, 
+    };
+
+    if (type === 'music' || type === 'albums') {
+      try {
+        const res = await fetch(`${API_BASE}/artists/all`, fetchOptions);
+        if (res.ok) {
+          const data = await res.json();
+          setArtists(Array.isArray(data) ? data : data.content || []);
+        }
+      } catch (e) { console.error("Scriptify: Lỗi tải danh sách nghệ sĩ", e); }
+    }
+
+    if (type === 'music') {
+      try {
+        const res = await fetch(`${API_BASE}/albums?size=100`, fetchOptions);
+        if (res.ok) {
+          const data = await res.json();
+          setAlbums(data.content || []);
+        }
+      } catch (e) { console.error("Scriptify: Lỗi tải danh sách album", e); }
+    }
+  }, [type]);
 
   useEffect(() => {
     if (open) {
-      // Load Artists
-      if (type === 'music' || type === 'albums') {
-        fetch(`${API_BASE}/artists/all`, { headers: { Authorization: `Bearer ${token}` } })
-          .then(res => res.json())
-          .then(data => setArtists(Array.isArray(data) ? data : data.content || []));
-      }
-      // Load Albums
-      if (type === 'music') {
-        fetch(`${API_BASE}/albums?size=100`, { headers: { Authorization: `Bearer ${token}` } })
-          .then(res => res.json())
-          .then(data => setAlbums(data.content || []));
-      }
-
+      loadOptions();
       if (editItem) {
         setFormData({
           title: editItem.title || "",
@@ -58,13 +72,14 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
       }
       setFiles({});
     }
-  }, [open, editItem, type, token]);
+  }, [open, editItem, loadOptions]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
+    // 2. Khởi tạo FormData để gửi File
     const body = new FormData();
-
     const endpointMap: Record<string, string> = { music: "songs", artists: "artists", albums: "albums" };
     const endpoint = endpointMap[type];
 
@@ -90,20 +105,21 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
     try {
       const res = await fetch(url, {
         method: editItem ? "PUT" : "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include", 
+        // ⚠️ LƯU Ý: Tuyệt đối KHÔNG set Content-Type khi gửi FormData
         body
       });
 
       if (res.ok) {
-        toast.success("Thành công!", { description: `${editItem ? 'Cập nhật' : 'Thêm mới'} dữ liệu hoàn tất.` });
+        toast.success("Đã đồng bộ Cloud!", { description: "Dữ liệu mới đã sẵn sàng trên Scriptify." });
         onSuccess();
         onOpenChange(false);
       } else {
         const err = await res.json();
-        toast.error("Lỗi rồi bồ ơi", { description: err.message || "Kiểm tra lại dữ liệu nhập vào nhé." });
+        toast.error("Thất bại", { description: err.message || "Vui lòng kiểm tra lại định dạng file bồ nhé." });
       }
     } catch (err) {
-      toast.error("Lỗi kết nối", { description: "Server Backend không phản hồi." });
+      toast.error("Lỗi kết nối Proxy", { description: "Hãy chắc chắn Nginx Proxy đang chạy mượt mà." });
     } finally {
       setLoading(false);
     }
@@ -111,60 +127,57 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
 
   const getTitle = () => {
     const action = editItem ? "Cập nhật" : "Thêm mới";
-    const entity = type === 'music' ? 'Bài hát' : type === 'artists' ? 'Nghệ sĩ' : 'Album';
+    const entity = type === 'music' ? 'Giai điệu' : type === 'artists' ? 'Nghệ sĩ' : 'Album';
     return `${action} ${entity}`;
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-zinc-950 border-zinc-800 text-white max-w-lg rounded-3xl p-8 shadow-2xl">
-        <form onSubmit={handleSave} className="space-y-6">
-          <DialogHeader className="mb-4">
-            <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-green-500 flex items-center gap-3">
-              {type === 'music' && <Music className="w-8 h-8" />}
-              {type === 'artists' && <User className="w-8 h-8" />}
-              {type === 'albums' && <Album className="w-8 h-8" />}
+      <DialogContent className="bg-zinc-950 border-white/5 text-white max-w-lg rounded-[2.5rem] p-10 shadow-3xl overflow-hidden">
+        <form onSubmit={handleSave} className="space-y-8">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-green-500 flex items-center gap-4">
+              {type === 'music' && <Music className="w-10 h-10" />}
+              {type === 'artists' && <User className="w-10 h-10" />}
+              {type === 'albums' && <Album className="w-10 h-10" />}
               {getTitle()}
             </DialogTitle>
-            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Quản lý hệ thống Scriptify</p>
+            <div className="h-1 w-20 bg-green-500/20 rounded-full mt-2"></div>
           </DialogHeader>
 
-          <div className="space-y-4">
-            {/* Tên/Tiêu đề */}
+          <div className="space-y-5">
             {(type === 'music' || type === 'albums') && (
               <div className="space-y-2">
-                <Label className="text-zinc-400 font-bold text-[10px] uppercase ml-1">Tiêu đề</Label>
-                <Input placeholder="Tên bài hát/album..." value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} required className={inputClasses} />
+                <Label className="text-zinc-500 font-black text-[10px] uppercase ml-1 italic tracking-widest">Tiêu đề bản phối</Label>
+                <Input placeholder="Tên tác phẩm..." value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} required className={inputClasses} />
               </div>
             )}
 
-            {/* Nghệ sĩ */}
             {(type === 'music' || type === 'albums') && (
               <div className="space-y-2">
-                <Label className="text-zinc-400 font-bold text-[10px] uppercase ml-1">Nghệ sĩ sở hữu</Label>
+                <Label className="text-zinc-500 font-black text-[10px] uppercase ml-1 italic tracking-widest">Nghệ sĩ định danh</Label>
                 <select 
-                  className={`${inputClasses} w-full p-3 outline-none appearance-none`} 
+                  className={`${inputClasses} w-full p-4 outline-none appearance-none cursor-pointer border border-white/5`} 
                   value={formData.artistId} 
                   onChange={e => setFormData({...formData, artistId: e.target.value, albumId: ""})} 
                   required
                 >
-                  <option value="" className="bg-zinc-950 text-zinc-500">-- Chọn nghệ sĩ --</option>
+                  <option value="" className="bg-zinc-950 text-zinc-700 italic">-- Lựa chọn nghệ sĩ --</option>
                   {artists.map(a => <option key={a.id} value={a.id} className="bg-zinc-950">{a.name}</option>)}
                 </select>
               </div>
             )}
 
-            {/* Album (Chỉ dành cho Music) */}
             {type === 'music' && (
               <div className="space-y-2">
-                <Label className="text-zinc-400 font-bold text-[10px] uppercase ml-1">Thuộc Album</Label>
+                <Label className="text-zinc-500 font-black text-[10px] uppercase ml-1 italic tracking-widest">Bộ sưu tập Album</Label>
                 <select 
-                  className={`${inputClasses} w-full p-3 outline-none appearance-none disabled:opacity-50`} 
+                  className={`${inputClasses} w-full p-4 outline-none appearance-none disabled:opacity-20 cursor-pointer border border-white/5`} 
                   value={formData.albumId} 
                   onChange={e => setFormData({...formData, albumId: e.target.value})}
                   disabled={!formData.artistId}
                 >
-                  <option value="" className="bg-zinc-950 text-zinc-500">-- Chọn Album (Nếu có) --</option>
+                  <option value="" className="bg-zinc-950 text-zinc-700 italic">-- Không thuộc album nào --</option>
                   {albums.filter(alb => !formData.artistId || alb.artist?.id === Number(formData.artistId)).map(alb => (
                     <option key={alb.id} value={alb.id} className="bg-zinc-950">{alb.title}</option>
                   ))}
@@ -172,81 +185,79 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
               </div>
             )}
 
-            {/* Trường cho Nghệ sĩ */}
             {type === 'artists' && (
               <>
                 <div className="space-y-2">
-                  <Label className="text-zinc-400 font-bold text-[10px] uppercase ml-1">Tên nghệ sĩ</Label>
-                  <Input placeholder="Tên hiển thị..." value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required className={inputClasses} />
+                  <Label className="text-zinc-500 font-black text-[10px] uppercase ml-1 italic tracking-widest">Tên nghệ sĩ</Label>
+                  <Input placeholder="Nghệ danh..." value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required className={inputClasses} />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-zinc-400 font-bold text-[10px] uppercase ml-1">Tiểu sử</Label>
+                  <Label className="text-zinc-500 font-black text-[10px] uppercase ml-1 italic tracking-widest">Tiểu sử nghệ sĩ</Label>
                   <textarea 
-                    placeholder="Giới thiệu về nghệ sĩ..." 
+                    placeholder="Vài dòng tâm đắc về nghệ sĩ..." 
                     value={formData.bio} 
                     onChange={e => setFormData({...formData, bio: e.target.value})} 
-                    className={`${inputClasses} h-28 pt-3 resize-none w-full p-3 outline-none`} 
+                    className={`${inputClasses} h-32 pt-4 resize-none w-full p-4 outline-none border border-white/5`} 
                   />
                 </div>
               </>
             )}
 
-            {/* Năm phát hành (Album) */}
             {type === 'albums' && (
               <div className="space-y-2">
-                <Label className="text-zinc-400 font-bold text-[10px] uppercase ml-1 flex items-center gap-2">
-                  <Calendar className="w-3 h-3" /> Năm phát hành
+                <Label className="text-zinc-500 font-black text-[10px] uppercase ml-1 italic tracking-widest flex items-center gap-2">
+                  <Calendar className="w-3 h-3 text-green-500" /> Năm phát hành
                 </Label>
-                <Input type="number" placeholder="2024" value={formData.year} onChange={e => setFormData({...formData, year: e.target.value})} className={inputClasses} />
+                <Input type="number" placeholder="2026" value={formData.year} onChange={e => setFormData({...formData, year: e.target.value})} className={inputClasses} />
               </div>
             )}
 
-            {/* File Uploads */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            {/* File Upload Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
               {type === 'music' && (
                 <div className="space-y-2">
-                  <Label className="text-zinc-400 font-bold text-[10px] uppercase ml-1 flex items-center gap-2">
-                    <FileAudio className="w-3 h-3 text-green-500" /> Bản ghi MP3
+                  <Label className="text-zinc-600 font-black text-[9px] uppercase ml-1 italic tracking-widest flex items-center gap-2">
+                    <FileAudio className="w-3 h-3 text-green-500" /> Digital Audio (MP3)
                   </Label>
                   <div className="relative group">
                     <Input 
                       type="file" 
                       accept="audio/*" 
                       onChange={e => setFiles({...files, song: e.target.files?.[0]})} 
-                      className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-12"
+                      className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-14"
                     />
-                    <div className="h-12 border border-zinc-800 bg-zinc-900 rounded-xl px-4 flex items-center text-xs text-zinc-500 group-hover:border-green-500/50 transition-all">
-                      <span className="truncate">{files.song ? files.song.name : "Chọn file nhạc..."}</span>
+                    <div className="h-14 border border-dashed border-white/10 bg-white/5 rounded-2xl px-5 flex items-center text-[10px] text-zinc-500 group-hover:border-green-500/50 group-hover:text-zinc-300 transition-all italic font-black uppercase">
+                      <span className="truncate">{files.song ? files.song.name : "Nạp file nhạc"}</span>
                     </div>
                   </div>
                 </div>
               )}
               <div className="space-y-2">
-                <Label className="text-zinc-400 font-bold text-[10px] uppercase ml-1 flex items-center gap-2">
-                  <ImageIcon className="w-3 h-3 text-green-500" /> Ảnh bìa (R2)
+                <Label className="text-zinc-600 font-black text-[9px] uppercase ml-1 italic tracking-widest flex items-center gap-2">
+                  <ImageIcon className="w-3 h-3 text-green-500" /> {type === 'artists' ? 'Profile Image' : 'Cover Artwork'}
                 </Label>
                 <div className="relative group">
                   <Input 
                     type="file" 
                     accept="image/*" 
                     onChange={e => setFiles({...files, image: e.target.files?.[0]})} 
-                    className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-12"
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-14"
                   />
-                  <div className="h-12 border border-zinc-800 bg-zinc-900 rounded-xl px-4 flex items-center text-xs text-zinc-500 group-hover:border-green-500/50 transition-all">
-                    <span className="truncate">{files.image ? files.image.name : "Duyệt ảnh..."}</span>
+                  <div className="h-14 border border-dashed border-white/10 bg-white/5 rounded-2xl px-5 flex items-center text-[10px] text-zinc-500 group-hover:border-green-500/50 group-hover:text-zinc-300 transition-all italic font-black uppercase">
+                    <span className="truncate">{files.image ? files.image.name : "Nạp file ảnh"}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <DialogFooter className="pt-4">
+          <DialogFooter className="pt-6">
             <Button 
               type="submit" 
               disabled={loading} 
-              className="w-full bg-green-500 text-black font-black py-7 rounded-2xl hover:bg-green-400 transition-all active:scale-95 shadow-lg shadow-green-500/10"
+              className="w-full bg-green-500 text-black font-black py-8 rounded-[1.5rem] hover:bg-green-400 transition-all active:scale-95 shadow-2xl shadow-green-500/10 text-base italic tracking-tighter"
             >
-              {loading ? <Loader2 className="animate-spin w-6 h-6" /> : "XÁC NHẬN CẬP NHẬT"}
+              {loading ? <Loader2 className="animate-spin w-7 h-7" /> : "XÁC NHẬN CẬP NHẬT CLOUD"}
             </Button>
           </DialogFooter>
         </form>

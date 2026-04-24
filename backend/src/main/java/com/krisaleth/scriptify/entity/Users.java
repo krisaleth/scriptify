@@ -33,14 +33,17 @@ public class Users implements UserDetails {
     private String email;
 
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
 
     private boolean enabled;
 
     @Column(name = "verification_code")
+    @JsonIgnore
     private String verificationCode;
 
     @Column(name = "verification_expiration")
+    @JsonIgnore
     private LocalDateTime verificationExpiration;
     
     @Enumerated(EnumType.STRING)

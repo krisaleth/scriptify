@@ -1,5 +1,6 @@
 package com.krisaleth.scriptify.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -25,5 +26,6 @@ public class Album {
     private Artist artist;
 
     @OneToMany(mappedBy = "album")
+    @JsonIgnore
     private List<Song> songs;
 }

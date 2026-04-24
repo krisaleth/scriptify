@@ -16,12 +16,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,34 +30,52 @@ import java.util.UUID;
 public class AlbumService {
     private final AlbumRepository albumRepository;
     private final ArtistRepository artistRepository;
+    private final S3Client s3Client; // Inject S3Client đã cấu hình cho R2
 
-    @Value("${app.upload.image-dir}")
-    private String imageDir;
+    @Value("${r2.bucket-name}")
+    private String bucketName;
 
-    private String saveImage(MultipartFile file) throws IOException {
-        if (file == null || file.isEmpty()) return "default-album.png";
-        Path uploadPath = Paths.get(imageDir);
-        if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Files.copy(file.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
-        return fileName;
+    /**
+     * ✅ HÀM UPLOAD ẢNH LÊN R2
+     * Sử dụng UUID để né sạch lỗi Illegal Character
+     */
+    private String uploadImageToR2(MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) return "images/default-album.png";
+
+        String originalName = file.getOriginalFilename();
+        String extension = "";
+        if (originalName != null && originalName.contains(".")) {
+            extension = originalName.substring(originalName.lastIndexOf("."));
+        }
+
+        // Tạo key: images/uuid.png
+        String fileName = "images/" + UUID.randomUUID().toString() + extension;
+
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(fileName)
+                .contentType(file.getContentType())
+                .build();
+
+        s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
+
+        return fileName; // Lưu đường dẫn tương đối vào DB
     }
 
-    private void deletePhysicalFile(String dbPath) {
-        // Kiểm tra null và tránh xóa ảnh mặc định (default-album.png hoặc default.png)
-        if (dbPath != null && !dbPath.toLowerCase().contains("default")) {
+    /**
+     * ✅ HÀM XÓA ẢNH TRÊN R2
+     */
+    private void deleteFromR2(String relativePath) {
+        if (relativePath != null && !relativePath.contains("default-album.png")) {
             try {
-                // Lấy tên file thô: /uploads/images/abc.jpg -> abc.jpg
-                Path pathInDb = Paths.get(dbPath);
-                String fileName = pathInDb.getFileName().toString();
-
-                // Nối với thư mục gốc trên server để xóa
-                Path targetFile = Paths.get(imageDir).resolve(fileName);
-                Files.deleteIfExists(targetFile);
-                System.out.println("Đã xóa file vật lý: " + targetFile);
+                DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                        .bucket(bucketName)
+                        .key(relativePath)
+                        .build();
+                s3Client.deleteObject(deleteObjectRequest);
+                System.out.println("R2: Đã xóa album cover: " + relativePath);
             } catch (Exception e) {
-                // Chỉ in log chứ không làm dừng chương trình (tránh crash App khi demo)
-                System.err.println("Không thể xóa file vật lý tại: " + dbPath + ". Lỗi: " + e.getMessage());
+                System.err.println("R2: Lỗi xóa file: " + relativePath + ". Lỗi: " + e.getMessage());
             }
         }
     }
@@ -66,54 +84,46 @@ public class AlbumService {
 
     @Transactional
     public Album create(String title, Integer releaseYear, Long artistId, MultipartFile imageFile) {
-        if (title == null || title.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tiêu đề Album trống");
+        if (title == null || title.isBlank())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tiêu đề Album không được để trống");
 
-        // Luôn gán vào 1 Artist (Nhiều album cùng trỏ về ID này)
         Artist artist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Nghệ sĩ"));
 
         try {
-            String savedFileName = saveImage(imageFile);
+            String savedPath = uploadImageToR2(imageFile);
             Album album = new Album();
             album.setTitle(title);
             album.setReleaseYear(releaseYear);
             album.setArtist(artist);
-            album.setCoverImageUrl("/uploads/images/" + savedFileName);
+            album.setCoverImageUrl(savedPath); // Lưu dạng "images/uuid.jpg"
             return albumRepository.save(album);
         } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi lưu file");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi lưu file lên Cloud");
         }
-    }
-
-    // Lấy tất cả album của một nhạc sĩ cụ thể (Trả về List để hiện Discography)
-    @Transactional(readOnly = true)
-    public List<Album> findAllByArtistId(Long artistId) {
-        if (!artistRepository.existsById(artistId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Nghệ sĩ không tồn tại");
-        }
-        // Gọi repository để tìm list album (Sắp xếp theo năm mới nhất lên đầu)
-        return albumRepository.findByArtist_IdOrderByReleaseYearDesc(artistId);
     }
 
     @Transactional
     public Album update(Long id, String title, Integer releaseYear, Long artistId, MultipartFile imageFile) {
         Album existing = getById(id);
+
         if (title != null) existing.setTitle(title);
         if (releaseYear != null) existing.setReleaseYear(releaseYear);
 
         if (artistId != null) {
             Artist artist = artistRepository.findById(artistId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Nghệ sĩ không tồn tại"));
             existing.setArtist(artist);
         }
 
         if (imageFile != null && !imageFile.isEmpty()) {
             try {
-                deletePhysicalFile(existing.getCoverImageUrl());
-                String savedFileName = saveImage(imageFile);
-                existing.setCoverImageUrl("/uploads/images/" + savedFileName);
+                // Xóa ảnh cũ trên R2 trước khi cập nhật
+                deleteFromR2(existing.getCoverImageUrl());
+                String savedPath = uploadImageToR2(imageFile);
+                existing.setCoverImageUrl(savedPath);
             } catch (IOException e) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi cập nhật ảnh");
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi cập nhật ảnh lên Cloud");
             }
         }
         return albumRepository.save(existing);
@@ -123,11 +133,20 @@ public class AlbumService {
     public void delete(Long id) {
         Album album = getById(id);
         try {
-            deletePhysicalFile(album.getCoverImageUrl());
+            // Xóa ảnh bìa trên R2
+            deleteFromR2(album.getCoverImageUrl());
             albumRepository.deleteById(id);
         } catch (DataIntegrityViolationException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Album đang có bài hát, không thể xóa!");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Album đang chứa bài hát, sếp phải xóa hết bài hát trước!");
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<Album> findAllByArtistId(Long artistId) {
+        if (!artistRepository.existsById(artistId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Nghệ sĩ không tồn tại");
+        }
+        return albumRepository.findByArtist_IdOrderByReleaseYearDesc(artistId);
     }
 
     @Transactional(readOnly = true)

@@ -8,7 +8,7 @@ export const getResourceUrl = (path: string | null | undefined): string => {
     // Nếu biến môi trường lỗi, tạm thời nối cứng link R2 vào đây để test 
     // const TEMP_R2 = "https://pub-xxxx.r2.dev";
     // return `${TEMP_R2}/${encodeURI(path.replace(/^\//, ""))}`;
-    return `http://localhost:8080/${path}`; 
+    return `http://localhost:8443/${path}`; 
   }
 
   const cleanBase = R2_URL.endsWith('/') ? R2_URL.slice(0, -1) : R2_URL;

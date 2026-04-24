@@ -1,5 +1,7 @@
+# version: '3.8'
+
 services:
-  # 1. DATABASE
+  # 1. DATABASE: MySQL 8.0
   mysql:
     image: mysql:8.0
     container_name: scriptify-db
@@ -15,24 +17,26 @@ services:
       - mysql-data:/var/lib/mysql
     networks:
       - scriptify-network
-    # Thêm healthcheck để Backend biết khi nào DB thực sự sẵn sàng
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # 2. BACKEND
+  # 2. BACKEND: Spring Boot HTTPS (8443)
   backend:
     build: ./backend
     container_name: scriptify-be
     restart: always
     ports:
-      - "8080:8080"
+      - "8443:8443"
     depends_on:
       mysql:
-        condition: service_healthy # Chỉ chạy khi DB đã khoẻ mạnh
+        condition: service_healthy
+    volumes:
+      # Mount keystore trực tiếp để BE dùng HTTPS
+      - ./certificates/keystore.p12:/app/src/main/resources/keystore.p12
     environment:
-      # LƯU Ý: Trong Docker network, bồ thay 'localhost' bằng 'mysql'
       - SPRING_DATASOURCE_URL=${DB_URL}
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
@@ -44,23 +48,38 @@ services:
       - R2_PUBLIC_URL=${R2_PUBLIC_URL}
       - EMAIL_USERNAME=${EMAIL_USERNAME}
       - EMAIL_PASSWORD=${EMAIL_PASSWORD}
-
+      # Cấu hình SSL
+      - SERVER_PORT=8443
+      - SERVER_SSL_KEY_STORE=file:/app/src/main/resources/keystore.p12
+      - SERVER_SSL_KEY_STORE_PASSWORD=123456
+      - SERVER_SSL_KEY_ALIAS=scriptify
+      - SERVER_SERVLET_CONTEXT_PATH=/api
     networks:
       - scriptify-network
+    healthcheck:
+      # Kiểm tra BE đã sẵn sàng HTTPS chưa (dùng -k để lờ cert tự ký)
+      test: ["CMD-SHELL", "curl -k https://localhost:8443/api/auth/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
 
-  # 3. FRONTEND
+  # 3. FRONTEND: Nginx (Cổng 80)
   frontend:
     build: 
       context: ./frontend
       args:
-        # Truyền URL R2 và Backend vào lúc build Vite
         - VITE_R2_PUBLIC_URL=${VITE_R2_PUBLIC_URL}
     container_name: scriptify-fe
     restart: always
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      # Gắn file config Nginx đã sửa lỗi 502 vào container
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy # CHỈ chạy FE khi BE đã xác nhận HTTPS thành công
     networks:
       - scriptify-network
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Pencil, Trash2, Music2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,81 +11,117 @@ interface SongSectionProps {
   onDelete: (id: number) => void;
 }
 
+// ✅ GIẢI PHÁP: Dùng đường dẫn tương đối để Nginx/Vite tự lo TLS nội bộ
+const API_BASE = "/api";
+
 export function SongSection({ refresh, onEdit, onDelete }: SongSectionProps) {
   const [songs, setSongs] = useState<any[]>([]);
-  const token = localStorage.getItem("token");
+  const [loading, setLoading] = useState(true);
+
+  const fetchSongs = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Gọi qua Proxy để đảm bảo HttpOnly Cookie (JWT) được gửi kèm
+      const res = await fetch(`${API_BASE}/songs?size=100`, {
+        method: "GET",
+        credentials: "include", 
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Handle linh hoạt cho Spring Boot PageImpl (.content)
+        setSongs(data.content || (Array.isArray(data) ? data : []));
+      } else {
+        console.error("Scriptify Admin: Không thể truy xuất danh sách nhạc.");
+      }
+    } catch (err) {
+      console.error("Scriptify Admin: Lỗi kết nối Proxy (Songs):", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchSongs = async () => {
-      try {
-        const res = await fetch("http://localhost:8080/api/songs?size=100", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        setSongs(data.content || []);
-      } catch (err) {
-        console.error("Lỗi fetch nhạc:", err);
-      }
-    };
     fetchSongs();
-  }, [refresh, token]);
+  }, [refresh, fetchSongs]);
 
   return (
-    <Card className="bg-zinc-900 border-zinc-800 overflow-hidden rounded-2xl shadow-2xl">
+    <Card className="bg-zinc-950 border-white/5 overflow-hidden rounded-[2rem] shadow-2xl">
       <Table>
-        <TableHeader className="bg-zinc-800/50">
-          <TableRow className="border-zinc-800 text-zinc-500 uppercase text-[10px] font-bold tracking-widest">
-            <TableHead className="w-[80px] text-center">Bìa</TableHead>
+        <TableHeader className="bg-white/5">
+          <TableRow className="border-white/5 text-zinc-500 uppercase text-[10px] font-black tracking-[0.2em] h-14 italic">
+            <TableHead className="w-[100px] text-center">Bìa Giai Điệu</TableHead>
             <TableHead>Tiêu đề</TableHead>
             <TableHead>Nghệ sĩ</TableHead>
-            <TableHead>Album</TableHead>
-            <TableHead className="text-right pr-8">Hành động</TableHead>
+            <TableHead>Album Cloud</TableHead>
+            <TableHead className="text-right pr-10">Hành động</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {songs.map((song) => (
-            <TableRow key={song.id} className="border-zinc-800 hover:bg-zinc-800/40 transition-colors group h-20">
-              <TableCell className="text-center">
-                <img 
-                  src={getResourceUrl(song.imageUrl)} 
-                  className="w-12 h-12 inline-block object-cover border border-zinc-700 rounded-md shadow-md"
-                  onError={(e) => (e.currentTarget.src = "/default-cover.png")}
-                />
-              </TableCell>
-              <TableCell className="font-bold text-zinc-200">
-                <div className="flex items-center gap-2">
-                  <Music2 size={14} className="text-green-500" />
-                  {song.title}
-                </div>
-              </TableCell>
-              <TableCell className="text-zinc-400 text-xs italic">
-                {song.artist?.name || "Unknown Artist"}
-              </TableCell>
-              <TableCell className="text-zinc-500 text-xs italic">
-                {song.album?.title || "Single"}
-              </TableCell>
-              <TableCell className="text-right pr-8">
-                <div className="flex justify-end gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => onEdit(song)} 
-                    className="text-blue-400 hover:bg-blue-400/10 h-8 w-8"
-                  >
-                    <Pencil size={14}/>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => onDelete(song.id)} 
-                    className="text-red-500 hover:bg-red-500/10 h-8 w-8"
-                  >
-                    <Trash2 size={14}/>
-                  </Button>
-                </div>
+          {loading ? (
+            <TableRow className="border-white/5">
+              <TableCell colSpan={5} className="text-center py-20 text-zinc-600 font-black uppercase text-[10px] tracking-widest animate-pulse italic">
+                Đang quét kho nhạc từ Scriptify Cloud...
               </TableCell>
             </TableRow>
-          ))}
+          ) : songs.length === 0 ? (
+            <TableRow className="border-white/5">
+              <TableCell colSpan={5} className="text-center py-20 text-zinc-700 font-black uppercase text-[10px] tracking-widest italic">
+                Kho nhạc hiện tại đang trống rỗng.
+              </TableCell>
+            </TableRow>
+          ) : (
+            songs.map((song) => (
+              <TableRow key={song.id} className="border-white/5 hover:bg-white/5 transition-all h-20 group">
+                <TableCell className="text-center">
+                  <img 
+                    src={getResourceUrl(song.imageUrl)} 
+                    className="w-12 h-12 inline-block object-cover border border-white/5 rounded-lg shadow-xl group-hover:scale-110 transition-transform duration-500"
+                    alt={song.title}
+                    onError={(e) => (e.currentTarget.src = "/assets/default-cover.png")}
+                  />
+                </TableCell>
+                <TableCell className="font-black text-zinc-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-6 bg-green-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <span className="uppercase italic tracking-tight group-hover:text-green-500 transition-colors">
+                      {song.title}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-zinc-500 text-[11px] font-black uppercase italic tracking-wider">
+                  {song.artist?.name || "Nghệ sĩ ẩn danh"}
+                </TableCell>
+                <TableCell className="text-zinc-500 text-[11px] font-black uppercase italic tracking-wider opacity-60">
+                  {song.album?.title ? (
+                    <span className="text-zinc-400 group-hover:text-zinc-200 transition-colors">{song.album.title}</span>
+                  ) : (
+                    "Single"
+                  )}
+                </TableCell>
+                <TableCell className="text-right pr-10">
+                  <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onEdit(song)} 
+                      className="text-blue-400 hover:bg-blue-400/10 hover:text-blue-300 h-9 w-9 rounded-xl transition-all"
+                    >
+                      <Pencil size={16} className="stroke-[2.5px]"/>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onDelete(song.id)} 
+                      className="text-red-500 hover:bg-red-500/10 hover:text-red-400 h-9 w-9 rounded-xl transition-all"
+                    >
+                      <Trash2 size={16} className="stroke-[2.5px]"/>
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </Card>

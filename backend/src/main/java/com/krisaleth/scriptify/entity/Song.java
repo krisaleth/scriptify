@@ -35,17 +35,17 @@ public class Song {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    // === THÊM MỚI LIÊN KẾT VỚI ARTIST Ở ĐÂY ===
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "artist_id", nullable = false)
-    @JsonIgnoreProperties({"songs", "albums"})
+    @JsonIgnoreProperties({"songs", "albums"}) // Cực kỳ quan trọng để cắt đứt vòng lặp
     private Artist artist;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "album_id")
-    @JsonIgnoreProperties("songs")
+    @JsonIgnoreProperties("songs") // Chặn Album liệt kê lại danh sách Song
     private Album album;
 
     @ManyToMany(mappedBy = "songs")
+    @JsonIgnoreProperties("songs")
     private Set<Playlist> playlists;
 }

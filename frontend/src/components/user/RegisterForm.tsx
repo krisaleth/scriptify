@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner"; 
+import { Loader2, Camera, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
+
+// ✅ Dùng đường dẫn tương đối để đi qua Proxy nội bộ Docker/Vite
+const API_BASE = "/api";
 
 export function RegisterForm() {
   const navigate = useNavigate();
@@ -13,16 +16,19 @@ export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  React.useEffect(() => () => {
-    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+  // Dọn dẹp bộ nhớ khi component unmount
+  React.useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
   }, [avatarPreview]);
 
   const onAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    setAvatarPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return file ? URL.createObjectURL(file) : null;
-    });
+    if (file) {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -36,6 +42,7 @@ export function RegisterForm() {
     const confirmPassword = formData.get("confirm_password")?.toString();
     const email = formData.get("email")?.toString();
 
+    // 1. Client-side Validation
     if (password !== confirmPassword) {
       const msg = "Mật khẩu xác nhận không khớp bồ ơi!";
       setError(msg);
@@ -44,31 +51,39 @@ export function RegisterForm() {
     }
 
     setIsLoading(true);
-    
+
     try {
-      const response = await fetch("http://localhost:8080/api/auth/register", {
+      // 2. Gọi API Đăng ký qua Proxy
+      // KHÔNG set Content-Type header để trình duyệt tự điền boundary cho FormData (Multi-part)
+      const response = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
         body: formData,
+        credentials: "include"
       });
 
-      const contentType = response.headers.get("content-type");
       let data;
+      const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         data = await response.json();
       }
 
       if (response.ok) {
-        toast.success("Đăng ký thành công! Kiểm tra mail nhận mã nhé.");
+        toast.success("Đăng ký thành công!", { 
+          description: "Check hòm thư nhận mã OTP để kích hoạt tài khoản nhé sếp." 
+        });
+        
         setTimeout(() => {
+          // Replace: true để user không back lại trang đăng ký khi đã xong
           navigate("/verify-otp", { state: { email: email }, replace: true });
         }, 1500);
       } else {
-        const serverError = data?.message || "Đăng ký thất bại rồi!";
+        const serverError = data?.message || "Đăng ký thất bại, email này có thể đã tồn tại.";
         setError(serverError);
         toast.error(serverError);
       }
     } catch (err) {
-      setError("Lỗi kết nối server");
+      setError("Không thể kết nối tới Proxy xác thực.");
+      toast.error("Lỗi kết nối Backend");
     } finally {
       setIsLoading(false);
     }
@@ -76,97 +91,114 @@ export function RegisterForm() {
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-black p-4">
-      <Card className="w-full max-w-md border-zinc-800 bg-zinc-900 text-white shadow-2xl rounded-2xl">
-        <CardHeader className="space-y-1 pt-8">
-          <CardTitle className="text-3xl font-black italic tracking-tighter text-green-500 uppercase">
-            Đăng ký Scriptify
+      <Card className="w-full max-w-md border-white/5 bg-zinc-950 text-white shadow-[0_20px_50px_rgba(34,197,94,0.1)] rounded-[2.5rem] overflow-hidden border-t-green-500/20 border-t-8">
+        <CardHeader className="space-y-1 pt-10 px-10">
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldCheck className="text-green-500 w-5 h-5" />
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600 italic">Secure Registration</span>
+          </div>
+          <CardTitle className="text-4xl font-black italic tracking-tighter text-green-500 uppercase leading-none">
+            Gia nhập <br /> Scriptify
           </CardTitle>
-          <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em]">Khởi đầu hành trình âm nhạc của bồ</p>
         </CardHeader>
         
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-5 px-8">
+          <CardContent className="space-y-5 px-10 pt-4">
             {/* Nickname */}
             <div className="space-y-2">
-              <Label className="text-zinc-400 font-bold text-[10px] uppercase">Nickname</Label>
+              <Label className="text-zinc-500 font-black text-[10px] uppercase ml-1 italic tracking-widest">Bồ tên là gì?</Label>
               <Input
                 name="nickname"
-                placeholder="Scriptify"
-                className="border-zinc-700 bg-zinc-800 h-11 focus-visible:ring-green-500"
+                placeholder="Exampled"
+                required
+                className="border-white/5 bg-white/5 h-14 focus-visible:ring-green-500/30 rounded-2xl italic transition-all"
               />
             </div>
 
             {/* Email */}
             <div className="space-y-2">
-              <Label className="text-zinc-400 font-bold text-[10px] uppercase">Email xác thực</Label>
+              <Label className="text-zinc-400 font-black text-[10px] uppercase ml-1 italic tracking-widest">Email (Nhận mã OTP)</Label>
               <Input
                 name="email"
                 type="email"
                 required
-                placeholder="ten@vi-du.com"
-                className="border-zinc-700 bg-zinc-800 h-11 focus-visible:ring-green-500"
+                placeholder="youremail@enample.com"
+                className="border-white/5 bg-white/5 h-14 focus-visible:ring-green-500/30 rounded-2xl italic transition-all"
               />
             </div>
 
-            {/* Avatar - Bỏ (Cloud R2) */}
+            {/* Avatar Upload */}
             <div className="space-y-2">
-              <Label className="text-zinc-400 font-bold text-[10px] uppercase">Ảnh đại diện</Label>
-              <Input
-                name="avatarFile"
-                type="file"
-                accept="image/*"
-                onChange={onAvatarChange}
-                className="cursor-pointer border-zinc-700 bg-zinc-800 file:bg-zinc-700 file:text-white"
-              />
-              {avatarPreview && (
-                <div className="mt-3 flex items-center gap-3 rounded-xl border border-zinc-800 bg-black/30 p-2 animate-in fade-in slide-in-from-left-2">
-                  <img src={avatarPreview} className="h-10 w-10 rounded-full object-cover" />
-                  <p className="text-[10px] text-zinc-500 italic">Avatar trông ổn đấy sếp!</p>
+              <Label className="text-zinc-500 font-black text-[10px] uppercase ml-1 italic tracking-widest">Ảnh đại diện</Label>
+              <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
+                <div className="relative group flex-shrink-0">
+                  <div className="h-16 w-16 rounded-full border-2 border-dashed border-zinc-800 flex items-center justify-center bg-zinc-900 overflow-hidden shadow-inner">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} className="h-full w-full object-cover" alt="Preview" />
+                    ) : (
+                      <Camera className="text-zinc-700 w-6 h-6" />
+                    )}
+                  </div>
+                  <Input
+                    name="avatarFile"
+                    type="file"
+                    accept="image/*"
+                    onChange={onAvatarChange}
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                  />
                 </div>
-              )}
+                <div className="text-[10px] text-zinc-600 italic font-bold leading-tight">
+                  {avatarPreview ? "Mướt đấy sếp! Ảnh này lên Cloud là bao nghệ." : "Chọn một tấm ảnh thật cá tính nhé bồ."}
+                </div>
+              </div>
             </div>
 
-            {/* Password Row - Sửa chữ "Xác nhận mật khẩu" */}
+            {/* Password Row */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-zinc-400 font-bold text-[10px] uppercase tracking-tighter">Mật khẩu</Label>
+                <Label className="text-zinc-500 font-black text-[10px] uppercase tracking-tighter ml-1 italic">Mật khẩu</Label>
                 <Input
                   name="password"
                   type="password"
                   required
-                  className="border-zinc-700 bg-zinc-800"
+                  minLength={8}
+                  className="border-white/5 bg-white/5 h-14 rounded-2xl italic"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-zinc-400 font-bold text-[10px] uppercase tracking-tighter">Xác nhận mật khẩu</Label>
+                <Label className="text-zinc-500 font-black text-[10px] uppercase tracking-tighter ml-1 italic">Xác nhận</Label>
                 <Input
                   name="confirm_password"
                   type="password"
                   required
-                  className="border-zinc-700 bg-zinc-800"
+                  className="border-white/5 bg-white/5 h-14 rounded-2xl italic"
                 />
               </div>
             </div>
 
             {error && (
-              <div className="mt-2 text-[10px] font-bold text-red-500 uppercase italic">
+              <div className="text-[10px] font-black text-red-500 uppercase italic bg-red-500/5 p-3 rounded-xl border border-red-500/10 animate-in fade-in zoom-in-95 tracking-widest text-center">
                 ⚠️ {error}
               </div>
             )}
           </CardContent>
 
-          {/* Giãn khoảng cách từ phần mật khẩu xuống nút bằng cách dùng pt-10 và pb-10 */}
-          <CardFooter className="flex flex-col gap-4 pb-10 px-8 pt-10">
+          <CardFooter className="flex flex-col gap-6 pb-12 px-10 pt-8">
             <Button 
               type="submit" 
               disabled={isLoading}
-              className="w-full bg-green-500 text-black hover:bg-green-400 font-black uppercase italic h-14 rounded-2xl shadow-xl shadow-green-500/10 active:scale-95 transition-transform"
+              className="w-full bg-green-500 text-black hover:bg-green-400 font-black uppercase italic h-16 rounded-[1.5rem] shadow-2xl shadow-green-500/10 active:scale-95 transition-all text-lg tracking-tighter"
             >
-              {isLoading ? <Loader2 className="animate-spin" /> : "Bắt đầu ngay"}
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="animate-spin w-6 h-6" />
+                  <span>Đang khởi tạo...</span>
+                </div>
+              ) : "Khởi tạo tài khoản"}
             </Button>
-            <p className="text-zinc-500 text-center text-xs">
-              Đã có tài khoản?{" "}
-              <Link to="/login" className="text-green-500 hover:underline font-bold">Đăng nhập</Link>
+            <p className="text-zinc-600 text-center text-[10px] font-black uppercase tracking-widest italic">
+              Đã là thành viên?{" "}
+              <Link to="/login" className="text-white hover:text-green-500 transition-colors underline underline-offset-4 decoration-white/5">Đăng nhập</Link>
             </p>
           </CardFooter>
         </form>

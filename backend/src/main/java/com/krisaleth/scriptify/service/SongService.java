@@ -48,7 +48,14 @@ public class SongService {
      */
     private String uploadToR2(MultipartFile file, String folder) throws IOException {
         // Tạo path tương đối: music/uuid_tenfile.mp3
-        String fileName = folder + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String originalName = file.getOriginalFilename();
+        String extension = "";
+        if (originalName != null && originalName.contains(".")) {
+            extension = originalName.substring(originalName.lastIndexOf("."));
+        }
+
+        // ✅ Tên file mới: folder/uuid.mp3 (Loại bỏ hoàn toàn ký tự lạ/khoảng trắng)
+        String fileName = folder + "/" + UUID.randomUUID().toString() + extension;
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
@@ -122,6 +129,11 @@ public class SongService {
     public Song createSong(String title, Long artistId, Long albumId, MultipartFile musicFile, MultipartFile imageFile) {
         Artist artist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Nghệ sĩ không tồn tại"));
+
+        // Kiểm tra file nhạc trước khi lấy duration
+        if (musicFile == null || musicFile.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File nhạc không được để trống");
+        }
 
         int duration = FileUtils.getMp3Duration(musicFile);
 
