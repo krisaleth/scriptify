@@ -113,5 +113,9 @@ public class Users implements UserDetails {
     public boolean getEnabled() {
         return enabled;
     }
+    @Override
+    public String getPassword() {
+        return this.password;
+    }
 
 }

@@ -85,6 +85,11 @@ public class SongService {
         }
     }
 
+    public Page<Song> getAllSongs(Pageable pageable) {
+        // Sau này sếp có thể filter nhạc lậu, nhạc ẩn ở đây
+        return songRepository.findAll(pageable);
+    }
+
     @Transactional
     public Song updateSong(Long id, String title, Long artistId, Long albumId, MultipartFile musicFile, MultipartFile imageFile) {
         Song existingSong = getSong(id);
@@ -180,16 +185,8 @@ public class SongService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy ID: " + id));
     }
 
-    /**
-     * TÌM KIẾM & PHÂN TRANG
-     */
-    @Transactional(readOnly = true)
-    public Page<Song> searchSongs(String title, String albumTitle, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        if (title != null && !title.isBlank()) {
-            return songRepository.findByTitleContainingIgnoreCase(title, pageable);
-        }
-        return songRepository.findAll(pageable);
+    public Page<Song> searchSongs(String keyword, Pageable pageable) {
+        return songRepository.findByTitleContainingIgnoreCaseOrArtist_NameContainingIgnoreCase(keyword, keyword, pageable);
     }
 
     @Transactional
@@ -199,5 +196,6 @@ public class SongService {
             throw new EntityNotFoundException("Không tìm thấy bài hát để tăng view");
         }
     }
+
 
 }

@@ -116,7 +116,7 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
         onOpenChange(false);
       } else {
         const err = await res.json();
-        toast.error("Thất bại", { description: err.message || "Vui lòng kiểm tra lại định dạng file bồ nhé." });
+        toast.error("Thất bại", { description: err.message || "Vui lòng kiểm tra lại định dạng file bạn nhé." });
       }
     } catch (err) {
       toast.error("Lỗi kết nối Proxy", { description: "Hãy chắc chắn Nginx Proxy đang chạy mượt mà." });

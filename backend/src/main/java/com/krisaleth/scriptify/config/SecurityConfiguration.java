@@ -45,7 +45,6 @@ public class SecurityConfiguration {
 
                         // ✅ Cho phép lấy data công khai
                         .requestMatchers("/songs/**", "/artists/**", "/albums/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
 
                         // Tất cả các thao tác khác (Admin, Upload...) yêu cầu đăng nhập
                         .anyRequest().authenticated()
@@ -73,10 +72,10 @@ public class SecurityConfiguration {
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*")); // Cho phép tất cả header để tránh bị chặn
 
-        // ✅ Cho phép gửi kèm Cookie/Credentials (BẮT BUỘC cho cơ chế xác thực của bồ)
+        // ✅ Cho phép gửi kèm Cookie/Credentials (BẮT BUỘC cho cơ chế xác thực của bạn)
         configuration.setAllowCredentials(true);
 
-        // Expose Header nếu bồ cần đọc Token từ Header phía Client
+        // Expose Header nếu bạn cần đọc Token từ Header phía Client
         configuration.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

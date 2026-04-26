@@ -1,40 +1,35 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { Pencil, Trash2, Mic2 } from "lucide-react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { getResourceUrl } from "@/utils/urlHelper";
+import { apiRequest } from "@/utils/apiClient"; // ✅ Sử dụng apiClient thông minh
 
 interface Props {
+  searchQuery: string; // ✅ Nhận từ khóa từ AdminDashboard truyền xuống
   refresh: number;
   onEdit: (artist: any) => void;
   onDelete: (id: number) => void;
 }
 
-// ✅ Dùng đường dẫn tương đối để Nginx/Vite tự lo phần TLS nội bộ
 const API_BASE = "/api";
 
-export function ArtistSection({ refresh, onEdit, onDelete }: Props) {
+export function ArtistSection({ searchQuery, refresh, onEdit, onDelete }: Props) {
   const [artists, setArtists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch qua Proxy (Credentials include cho HttpOnly Cookie)
+  // ✅ Fetch data qua người gác cổng apiRequest
   const fetchArtists = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/artists/all`, {
-        method: "GET",
-        credentials: "include", 
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+      const data = await apiRequest(`${API_BASE}/artists/all`);
+      if (data) {
+        // Xử lý cả 2 trường hợp: Backend trả về mảng hoặc Object phân trang
         setArtists(Array.isArray(data) ? data : data.content || []);
-      } else {
-        console.error("Scriptify Admin: Lỗi truy xuất danh sĩ. Status:", response.status);
       }
     } catch (err) {
-      console.error("Scriptify Admin: Lỗi kết nối Proxy (Artists):", err);
+      console.error("Scriptify Admin: Lỗi truy xuất nghệ sĩ.", err);
     } finally {
       setLoading(false);
     }
@@ -43,6 +38,14 @@ export function ArtistSection({ refresh, onEdit, onDelete }: Props) {
   useEffect(() => {
     fetchArtists();
   }, [refresh, fetchArtists]);
+
+  // ✅ Logic tìm kiếm tại chỗ (Client-side filtering) cực nhanh trên máy LOQ
+  const filteredArtists = useMemo(() => {
+    return artists.filter((artist) =>
+      artist.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      artist.bio?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [artists, searchQuery]);
 
   return (
     <Card className="bg-zinc-950 border-white/5 overflow-hidden rounded-[2rem] shadow-2xl">
@@ -62,14 +65,14 @@ export function ArtistSection({ refresh, onEdit, onDelete }: Props) {
                 Đang quét danh sách từ Scriptify Cloud...
               </TableCell>
             </TableRow>
-          ) : artists.length === 0 ? (
+          ) : filteredArtists.length === 0 ? (
             <TableRow className="border-white/5">
               <TableCell colSpan={4} className="text-center py-20 text-zinc-700 font-black uppercase text-[10px] tracking-widest italic">
-                Thư viện nghệ sĩ hiện đang trống.
+                {searchQuery ? "Không tìm thấy nghệ sĩ nào khớp với từ khóa." : "Thư viện nghệ sĩ hiện đang trống."}
               </TableCell>
             </TableRow>
           ) : (
-            artists.map((artist) => (
+            filteredArtists.map((artist) => (
               <TableRow key={artist.id} className="border-white/5 hover:bg-white/5 transition-all h-20 group">
                 <TableCell className="text-center">
                   <img 
@@ -93,7 +96,7 @@ export function ArtistSection({ refresh, onEdit, onDelete }: Props) {
                   </div>
                 </TableCell>
                 <TableCell className="text-right pr-10">
-                  <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
+                  <div className="flex justify-end gap-3 transition-all transform translate-x-4 group-hover:translate-x-0">
                     <Button 
                       variant="ghost" 
                       size="icon" 

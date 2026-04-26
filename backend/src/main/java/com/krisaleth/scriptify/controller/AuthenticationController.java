@@ -37,18 +37,18 @@ public class AuthenticationController {
 
         // 2. Tạo JWT Token
         String jwtToken = jwtService.generateToken(authenticatedUser);
+        long expirationMillis = jwtService.getExpirationTime();
 
         // 3. Tạo HttpOnly Cookie
         ResponseCookie jwtCookie = ResponseCookie.from("jwt", jwtToken)
-                .httpOnly(true)    // Quan trọng nhất: JavaScript không thể đọc được
-                .secure(false)    // Để false vì bồ đang chạy localhost (HTTP), để true nếu có HTTPS
-                .path("/")        // Có hiệu lực cho toàn bộ domain
-                .maxAge(7 * 24 * 60 * 60) // Hết hạn sau 7 ngày (giống MaxAge của Token)
-                .sameSite("Lax")  // Bảo vệ chống CSRF cơ bản
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(expirationMillis / 1000)
+                .sameSite("Lax")
                 .build();
 
         // 4. Trả về Response
-        // Không gửi token trong Body nữa, chỉ gửi thông tin hết hạn hoặc User info
         LoginResponse loginResponse = new LoginResponse();
         loginResponse.setExpiresIn(jwtService.getExpirationTime());
         loginResponse.setUser(authenticatedUser);
@@ -78,6 +78,11 @@ public class AuthenticationController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("UP");
     }
 
     @PostMapping("/logout")

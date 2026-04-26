@@ -162,4 +162,15 @@ public class AlbumService {
                 ? albumRepository.findByTitleContainingIgnoreCase(title, pageable)
                 : albumRepository.findAll(pageable);
     }
+
+    @Transactional(readOnly = true)
+    public Page<Album> getAllPaginated(Pageable pageable) {
+        return albumRepository.findAll(pageable);
+    }
+
+    // Lấy tất cả album không phân trang (Dùng cho dropdown/select ở trang Upload nhạc)
+    @Transactional(readOnly = true)
+    public List<Album> getAll() {
+        return albumRepository.findAll(Sort.by(Sort.Direction.ASC, "title"));
+    }
 }

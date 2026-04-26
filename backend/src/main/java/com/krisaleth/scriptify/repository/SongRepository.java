@@ -18,13 +18,13 @@ public interface SongRepository extends JpaRepository<Song, Long> {
     // Search by using name
     Page<Song> findByTitleContainingIgnoreCase(String title, Pageable pageable);
 
-    // Search by using album title (FIXED dấu gạch dưới)
+    // Search by using album title
     Page<Song> findByAlbum_TitleContainingIgnoreCase(String albumTitle, Pageable pageable);
 
-    // Search by using artist id (FIXED để lấy được cả nhạc Single)
+    // Search by using artist id
     List<Song> findByArtist_Id(Long artistId);
 
-    // Search by using song name or album name (FIXED lỗi Spring Boot không start được)
+    // Search by using song name or album name
     Page<Song> findByTitleContainingIgnoreCaseOrAlbum_TitleContainingIgnoreCase(String title, String albumTitle, Pageable pageable);
 
     // Top 10 song have most views
@@ -45,7 +45,9 @@ public interface SongRepository extends JpaRepository<Song, Long> {
     Integer getTotalDurationByAlbumId(@Param("albumId") Long albumId);
 
     @Query("SELECT s FROM Song s WHERE " +
-            "LOWER(s.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(s.artist.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    List<Song> searchSongs(@Param("keyword") String keyword);
+       "LOWER(s.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+       "LOWER(s.artist.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<Song> searchSongs(@Param("keyword") String keyword, Pageable pageable);
+
+    Page<Song> findByTitleContainingIgnoreCaseOrArtist_NameContainingIgnoreCase(String title, String artistName, Pageable pageable);
 }

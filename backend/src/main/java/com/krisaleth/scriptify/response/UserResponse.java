@@ -5,7 +5,7 @@ public class UserResponse {
     private String nickname;
     private String email;
     private String role;
-    private String avatarUrl; // Đổi tên thành avatarUrl cho khớp với Sidebar bồ đang viết
+    private String avatarUrl; // Đổi tên thành avatarUrl cho khớp với Sidebar bạn đang viết
 
     public UserResponse() {}
 

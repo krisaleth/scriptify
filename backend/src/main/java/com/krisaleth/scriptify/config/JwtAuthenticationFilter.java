@@ -1,6 +1,7 @@
 package com.krisaleth.scriptify.config;
 
 import com.krisaleth.scriptify.service.JwtService;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -86,9 +87,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             filterChain.doFilter(request, response);
-        } catch (Exception e) {
+        } catch (ExpiredJwtException e) {
             // Log lỗi để sếp dễ soi trên con LOQ
-            System.err.println("JWT Filter Error: " + e.getMessage());
+            SecurityContextHolder.clearContext();
             handlerExceptionResolver.resolveException(request, response, null, e);
         }
     }

@@ -41,20 +41,13 @@ export function LoginForm() {
 
       if (loginResponse.ok) {
         // ✅ BƯỚC 2: NẠP USER TỪ RESPONSE VÀO STORE
-        // Dựa trên tab Network của bồ, loginData đã có object { user: { ... } }
+        // Dựa trên tab Network của bạn, loginData đã có object { user: { ... } }
         if (loginData.user) {
-          console.log("Scriptify: Đã nhận diện User từ Cloud...", loginData.user);
-          
-          // Nạp vào Zustand Store ngay tại đây. 
-          // Sidebar đang 'lắng nghe' biến user này sẽ tự động hiện Avatar mà không cần F5.
           setUser(loginData.user); 
 
-          toast.success("Mừng bồ quay lại!", {
+          toast.success("Mừng bạn quay lại!", {
             description: `Chào sếp ${loginData.user.nickname || 'Unnamed'}!`,
           });
-
-          // 🚀 ĐIỀU HƯỚNG VỀ HOME
-          // Tuyệt đối không gọi thêm API /user/me ở đây nữa để tránh lỗi 400 đè dữ liệu.
           navigate("/"); 
         } else {
           console.error("Scriptify: Login thành công nhưng response thiếu object 'user'");
@@ -64,11 +57,11 @@ export function LoginForm() {
         // Xử lý lỗi xác thực OTP hoặc sai pass
         if (loginData.message === "Account not verified!" || loginData.code === "ACCOUNT_NOT_VERIFIED") {
           toast.warning("Tài khoản chưa xác thực", {
-            description: "Đang chuyển bồ đến hệ thống xác nhận OTP..."
+            description: "Đang chuyển bạn đến hệ thống xác nhận OTP..."
           });
           navigate("/verify-otp", { state: { email: email } });
         } else {
-          setError(loginData.message || "Email hoặc mật khẩu không đúng bồ ơi");
+          setError(loginData.message || "Email hoặc mật khẩu không đúng bạn ơi");
         }
       }
     } catch (err) {

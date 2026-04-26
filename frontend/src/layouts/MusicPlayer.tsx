@@ -64,7 +64,7 @@ export function MusicPlayer(props: MusicPlayerProps) {
             {currentSong?.title || "Scriptify Sẵn sàng"}
           </div>
           <div className="text-[10px] text-zinc-500 truncate font-bold uppercase tracking-[0.2em] mt-0.5 opacity-70">
-            {currentSong?.artist?.name || "Chọn giai điệu của bồ"}
+            {currentSong?.artist?.name || "Chọn giai điệu của bạn"}
           </div>
         </div>
       </div>
@@ -113,7 +113,7 @@ export function MusicPlayer(props: MusicPlayerProps) {
 
         {/* Thanh Thời gian (Progress) */}
         <div className="flex items-center gap-3 w-full group/progress">
-          <span className="text-[9px] text-zinc-500 font-black w-10 text-right tabular-nums tracking-tighter opacity-0 group-hover/progress:opacity-100 transition-opacity">
+          <span className="text-[9px] text-zinc-500 font-black w-10 text-right tabular-nums tracking-tighter opacity-100 transition-opacity">
             {formatTime(currentTime)}
           </span>
           <Slider

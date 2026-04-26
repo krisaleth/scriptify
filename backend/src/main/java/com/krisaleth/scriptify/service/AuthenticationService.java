@@ -41,7 +41,7 @@ public class AuthenticationService {
         users.setNickname(nickname);
 
         if (usersRepository.findByEmail(input.getEmail()).isPresent()) {
-            throw new RuntimeException("Email này đã được sử dụng rồi bồ ơi!");
+            throw new RuntimeException("Email này đã được sử dụng rồi bạn ơi!");
         }
         users.setEmail(input.getEmail());
         users.setPassword(passwordEncoder.encode(input.getPassword()));
@@ -121,7 +121,7 @@ public class AuthenticationService {
                 + "<body style=\"font-family: Arial, sans-serif;\">"
                 + "<div style=\"background-color: #f5f5f5; padding: 20px;\">"
                 + "<h2 style=\"color: #333;\">Chào mừng đến với Scriptify!</h2>"
-                + "<p style=\"font-size: 16px;\">Mã xác thực của bồ là:</p>"
+                + "<p style=\"font-size: 16px;\">Mã xác thực của bạn là:</p>"
                 + "<div style=\"background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);\">"
                 + "<h3 style=\"color: #333;\">Verification Code:</h3>"
                 + "<p style=\"font-size: 24px; font-weight: bold; color: #22c55e;\">" + verificationCode + "</p>"

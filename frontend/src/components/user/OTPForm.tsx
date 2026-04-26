@@ -25,7 +25,7 @@ export function OTPForm() {
   useEffect(() => {
     if (!email) {
       toast.error("Thiếu thông tin xác thực", {
-        description: "Vui lòng đăng ký lại để nhận mã OTP bồ nhé."
+        description: "Vui lòng đăng ký lại để nhận mã OTP bạn nhé."
       });
       navigate("/register", { replace: true });
     }
@@ -59,7 +59,7 @@ export function OTPForm() {
 
       if (response.ok) {
         toast.success("Xác thực thành công!", {
-          description: "Chào mừng bồ gia nhập gia đình Scriptify Cloud."
+          description: "Chào mừng bạn gia nhập gia đình Scriptify Cloud."
         });
         navigate("/login", { replace: true });
       } else {
@@ -86,7 +86,7 @@ export function OTPForm() {
 
       if (response.ok) {
         toast.success("Đã gửi mã mới!", {
-          description: "Bồ check lại hòm thư (kể cả Spam) nhé."
+          description: "bạn check lại hòm thư (kể cả Spam) nhé."
         });
         setCountdown(60); 
       } else {

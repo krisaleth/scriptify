@@ -1,6 +1,6 @@
 package com.krisaleth.scriptify.response;
 
-import com.krisaleth.scriptify.entity.Users; // Import entity User của bồ
+import com.krisaleth.scriptify.entity.Users; // Import entity User của bạn
 
 public class LoginResponse {
     private String token;

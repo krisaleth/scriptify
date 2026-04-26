@@ -116,7 +116,7 @@ public class ArtistService {
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "Không thể xóa nghệ sĩ này vì họ vẫn còn Album hoặc Bài hát gắn liền bồ ơi!"
+                    "Không thể xóa nghệ sĩ này vì họ vẫn còn Album hoặc Bài hát gắn liền bạn ơi!"
             );
         }
     }

@@ -15,13 +15,44 @@ import java.util.List;
 @RestController
 @RequestMapping("/albums")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*") // Lưu ý: Nginx đã lo phần này, sếp có thể bỏ nếu dùng Tunnel
 public class AlbumController {
     private final AlbumService albumService;
 
     /**
+     * ✅ SEARCH & GET ALL (PAGINATED)
+     * Trả về danh sách Album phân trang.
+     * Nếu không truyền 'title', nó sẽ trả về toàn bộ album theo trang.
+     */
+    @GetMapping
+    public ResponseEntity<Page<Album>> searchAlbums(
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
+        return ResponseEntity.ok(albumService.search(title, page, size));
+    }
+
+    /**
+     * ✅ GET ALL FOR DROPDOWN (NEW)
+     * Dùng để lấy toàn bộ danh sách album cho trang Dashboard/Upload nhạc
+     */
+    @GetMapping("/all-list")
+    public ResponseEntity<List<Album>> getAllAlbumsList() {
+        // Tận dụng hàm search(null, 0, Integer.MAX_VALUE) nếu chưa viết hàm findAll
+        // Hoặc sếp viết thêm hàm findAll() trong service như tui bàn ở trên
+        return ResponseEntity.ok(albumService.search(null, 0, 1000).getContent());
+    }
+
+    /**
+     * ✅ GET BY ID
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<Album> getAlbumById(@PathVariable Long id) {
+        return ResponseEntity.ok(albumService.getById(id));
+    }
+
+    /**
      * ✅ CREATE ALBUM
-     * Nhận FormData từ Dashboard: title, releaseYear, artistId, imageFile
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Album> createAlbum(
@@ -30,15 +61,13 @@ public class AlbumController {
             @RequestParam("artistId") Long artistId,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
 
-        System.out.println("Scriptify Cloud: Đang khởi tạo Album [" + title + "] cho Artist ID: " + artistId);
-
+        System.out.println("Scriptify Cloud: Đang khởi tạo Album [" + title + "]...");
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(albumService.create(title, releaseYear, artistId, imageFile));
     }
 
     /**
      * ✅ UPDATE ALBUM
-     * Cập nhật thông tin và Cover Image lên R2
      */
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Album> updateAlbum(
@@ -48,47 +77,20 @@ public class AlbumController {
             @RequestParam(value = "artistId", required = false) Long artistId,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
 
-        System.out.println("Scriptify Cloud: Cập nhật thông tin cho Album ID: " + id);
         return ResponseEntity.ok(albumService.update(id, title, releaseYear, artistId, imageFile));
     }
 
     /**
      * ✅ DELETE ALBUM
-     * Xóa sạch ảnh bìa trên R2 và record trong DB
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAlbum(@PathVariable Long id) {
-        System.out.println("Scriptify Cloud: Yêu cầu xóa Album ID: " + id);
         albumService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
-    // --- READ OPERATIONS ---
-
-    /**
-     * ✅ SEARCH & PAGE
-     * Trả về danh sách Album phân trang
-     */
-    @GetMapping
-    public ResponseEntity<Page<Album>> searchAlbums(
-            @RequestParam(required = false) String title,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(albumService.search(title, page, size));
-    }
-
-    /**
-     * ✅ GET BY ID
-     * Lấy chi tiết Album (bao gồm cả list bài hát nhờ @JsonIgnoreProperties đã cài ở Entity)
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<Album> getAlbumById(@PathVariable Long id) {
-        return ResponseEntity.ok(albumService.getById(id));
-    }
-
     /**
      * ✅ GET BY ARTIST
-     * Dùng cho trang Artist Detail / Discography
      */
     @GetMapping("/artist/{artistId}")
     public ResponseEntity<List<Album>> getAlbumsByArtist(@PathVariable Long artistId) {

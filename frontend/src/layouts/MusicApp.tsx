@@ -5,7 +5,6 @@ import { MusicPlayer } from "./MusicPlayer";
 import { getResourceUrl } from "@/utils/urlHelper";
 import { useAuthStore } from "@/store/useAuthStore";
 
-// ĐỔI SANG ĐƯỜNG DẪN TƯƠNG ĐỐI: Đi qua Vite Proxy
 const API_BASE = "/api";
 
 export default function MusicApp() {
@@ -27,61 +26,74 @@ export default function MusicApp() {
     fetch(`${API_BASE}/songs?size=100`, { credentials: "include" })
       .then(res => res.json())
       .then(data => {
-        // Handle Spring PageImpl (.content) hoặc mảng thuần
         const songsList = data.content || (Array.isArray(data) ? data : []);
         setSongs(songsList);
       })
       .catch(err => console.error("Scriptify: Không thể load danh sách nhạc", err));
   }, []);
 
-  // 2. Cập nhật bài hát hiện tại
+  // 2. Cập nhật bài hát hiện tại khi ID thay đổi
   useEffect(() => {
-    if (currentTrackId) {
+    if (currentTrackId !== null) {
       const song = songs.find(s => s.id === currentTrackId);
       if (song) {
         setCurrentSong(song);
       } else {
         fetch(`${API_BASE}/songs/${currentTrackId}`, { credentials: "include" })
           .then(res => res.json())
-          .then(data => setCurrentSong(data));
+          .then(data => setCurrentSong(data))
+          .catch(err => console.error("Scriptify: Lỗi load bài hát đơn", err));
       }
     }
   }, [currentTrackId, songs]);
 
-  // 3. Logic Play/Pause
+  // 3. Thực hiện Play/Pause khi trạng thái hoặc Bài hát thay đổi
   useEffect(() => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.play().catch(() => setIsPlaying(false));
-    } else {
-      audioRef.current.pause();
-    }
-  }, [isPlaying, currentTrackId]);
+    const audio = audioRef.current;
+    if (!audio || !currentSong) return;
 
-  // 4. Handle Play & Tăng View qua Proxy
-  const handlePlayTrack = useCallback(async (id: number) => {
-    if (currentTrackId === id) {
-      setIsPlaying(!isPlaying);
+    if (isPlaying) {
+      // Dùng promise để handle lỗi autoplay của trình duyệt
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error("Scriptify: Autoplay prevented:", error);
+          setIsPlaying(false);
+        });
+      }
     } else {
+      audio.pause();
+    }
+  }, [isPlaying, currentSong]); // Theo dõi cả currentSong để phát ngay khi đổi bài
+
+  // 4. Cập nhật Volume thực tế cho thẻ Audio
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  // 5. Handle Play & Tăng View
+  const handlePlayTrack = useCallback((id: number) => {
+    if (currentTrackId === id) {
+      setIsPlaying(prev => !prev);
+    } else {
+      // Khi chọn bài mới:
       setCurrentTrackId(id);
       setIsPlaying(true);
       setCurrentTime(0);
 
-      // Ghi nhận view - Đi qua Proxy giúp BE nhận diện được User qua Cookie
-      try {
-        fetch(`${API_BASE}/songs/${id}/play`, {
-          method: 'GET',
-          credentials: "include",
-        }).then(res => {
-          if (res.ok) {
-            console.log(`%cScriptify Cloud: +1 View cho ID ${id}`, "color: #22c55e; font-weight: bold");
-          }
-        });
-      } catch (err) {
-        console.error("Scriptify: View counter failed", err);
-      }
+      // Ghi nhận view qua Proxy
+      fetch(`${API_BASE}/songs/${id}/play`, {
+        method: 'GET',
+        credentials: "include",
+      }).then(res => {
+        if (res.ok) {
+          console.log(`%cScriptify Cloud: +1 View cho ID ${id}`, "color: #22c55e; font-weight: bold");
+        }
+      }).catch(err => console.error("Scriptify: View counter failed", err));
     }
-  }, [currentTrackId, isPlaying]);
+  }, [currentTrackId]);
 
   const handleNext = useCallback(() => {
     if (songs.length === 0) return;
@@ -106,7 +118,8 @@ export default function MusicApp() {
     <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden font-sans select-none tracking-tight">
       <audio
         ref={audioRef}
-        // File nhạc vẫn lấy từ URLHelper (thường là link Cloudflare R2 trực tiếp)
+        // "Key" thần thánh: Giúp React reset hoàn toàn thẻ audio khi đổi bài hát
+        key={currentSong?.id} 
         src={currentSong ? getResourceUrl(currentSong.filePath) : undefined}
         onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
         onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
@@ -132,10 +145,7 @@ export default function MusicApp() {
         onNext={handleNext}
         onPrevious={handlePrev}
         onSeek={(val) => { if(audioRef.current) audioRef.current.currentTime = val; }}
-        onVolumeChange={(val) => { 
-          setVolume(val); 
-          if(audioRef.current) audioRef.current.volume = val; 
-        }}
+        onVolumeChange={setVolume}
         onToggleShuffle={() => setIsShuffle(!isShuffle)}
         onToggleRepeat={() => setIsRepeat(!isRepeat)}
       />

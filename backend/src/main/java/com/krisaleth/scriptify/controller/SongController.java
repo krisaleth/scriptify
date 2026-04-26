@@ -5,6 +5,9 @@ import com.krisaleth.scriptify.service.SongService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort; // PHẢI CÓ IMPORT NÀY
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,21 +28,34 @@ public class SongController {
 
     /**
      * PHÁT NHẠC (REDIRECT STREAMING)
-     * Thay vì trả về Resource, ta Redirect tới link R2 để tối ưu băng thông
      */
     @GetMapping("/{id}/play")
     public ResponseEntity<Void> playSong(@PathVariable Long id) {
         Song song = songService.getSong(id);
-
-        // 1. Tăng lượt nghe (Logic thống kê của bồ vẫn giữ nguyên)
         songService.incrementViewCount(id);
 
         String cloudUrl = publicUrl + "/" + song.getFilePath();
 
-        // 3. Trả về mã 302 (Found) để Player tự động tìm tới link nhạc trên mây
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(cloudUrl))
                 .build();
+    }
+
+    /**
+     * ✅ LẤY DANH SÁCH NHẠC & SEARCH (Đã Fix Ambiguous mapping)
+     * Bỏ Sort.Direction.DESC vì @PageableDefault cần chuỗi hoặc Enum cụ thể
+     */
+    @GetMapping
+    public ResponseEntity<Page<Song>> getSongs(
+            @RequestParam(required = false) String query,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        
+        if (query != null && !query.isBlank()) {
+            // Đảm bảo trong SongService đã đổi hàm searchSongs nhận thêm Pageable
+            return ResponseEntity.ok(songService.searchSongs(query, pageable));
+        }
+        
+        return ResponseEntity.ok(songService.getAllSongs(pageable));
     }
 
     // --- THÊM NHẠC ---
@@ -51,7 +67,6 @@ public class SongController {
             @RequestParam("songFile") MultipartFile musicFile,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
 
-        System.out.println("Backend: Đang upload bài hát lên R2 - " + title);
         Song savedSong = songService.createSong(title, artistId, albumId, musicFile, imageFile);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedSong);
     }
@@ -66,19 +81,8 @@ public class SongController {
             @RequestParam(value = "songFile", required = false) MultipartFile musicFile,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
 
-        System.out.println("Backend: Cập nhật bài hát trên R2 ID: " + id);
         Song updatedSong = songService.updateSong(id, title, artistId, albumId, musicFile, imageFile);
         return ResponseEntity.ok(updatedSong);
-    }
-
-    // --- TÌM KIẾM & PHÂN TRANG ---
-    @GetMapping
-    public ResponseEntity<Page<Song>> searchSongs(
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String albumTitle,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(songService.searchSongs(title, albumTitle, page, size));
     }
 
     @GetMapping("/{id}")

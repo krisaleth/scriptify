@@ -44,7 +44,7 @@ export function RegisterForm() {
 
     // 1. Client-side Validation
     if (password !== confirmPassword) {
-      const msg = "Mật khẩu xác nhận không khớp bồ ơi!";
+      const msg = "Mật khẩu xác nhận không khớp bạn ơi!";
       setError(msg);
       toast.error(msg);
       return;
@@ -106,7 +106,7 @@ export function RegisterForm() {
           <CardContent className="space-y-5 px-10 pt-4">
             {/* Nickname */}
             <div className="space-y-2">
-              <Label className="text-zinc-500 font-black text-[10px] uppercase ml-1 italic tracking-widest">Bồ tên là gì?</Label>
+              <Label className="text-zinc-500 font-black text-[10px] uppercase ml-1 italic tracking-widest">bạn tên là gì?</Label>
               <Input
                 name="nickname"
                 placeholder="Exampled"
@@ -148,7 +148,7 @@ export function RegisterForm() {
                   />
                 </div>
                 <div className="text-[10px] text-zinc-600 italic font-bold leading-tight">
-                  {avatarPreview ? "Mướt đấy sếp! Ảnh này lên Cloud là bao nghệ." : "Chọn một tấm ảnh thật cá tính nhé bồ."}
+                  {avatarPreview ? "Mướt đấy sếp! Ảnh này lên Cloud là bao nghệ." : "Chọn một tấm ảnh thật cá tính nhé bạn."}
                 </div>
               </div>
             </div>
