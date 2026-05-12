@@ -51,27 +51,27 @@ export function AlbumsView() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-black min-h-screen">
-        <Loader2 className="w-12 h-12 text-green-500 animate-spin" />
+      <div className="flex-1 flex items-center justify-center bg-background min-h-screen">
+        <Loader2 className="w-12 h-12 text-primary animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gradient-to-b from-zinc-900 to-black pb-32 custom-scrollbar">
-      {/* Header với hiệu ứng gradient Xanh Indigo */}
-      <div className="bg-gradient-to-b from-green-900/20 to-transparent pt-12 pb-8 px-8">
-        <h2 className="text-4xl font-black text-white mb-2 tracking-tighter uppercase italic">Albums</h2>
-        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em] italic">Khám phá những tuyệt phẩm từ Scriptify Cloud</p>
+    <div className="flex-1 overflow-y-auto bg-background pb-32 custom-scrollbar">
+      {/* Header Flat Design */}
+      <div className="pt-12 pb-8 px-8">
+        <h2 className="text-4xl font-black text-foreground mb-2 tracking-tighter uppercase italic">Albums</h2>
+        <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em] italic">Khám phá những tuyệt phẩm từ Scriptify Cloud</p>
         
         <div className="relative mt-8 max-w-md group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 group-focus-within:text-green-500 transition-colors" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <input
             type="text"
             placeholder="Tìm tên album hoặc nghệ sĩ..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-zinc-800/30 text-white placeholder-zinc-600 rounded-full py-3.5 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-green-500/30 transition-all border border-white/5"
+            className="w-full bg-secondary/50 text-foreground placeholder-muted-foreground rounded-full py-3.5 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all border border-border"
           />
         </div>
       </div>
@@ -87,9 +87,9 @@ export function AlbumsView() {
                 <div
                   key={album.id}
                   onClick={() => navigate(`/album/${album.id}`)}
-                  className="bg-zinc-900/40 p-4 rounded-2xl hover:bg-zinc-800/60 transition-all cursor-pointer group shadow-lg border border-transparent hover:border-white/5"
+                  className="bg-secondary/30 p-4 rounded-2xl hover:bg-accent transition-all cursor-pointer group shadow-md border border-transparent hover:border-border"
                 >
-                  <div className="relative mb-4 overflow-hidden rounded-xl aspect-square shadow-2xl border border-white/5">
+                  <div className="relative mb-4 overflow-hidden rounded-xl aspect-square shadow-lg border border-border">
                     <img
                       src={getResourceUrl(album.coverImageUrl)}
                       alt={album.title}
@@ -104,34 +104,34 @@ export function AlbumsView() {
                           e.stopPropagation();
                           handlePlayTrack(firstTrackInAlbum.id);
                         }}
-                        className="absolute bottom-3 right-3 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all shadow-2xl hover:bg-green-400 active:scale-95"
+                        className="absolute bottom-3 right-3 w-12 h-12 bg-primary rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all shadow-lg hover:bg-primary/90 active:scale-95"
                       >
-                        <Play className="w-6 h-6 text-black ml-1 fill-current" />
+                        <Play className="w-6 h-6 text-primary-foreground ml-1 fill-current" />
                       </button>
                     )}
                   </div>
 
-                  <h4 className="text-white font-black truncate mb-1 group-hover:text-green-500 transition-colors uppercase italic tracking-tight">
+                  <h4 className="text-foreground font-black truncate mb-1 group-hover:text-primary transition-colors uppercase italic tracking-tight">
                     {album.title}
                   </h4>
-                  <p className="text-[10px] text-zinc-500 truncate font-black uppercase tracking-widest">
+                  <p className="text-[10px] text-muted-foreground truncate font-black uppercase tracking-widest">
                     {album.artist?.name || 'Nghệ sĩ ẩn danh'}
                   </p>
                   
                   <div className="flex items-center gap-2 mt-4">
-                    <span className="text-[9px] bg-black/40 text-green-500 px-2 py-0.5 rounded-full font-black border border-white/5">
+                    <span className="text-[9px] bg-background/80 text-primary px-2 py-0.5 rounded-full font-black border border-border">
                       {album.releaseYear || '2026'}
                     </span>
-                    <span className="text-[8px] text-zinc-700 font-black uppercase tracking-[0.2em] italic">• Album</span>
+                    <span className="text-[8px] text-muted-foreground font-black uppercase tracking-[0.2em] italic">• Album</span>
                   </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-32 bg-zinc-900/10 rounded-3xl border border-dashed border-white/5">
-            <Music size={48} className="mb-4 text-zinc-800 animate-pulse opacity-20" />
-            <p className="text-zinc-700 font-black uppercase text-[10px] tracking-widest italic">Hệ thống Cloud chưa tìm thấy dữ liệu</p>
+          <div className="flex flex-col items-center justify-center py-32 bg-secondary/10 rounded-3xl border border-dashed border-border">
+            <Music size={48} className="mb-4 text-muted-foreground/30 animate-pulse" />
+            <p className="text-muted-foreground font-black uppercase text-[10px] tracking-widest italic">Hệ thống Cloud chưa tìm thấy dữ liệu</p>
           </div>
         )}
       </div>

@@ -5,27 +5,131 @@
   box-sizing: border-box;
 }
 
+* {
+  box-sizing: border-box;
+}
 
-/* Firefox */
+@layer base {
+  *, ::before, ::after {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+:root {
+  --font-size: 16px;
+  --background: #FDFAF6; /* Nền sáng */
+  --foreground: oklch(0.145 0 0); /* Chữ tối màu */
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #030213;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.0058 264.53);
+  --secondary-foreground: #030213;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: transparent;
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: #FDFAF6;
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: #030213;
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+/* 
+  ======================================================
+  2. GIAO DIỆN TỐI (DARK MODE)
+  ======================================================
+*/
+.dark {
+  --background: oklch(0.145 0 0); /* Nền tối */
+  --foreground: oklch(0.985 0 0); /* Chữ sáng */
+  --card: oklch(0.145 0 0); 
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+}
+
+/* Firefox - Đã thay màu trắng bằng biến theme */
 .progress-slider::-moz-range-thumb {
   height: 12px;
   width: 12px;
-  background-color: white;
+  background-color: var(--background);
+  border: 2px solid var(--primary);
   border-radius: 50%;
-  border: none;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
+/* Webkit (Chrome, Safari, Edge) - Đã thay màu trắng bằng biến theme */
 .progress-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   height: 12px;
   width: 12px;
-  background-color: white;
+  background-color: var(--background);
+  border: 2px solid var(--primary);
   border-radius: 50%;
-  border: none;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   cursor: pointer;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
 
+html, body, *, ::before, ::after {
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
 }
 
 /* Tùy chỉnh Toast để có thanh Progress Bar ở dưới */
@@ -33,7 +137,7 @@
   overflow: hidden !important;
   position: relative;
   /* Hiệu ứng mượt khi xuất hiện */
-  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease !important;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease, background-color 0.3s ease, color 0.3s ease !important;
 }
 
 /* Thanh tiến trình (Progress Bar) */
@@ -55,12 +159,8 @@
 }
 
 @keyframes toast-progress {
-  from {
-    transform: scaleX(1);
-  }
-  to {
-    transform: scaleX(0);
-  }
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
 }
 
 [data-sonner-toast][data-type="success"] {

@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Sidebar } from "./Sidebar";
+import { Sidebar } from "./sidebar";
 import { MusicPlayer } from "./MusicPlayer";
 import { getResourceUrl } from "@/utils/urlHelper";
 import { useAuthStore } from "@/store/useAuthStore";

@@ -65,30 +65,30 @@ export function ArtistsView() {
   }, [artists]);
 
   if (isLoading) return (
-    <div className="flex-1 flex items-center justify-center bg-black min-h-screen">
-      <Loader2 className="w-10 h-10 text-green-500 animate-spin" />
+    <div className="flex-1 flex items-center justify-center bg-background min-h-screen">
+      <Loader2 className="w-10 h-10 text-primary animate-spin" />
     </div>
   );
 
   return (
     // ✅ FIX: padding-bottom (pb-20) vừa đủ để không bị che bởi Music Player mà không dư thừa
-    <div className="w-full h-full overflow-y-auto overflow-x-hidden bg-black pb-20 custom-scrollbar select-none">
+    <div className="w-full h-full overflow-y-auto overflow-x-hidden bg-background pb-20 custom-scrollbar select-none">
       
       {/* Header & Search */}
       <div className="relative px-6 md:px-10 pt-16 pb-8 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-green-500/10 to-transparent pointer-events-none"></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-primary/10 to-transparent pointer-events-none"></div>
         <div className="relative z-10">
-          <h2 className="text-5xl md:text-6xl font-black text-white mb-2 tracking-tighter italic uppercase leading-none">Nghệ sĩ</h2>
-          <p className="text-zinc-500 font-black text-[10px] italic uppercase tracking-[0.4em] opacity-40">Scriptify Cloud Engine</p>
+          <h2 className="text-5xl md:text-6xl font-black text-foreground mb-2 tracking-tighter italic uppercase leading-none">Nghệ sĩ</h2>
+          <p className="text-muted-foreground font-black text-[10px] italic uppercase tracking-[0.4em] opacity-40">Scriptify Cloud Engine</p>
           
           <div className="relative mt-8 max-w-xl group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600 group-focus-within:text-green-500 transition-all" />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-all" />
             <input
               type="text"
               placeholder="Tìm nghệ sĩ..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-zinc-900/40 text-white rounded-2xl py-4 pl-16 pr-8 outline-none border border-white/5 focus:border-green-500/20 transition-all font-bold italic shadow-2xl"
+              className="w-full bg-secondary/40 text-foreground placeholder-muted-foreground rounded-2xl py-4 pl-16 pr-8 outline-none border border-border focus:border-primary/30 transition-all font-bold italic shadow-lg"
             />
           </div>
         </div>
@@ -100,38 +100,38 @@ export function ArtistsView() {
         {!searchQuery && spotlightArtists.length > 0 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             <div className="flex items-center gap-4">
-              <TrendingUp className="text-green-500" size={20} />
-              <h3 className="text-xl font-black text-white italic tracking-tighter uppercase">Spotlight</h3>
+              <TrendingUp className="text-primary" size={20} />
+              <h3 className="text-xl font-black text-foreground italic tracking-tighter uppercase">Spotlight</h3>
             </div>
 
             <div className="grid gap-8">
               {spotlightArtists.map((artist, idx) => (
-                <div key={artist.id} className="group relative bg-zinc-900/20 rounded-[2.5rem] border border-white/5 overflow-hidden hover:border-green-500/20 transition-all duration-500">
+                <div key={artist.id} className="group relative bg-secondary/20 rounded-[2.5rem] border border-border overflow-hidden hover:border-primary/20 transition-all duration-500">
                   <div className="relative z-10 flex flex-col xl:flex-row gap-10 p-8 xl:p-10 items-center">
                     <div className="relative shrink-0">
                        <img 
                           src={getResourceUrl(artist.imageUrl)} 
-                          className="w-40 h-40 md:w-52 md:h-52 rounded-full object-cover shadow-2xl ring-8 ring-black group-hover:ring-green-500/10 transition-all duration-700" 
+                          className="w-40 h-40 md:w-52 md:h-52 rounded-full object-cover shadow-2xl ring-8 ring-background group-hover:ring-primary/10 transition-all duration-700" 
                           onError={(e) => (e.currentTarget.src = "/assets/default-artist.png")}
                        />
-                       <div className="absolute -bottom-1 -right-1 bg-green-500 text-black font-black px-4 py-1 rounded-full text-[9px] italic shadow-2xl uppercase">TOP {idx + 1}</div>
+                       <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground font-black px-4 py-1 rounded-full text-[9px] italic shadow-lg uppercase">TOP {idx + 1}</div>
                     </div>
                     
                     <div className="flex-1 text-center xl:text-left min-w-0">
                         {/* ✅ FIX 1: Dùng whitespace-nowrap hoặc font-size responsive để không rớt 1 chữ cái */}
-                        <h4 className="text-4xl md:text-5xl lg:text-6xl font-black text-white uppercase italic tracking-tighter leading-[0.9] mb-4 overflow-hidden text-ellipsis whitespace-nowrap xl:whitespace-normal">
+                        <h4 className="text-4xl md:text-5xl lg:text-6xl font-black text-foreground uppercase italic tracking-tighter leading-[0.9] mb-4 overflow-hidden text-ellipsis whitespace-nowrap xl:whitespace-normal">
                           {artist.name}
                         </h4>
-                        <p className="text-zinc-600 text-xs font-bold uppercase tracking-widest leading-relaxed mb-6 opacity-70">
+                        <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest leading-relaxed mb-6 opacity-70">
                            {artist.bio || "Scriptify Spotlight Artist"}
                         </p>
                         
                         <div className="flex items-center justify-center xl:justify-start gap-4">
-                           <div className="bg-black/40 px-6 py-2.5 rounded-2xl border border-white/5">
-                              <span className="block text-green-500 text-xl font-black italic leading-none">{(artist.totalViews ?? 0).toLocaleString()}</span>
-                              <span className="text-[8px] text-zinc-600 font-black uppercase tracking-widest mt-1 block">GLOBAL VIEWS</span>
+                           <div className="bg-background/40 px-6 py-2.5 rounded-2xl border border-border">
+                              <span className="block text-primary text-xl font-black italic leading-none">{(artist.totalViews ?? 0).toLocaleString()}</span>
+                              <span className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mt-1 block">GLOBAL VIEWS</span>
                            </div>
-                           <button onClick={() => artist.topSongs?.[0] && handlePlayTrack(artist.topSongs[0].id)} className="bg-green-500 hover:bg-green-400 w-12 h-12 rounded-2xl text-black shadow-2xl flex items-center justify-center transition-transform active:scale-90">
+                           <button onClick={() => artist.topSongs?.[0] && handlePlayTrack(artist.topSongs[0].id)} className="bg-primary hover:bg-primary/90 w-12 h-12 rounded-2xl text-primary-foreground shadow-xl flex items-center justify-center transition-transform active:scale-90">
                              <Play size={24} fill="currentColor" className="ml-1" />
                            </button>
                         </div>
@@ -139,13 +139,13 @@ export function ArtistsView() {
 
                     <div className="w-full xl:w-[350px] grid gap-3 shrink-0">
                       {artist.topSongs?.slice(0, 2).map((track) => (
-                        <div key={track.id} onClick={() => handlePlayTrack(track.id)} className="flex items-center gap-4 p-4 bg-black/40 rounded-xl border border-white/5 hover:border-green-500/10 transition-all cursor-pointer group/item">
-                          <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 relative shadow-md">
+                        <div key={track.id} onClick={() => handlePlayTrack(track.id)} className="flex items-center gap-4 p-4 bg-background/40 rounded-xl border border-border hover:border-primary/20 transition-all cursor-pointer group/item">
+                          <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 relative shadow-sm border border-border">
                             <img src={getResourceUrl(track.imageUrl)} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-white font-black text-xs truncate uppercase italic tracking-tighter group-hover/item:text-green-400 transition-colors">{track.title}</p>
-                            <p className="text-[8px] text-zinc-600 font-bold uppercase mt-1 flex items-center gap-2"><Eye size={10}/> {track.viewCount?.toLocaleString()}</p>
+                            <p className="text-foreground font-black text-xs truncate uppercase italic tracking-tighter group-hover/item:text-primary transition-colors">{track.title}</p>
+                            <p className="text-[8px] text-muted-foreground font-bold uppercase mt-1 flex items-center gap-2"><Eye size={10}/> {track.viewCount?.toLocaleString()}</p>
                           </div>
                         </div>
                       ))}
@@ -159,10 +159,10 @@ export function ArtistsView() {
 
         {/* 🎨 2. ALL ARTISTS GRID */}
         <div className="space-y-8">
-          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+          <div className="flex items-center justify-between border-b border-border pb-4">
             <div className="flex items-center gap-3">
-               <Users size={20} className="text-green-500" />
-               <h3 className="text-xl font-black text-white italic tracking-tighter uppercase">Danh sách nghệ sĩ</h3>
+               <Users size={20} className="text-primary" />
+               <h3 className="text-xl font-black text-foreground italic tracking-tighter uppercase">Danh sách nghệ sĩ</h3>
             </div>
           </div>
           
@@ -171,29 +171,29 @@ export function ArtistsView() {
             {filteredArtists.map((artist) => (
               <div 
                 key={artist.id} 
-                className="group bg-zinc-900/30 p-6 rounded-[2rem] border border-white/5 hover:border-green-500/20 hover:bg-zinc-800/40 transition-all duration-500 text-center cursor-pointer shadow-xl relative overflow-hidden"
+                className="group bg-secondary/30 p-6 rounded-[2rem] border border-border hover:border-primary/20 hover:bg-accent/40 transition-all duration-500 text-center cursor-pointer shadow-md relative overflow-hidden"
               >
-                <div className="relative mx-auto mb-6 aspect-square w-full max-w-[150px] rounded-full overflow-hidden ring-8 ring-zinc-950 group-hover:ring-green-500/20 transition-all duration-700 shadow-2xl">
+                <div className="relative mx-auto mb-6 aspect-square w-full max-w-[150px] rounded-full overflow-hidden ring-8 ring-background group-hover:ring-primary/20 transition-all duration-700 shadow-xl">
                   <img 
                     src={getResourceUrl(artist.imageUrl)} 
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
                     onError={(e) => (e.currentTarget.src = "/assets/default-artist.png")}
                   />
-                  <div className="absolute inset-0 bg-green-500/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                    <button onClick={(e) => { e.stopPropagation(); artist.topSongs?.[0] && handlePlayTrack(artist.topSongs[0].id); }} className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-black shadow-2xl hover:scale-110 transition-transform">
+                  <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                    <button onClick={(e) => { e.stopPropagation(); artist.topSongs?.[0] && handlePlayTrack(artist.topSongs[0].id); }} className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground shadow-xl hover:scale-110 transition-transform">
                       <Play size={24} fill="currentColor" className="ml-1" />
                     </button>
                   </div>
                 </div>
 
-                <h4 className="text-white font-black text-lg uppercase italic tracking-tighter group-hover:text-green-500 transition-colors leading-tight mb-4 min-h-[2.5rem] flex items-center justify-center">
+                <h4 className="text-foreground font-black text-lg uppercase italic tracking-tighter group-hover:text-primary transition-colors leading-tight mb-4 min-h-[2.5rem] flex items-center justify-center">
                   {artist.name}
                 </h4>
 
-                <div className="flex items-center justify-center gap-4 text-[8px] text-zinc-500 font-black uppercase tracking-widest italic bg-black/40 py-2.5 rounded-2xl border border-white/5 group-hover:border-green-500/10 transition-all">
-                  <span className="flex items-center gap-1.5"><Music2 size={10} className="text-green-500"/> {artist.songCount ?? 0}</span>
-                  <div className="w-[1px] h-3 bg-zinc-800"></div>
-                  <span className="flex items-center gap-1.5"><Eye size={10} className="text-blue-400"/> {(artist.totalViews ?? 0).toLocaleString()}</span>
+                <div className="flex items-center justify-center gap-4 text-[8px] text-muted-foreground font-black uppercase tracking-widest italic bg-background/40 py-2.5 rounded-2xl border border-border group-hover:border-primary/20 transition-all">
+                  <span className="flex items-center gap-1.5"><Music2 size={10} className="text-primary"/> {artist.songCount ?? 0}</span>
+                  <div className="w-[1px] h-3 bg-border"></div>
+                  <span className="flex items-center gap-1.5"><Eye size={10} className="text-foreground/70"/> {(artist.totalViews ?? 0).toLocaleString()}</span>
                 </div>
               </div>
             ))}

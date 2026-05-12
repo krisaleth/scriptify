@@ -33,16 +33,16 @@ export function MusicPlayer(props: MusicPlayerProps) {
 
   // Logic chọn Icon Volume mượt mà
   const getVolumeIcon = () => {
-    if (volume === 0) return <VolumeX size={18} className="text-red-500 transition-colors" />;
-    if (volume < 0.5) return <Volume1 size={18} className="text-zinc-400 group-hover/volume:text-white transition-colors" />;
-    return <Volume2 size={18} className="text-zinc-400 group-hover/volume:text-white transition-colors" />;
+    if (volume === 0) return <VolumeX size={18} className="text-destructive transition-colors" />;
+    if (volume < 0.5) return <Volume1 size={18} className="text-muted-foreground group-hover/volume:text-foreground transition-colors" />;
+    return <Volume2 size={18} className="text-muted-foreground group-hover/volume:text-foreground transition-colors" />;
   };
 
   return (
-    <footer className="h-24 bg-black/95 backdrop-blur-md border-t border-white/5 px-6 flex items-center justify-between z-50">
+    <footer className="h-24 bg-background/95 backdrop-blur-md border-t border-border px-6 flex items-center justify-between z-50">
       {/* TRÁI: THÔNG TIN BÀI HÁT ĐANG PHÁT */}
       <div className="flex items-center gap-4 w-[30%] min-w-0">
-        <div className="w-14 h-14 bg-zinc-900 rounded-xl overflow-hidden flex-shrink-0 border border-white/10 shadow-2xl relative group">
+        <div className="w-14 h-14 bg-secondary rounded-xl overflow-hidden flex-shrink-0 border border-border shadow-lg relative group">
           {hasActiveSong ? (
             <img 
               src={getResourceUrl(currentSong.imageUrl)} 
@@ -54,16 +54,16 @@ export function MusicPlayer(props: MusicPlayerProps) {
               onError={(e) => (e.currentTarget.src = "/assets/default-cover.png")}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-zinc-800 bg-zinc-950">
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground/40 bg-secondary/50">
               <Music2 className="animate-pulse" />
             </div>
           )}
         </div>
         <div className="min-w-0">
-          <div className="text-sm font-black truncate uppercase italic tracking-tighter text-white hover:text-green-500 transition-colors cursor-default">
+          <div className="text-sm font-black truncate uppercase italic tracking-tighter text-foreground hover:text-primary transition-colors cursor-default">
             {currentSong?.title || "Scriptify Sẵn sàng"}
           </div>
-          <div className="text-[10px] text-zinc-500 truncate font-bold uppercase tracking-[0.2em] mt-0.5 opacity-70">
+          <div className="text-[10px] text-muted-foreground truncate font-bold uppercase tracking-[0.2em] mt-0.5 opacity-70">
             {currentSong?.artist?.name || "Chọn giai điệu của bạn"}
           </div>
         </div>
@@ -72,31 +72,31 @@ export function MusicPlayer(props: MusicPlayerProps) {
       {/* GIỮA: TRUNG TÂM ĐIỀU KHIỂN */}
       <div className={cn(
         "flex flex-col items-center flex-1 max-w-[600px] gap-3 transition-all duration-500",
-        !hasActiveSong ? 'opacity-10 pointer-events-none scale-95' : 'opacity-100'
+        !hasActiveSong ? 'opacity-30 pointer-events-none scale-95' : 'opacity-100'
       )}>
         <div className="flex items-center gap-8">
           <button 
             onClick={props.onToggleShuffle} 
             className={cn(
               "transition-all hover:scale-110 active:scale-90 p-1 rounded-full", 
-              isShuffle ? 'text-green-500 drop-shadow-[0_0_10px_rgba(34,197,94,0.6)]' : 'text-zinc-500 hover:text-zinc-300'
+              isShuffle ? 'text-primary drop-shadow-md' : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <Shuffle size={16}/>
           </button>
           
-          <button onClick={props.onPrevious} className="text-zinc-400 hover:text-white transition-all hover:scale-125 active:scale-90">
+          <button onClick={props.onPrevious} className="text-muted-foreground hover:text-foreground transition-all hover:scale-125 active:scale-90">
             <SkipBack size={22} fill="currentColor"/>
           </button>
           
           <button 
             onClick={props.onPlayPause} 
-            className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center hover:scale-110 transition-all active:scale-90 shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+            className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:scale-110 transition-all active:scale-90 shadow-lg hover:shadow-primary/40"
           >
-            {isPlaying ? <Pause size={24} fill="black" /> : <Play size={24} fill="black" className="ml-1" />}
+            {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
           </button>
           
-          <button onClick={props.onNext} className="text-zinc-400 hover:text-white transition-all hover:scale-125 active:scale-90">
+          <button onClick={props.onNext} className="text-muted-foreground hover:text-foreground transition-all hover:scale-125 active:scale-90">
             <SkipForward size={22} fill="currentColor"/>
           </button>
           
@@ -104,7 +104,7 @@ export function MusicPlayer(props: MusicPlayerProps) {
             onClick={props.onToggleRepeat} 
             className={cn(
               "transition-all hover:scale-110 active:scale-90 p-1 rounded-full", 
-              isRepeat ? 'text-green-500 drop-shadow-[0_0_10px_rgba(34,197,94,0.6)]' : 'text-zinc-500 hover:text-zinc-300'
+              isRepeat ? 'text-primary drop-shadow-md' : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <Repeat size={16}/>
@@ -113,7 +113,7 @@ export function MusicPlayer(props: MusicPlayerProps) {
 
         {/* Thanh Thời gian (Progress) */}
         <div className="flex items-center gap-3 w-full group/progress">
-          <span className="text-[9px] text-zinc-500 font-black w-10 text-right tabular-nums tracking-tighter opacity-100 transition-opacity">
+          <span className="text-[9px] text-muted-foreground font-black w-10 text-right tabular-nums tracking-tighter opacity-100 transition-opacity">
             {formatTime(currentTime)}
           </span>
           <Slider
@@ -123,7 +123,7 @@ export function MusicPlayer(props: MusicPlayerProps) {
             onValueChange={(val) => props.onSeek(val[0])}
             className="flex-1 cursor-pointer"
           />
-          <span className="text-[9px] text-zinc-500 font-black w-10 tabular-nums tracking-tighter">
+          <span className="text-[9px] text-muted-foreground font-black w-10 tabular-nums tracking-tighter">
             {formatTime(duration)}
           </span>
         </div>
@@ -133,7 +133,7 @@ export function MusicPlayer(props: MusicPlayerProps) {
       <div className="flex items-center justify-end gap-3 w-[30%] group/volume">
         <button 
           onClick={() => props.onVolumeChange(volume === 0 ? 0.7 : 0)} 
-          className="p-2 hover:bg-white/5 rounded-full transition-colors"
+          className="p-2 hover:bg-accent rounded-full transition-colors"
         >
           {getVolumeIcon()}
         </button>
