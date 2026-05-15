@@ -86,11 +86,12 @@ export default function ProfilePage() {
 
   return (
     <>
-      <div className="min-h-screen relative overflow-hidden bg-black selection:bg-[#1DB954]/30 font-sans">
+      {/* Đã gỡ bg-black, thay bằng bg-background, đồng bộ màu kéo bôi đen */}
+      <div className="min-h-screen relative overflow-hidden bg-background selection:bg-primary/30 font-sans transition-colors duration-300">
         
-        {/* Background Gradients */}
-        <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full opacity-20 blur-[100px]" style={{ background: "radial-gradient(circle, #1DB954 0%, transparent 70%)" }}></div>
-        <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full opacity-10 blur-[120px]" style={{ background: "radial-gradient(circle, #1DB954 0%, transparent 70%)" }}></div>
+        {/* Background Gradients: Đổi màu xanh cứng sang CSS Variable màu của Theme */}
+        <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full opacity-10 blur-[100px] bg-primary"></div>
+        <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full opacity-[0.05] blur-[120px] bg-primary"></div>
 
         <div className="relative z-10 max-w-6xl mx-auto px-8 py-16">
           
@@ -102,7 +103,8 @@ export default function ProfilePage() {
             <div className="relative group">
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl relative z-10 bg-zinc-900 transition-all duration-500 group-hover:border-[#1DB954]/50"
+                // Đổi bg-zinc-900 -> bg-secondary, hover viền xanh cứng -> hover:border-primary/50
+                className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden border-2 border-border shadow-2xl relative z-10 bg-secondary transition-all duration-500 group-hover:border-primary/50"
               >
                 <img 
                   src={getResourceUrl(user.avatarUrl)} 
@@ -111,28 +113,29 @@ export default function ProfilePage() {
                   onError={(e) => (e.currentTarget.src = '/assets/default-avatar.png')} 
                 />
               </motion.div>
-              <div className="absolute inset-0 -m-2 bg-[#1DB954]/15 blur-3xl rounded-full -z-0 opacity-50 transition-opacity group-hover:opacity-80"></div>
+              {/* Bóng mờ đằng sau Avatar tự động đổi màu theo Primary */}
+              <div className="absolute inset-0 -m-2 bg-primary/15 blur-3xl rounded-full -z-0 opacity-50 transition-opacity group-hover:opacity-80"></div>
             </div>
 
             <div className="flex-1 pb-2">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="flex items-center gap-3 justify-center md:justify-start mb-4">
-                <span className="bg-[#1DB954] text-black text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
+                <span className="bg-primary text-primary-foreground text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
                   {user.role}
                 </span>
                 <div className="flex gap-2">
-                  <button onClick={() => setIsEditModalOpen(true)} className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-[#1DB954]/50 hover:bg-[#1DB954]/10 transition-all text-zinc-500 hover:text-white"><Settings size={14} /></button>
-                  <button onClick={() => setIsPasswordModalOpen(true)} className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-[#1DB954]/50 hover:bg-[#1DB954]/10 transition-all text-zinc-500 hover:text-white"><ShieldCheck size={14} /></button>
+                  <button onClick={() => setIsEditModalOpen(true)} className="p-1.5 rounded-lg bg-secondary/30 border border-border hover:border-primary/50 hover:bg-primary/10 transition-all text-muted-foreground hover:text-foreground"><Settings size={14} /></button>
+                  <button onClick={() => setIsPasswordModalOpen(true)} className="p-1.5 rounded-lg bg-secondary/30 border border-border hover:border-primary/50 hover:bg-primary/10 transition-all text-muted-foreground hover:text-foreground"><ShieldCheck size={14} /></button>
                 </div>
               </motion.div>
 
-              <h1 className="text-5xl md:text-7xl font-black text-white leading-[0.8] tracking-tighter mb-6 uppercase italic">
+              <h1 className="text-5xl md:text-7xl font-black text-foreground leading-[0.8] tracking-tighter mb-6 uppercase italic">
                 {user.nickname}
               </h1>
               
-              <div className="flex flex-wrap items-center gap-5 text-white/60 justify-center md:justify-start font-bold text-[10px] uppercase tracking-widest italic">
-                <div className="flex items-center gap-2 border-r border-white/10 pr-5"><Mail size={12} className="text-[#1DB954]" /> {user.email}</div>
-                <div className="flex items-center gap-2 border-r border-white/10 pr-5"><Music2 size={12} className="text-[#1DB954]" /> {playlists.length} Playlists</div>
-                <div className="flex items-center gap-2"><Heart size={12} className="text-[#1DB954]" /> {likedSongs.length} Favorites</div>
+              <div className="flex flex-wrap items-center gap-5 text-muted-foreground justify-center md:justify-start font-bold text-[10px] uppercase tracking-widest italic">
+                <div className="flex items-center gap-2 border-r border-border pr-5"><Mail size={12} className="text-primary" /> {user.email}</div>
+                <div className="flex items-center gap-2 border-r border-border pr-5"><Music2 size={12} className="text-primary" /> {playlists.length} Playlists</div>
+                <div className="flex items-center gap-2"><Heart size={12} className="text-primary" /> {likedSongs.length} Favorites</div>
               </div>
             </div>
           </motion.div>
@@ -141,19 +144,19 @@ export default function ProfilePage() {
           <section className="mb-20">
             <div className="flex items-center justify-between mb-8 group/title">
                <div className="flex items-center gap-4">
-                  <h2 className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em] italic group-hover/title:text-[#1DB954] transition-colors">Playlists</h2>
+                  <h2 className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.4em] italic group-hover/title:text-primary transition-colors">Playlists</h2>
                   <motion.button
                     whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:border-[#1DB954]/50 hover:bg-[#1DB954]/10 transition-all group/btn shadow-lg"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/30 border border-border hover:border-primary/50 hover:bg-primary/10 transition-all group/btn shadow-sm"
                   >
-                    <Plus size={12} className="text-[#1DB954] group-hover/btn:rotate-90 transition-transform duration-300" />
-                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400 group-hover/btn:text-white">New</span>
+                    <Plus size={12} className="text-primary group-hover/btn:rotate-90 transition-transform duration-300" />
+                    <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground group-hover/btn:text-foreground">New</span>
                   </motion.button>
                </div>
               <div className="flex gap-2">
-                <button onClick={() => scrollPlaylists('left')} disabled={!canScrollLeft} className={`p-2 rounded-full border border-white/5 transition-all ${canScrollLeft ? 'text-[#1DB954] hover:bg-white/5' : 'text-white/5 cursor-not-allowed'}`}><ChevronLeft size={18} /></button>
-                <button onClick={() => scrollPlaylists('right')} disabled={!canScrollRight} className={`p-2 rounded-full border border-white/5 transition-all ${canScrollRight ? 'text-[#1DB954] hover:bg-white/5' : 'text-white/5 cursor-not-allowed'}`}><ChevronRight size={18} /></button>
+                <button onClick={() => scrollPlaylists('left')} disabled={!canScrollLeft} className={`p-2 rounded-full border border-border transition-all ${canScrollLeft ? 'text-primary hover:bg-secondary' : 'text-muted-foreground/30 cursor-not-allowed'}`}><ChevronLeft size={18} /></button>
+                <button onClick={() => scrollPlaylists('right')} disabled={!canScrollRight} className={`p-2 rounded-full border border-border transition-all ${canScrollRight ? 'text-primary hover:bg-secondary' : 'text-muted-foreground/30 cursor-not-allowed'}`}><ChevronRight size={18} /></button>
               </div>
             </div>
 
@@ -169,24 +172,24 @@ export default function ProfilePage() {
                     whileHover={{ y: -5 }} 
                     className="w-[180px] min-w-[180px] shrink-0 group cursor-pointer relative"
                   >
-                    <div className="aspect-square rounded-2xl overflow-hidden mb-3 bg-zinc-900 border border-white/5 relative shadow-xl group-hover:border-[#1DB954]/30 transition-all">
+                    <div className="aspect-square rounded-2xl overflow-hidden mb-3 bg-secondary border border-border relative shadow-lg group-hover:border-primary/30 transition-all">
                       <img src={getResourceUrl(pl.thumbnailUrl)} className="w-full h-full object-cover grayscale-[0.1] group-hover:grayscale-0 transition-all duration-700" alt={pl.name} />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                        <div className="w-10 h-10 bg-[#1DB954] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
-                          <Play fill="black" size={16} className="ml-1" />
+                      <div className="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
+                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                          <Play fill="currentColor" size={16} className="ml-1 text-primary-foreground" />
                         </div>
-                        <button onClick={(e) => handleDeletePlaylist(e, pl.id, pl.name)} className="w-8 h-8 bg-red-500/20 backdrop-blur-md border border-red-500/50 rounded-full flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-xl">
+                        <button onClick={(e) => handleDeletePlaylist(e, pl.id, pl.name)} className="w-8 h-8 bg-destructive/20 backdrop-blur-md border border-destructive/50 rounded-full flex items-center justify-center text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all shadow-md">
                           <Trash2 size={14} />
                         </button>
                       </div>
-                      <div className="absolute top-3 right-3 p-1.5 rounded-lg backdrop-blur-xl bg-black/60 border border-white/10">
-                        {pl.isPublic ? <Globe size={12} className="text-[#1DB954]" /> : <Lock size={12} className="text-zinc-400" />}
+                      <div className="absolute top-3 right-3 p-1.5 rounded-lg backdrop-blur-xl bg-background/60 border border-border">
+                        {pl.isPublic ? <Globe size={12} className="text-primary" /> : <Lock size={12} className="text-muted-foreground" />}
                       </div>
                     </div>
-                    <h3 className="text-white text-[11px] font-bold uppercase italic tracking-wider truncate group-hover:text-[#1DB954] transition-colors px-1">{pl.name}</h3>
+                    <h3 className="text-foreground text-[11px] font-bold uppercase italic tracking-wider truncate group-hover:text-primary transition-colors px-1">{pl.name}</h3>
                   </motion.div>
                 )) : (
-                  <div className="w-full h-32 flex items-center justify-center border border-dashed border-white/5 rounded-2xl text-zinc-700 font-black uppercase italic tracking-widest text-[9px]">
+                  <div className="w-full h-32 flex items-center justify-center border border-dashed border-border rounded-2xl text-muted-foreground/50 font-black uppercase italic tracking-widest text-[9px]">
                     Vault is empty
                   </div>
                 )}
@@ -197,20 +200,20 @@ export default function ProfilePage() {
           {/* 🟢 Heart Beats Section */}
           <section>
             <div className="flex items-center gap-4 mb-8 group/title">
-               <h2 className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em] italic group-hover/title:text-[#1DB954] transition-colors">Heart Beats</h2>
-               <div className="h-[1px] w-16 bg-white/5 group-hover/title:bg-[#1DB954]/20 transition-colors"></div>
+               <h2 className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.4em] italic group-hover/title:text-primary transition-colors">Heart Beats</h2>
+               <div className="h-[1px] w-16 bg-border group-hover/title:bg-primary/20 transition-colors"></div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {likedSongs.slice(0, 6).map((song, i) => (
-                <motion.div key={song.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 * i }} className="flex items-center gap-4 p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 transition-all group shadow-sm">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-900 border border-white/5 shrink-0">
+                <motion.div key={song.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 * i }} className="flex items-center gap-4 p-2.5 rounded-xl bg-secondary/20 hover:bg-accent border border-border transition-all group shadow-sm">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary border border-border shrink-0">
                     <img src={getResourceUrl(song.imageUrl)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-zinc-100 font-bold truncate text-[13px] uppercase italic tracking-tight">{song.title}</h4>
-                    <p className="text-[#1DB954] text-[9px] font-black uppercase tracking-widest truncate mt-0.5 opacity-70">{song.artist?.name}</p>
+                    <h4 className="text-foreground font-bold truncate text-[13px] uppercase italic tracking-tight">{song.title}</h4>
+                    <p className="text-primary text-[9px] font-black uppercase tracking-widest truncate mt-0.5 opacity-70">{song.artist?.name}</p>
                   </div>
-                  <Heart size={12} className="text-[#1DB954] fill-[#1DB954] mr-3" />
+                  <Heart size={12} className="text-primary fill-primary mr-3" />
                 </motion.div>
               ))}
             </div>
