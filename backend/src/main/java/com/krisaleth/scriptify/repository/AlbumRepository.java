@@ -13,7 +13,7 @@ import java.util.List;
 @Repository
 public interface AlbumRepository extends JpaRepository<tktAlbum, Long> {
 
-    List<tktAlbum> findByTktArtist_TktIdOrderByTktReleaseYearDesc(Long artistId);
+    Page<tktAlbum> findByTktArtist_TktIdOrderByTktReleaseYearDesc(Long artistId, Pageable pageable);
 
     List<tktAlbum> findTop3ByTktArtist_TktIdOrderByTktReleaseYearDesc(Long artistId);
 

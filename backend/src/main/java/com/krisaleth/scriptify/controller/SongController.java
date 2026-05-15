@@ -30,7 +30,7 @@ public class SongController {
 
     @GetMapping("/{id}/play")
     public ResponseEntity<Void> playSong(@PathVariable Long id) {
-        tktSong song = songService.getSong(id);
+        SongResponse song = songService.getSong(id);
         songService.incrementViewCount(id);
 
         String cloudUrl = publicUrl + "/" + song.getFilePath();
@@ -45,7 +45,7 @@ public class SongController {
             @RequestParam(required = false) String query,
             @PageableDefault(size = 20, sort = "tktCreatedAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Page<tktSong> songPage;
+        Page<SongResponse> songPage;
 
         if (query != null && !query.isBlank()) {
             songPage = songService.searchSongs(query, pageable);
@@ -53,39 +53,23 @@ public class SongController {
             songPage = songService.getAllSongs(pageable);
         }
 
-        Page<SongResponse> responsePage = songPage.map(song -> SongResponse.builder()
-                .id(song.getId())
-                .title(song.getTitle())
-                .duration(song.getDuration())
-                .filePath(song.getFilePath())
-                .imageUrl(song.getImageUrl())
-                .viewCount(song.getViewCount())
-                .likeCount(song.getLikeCount())
-                .createdAt(song.getCreatedAt())
-                .artist(SongResponse.ArtistShortResponse.builder()
-                        .id(song.getArtist().getId())
-                        .name(song.getArtist().getName())
-                        .build())
-                .albumTitle(song.getAlbum() != null ? song.getAlbum().getTitle() : null)
-                .build());
-
-        return ResponseEntity.ok(responsePage);
+        return ResponseEntity.ok(songPage);
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<tktSong> createSong(
+    public ResponseEntity<SongResponse> createSong(
             @RequestParam("title") String title,
             @RequestParam("artistId") Long artistId,
             @RequestParam(value = "albumId", required = false) Long albumId,
             @RequestParam("songFile") MultipartFile musicFile,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
 
-        tktSong savedSong = songService.createSong(title, artistId, albumId, musicFile, imageFile);
+        SongResponse savedSong = songService.createSong(title, artistId, albumId, musicFile, imageFile);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedSong);
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<tktSong> updateSong(
+    public ResponseEntity<SongResponse> updateSong(
             @PathVariable Long id,
             @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "artistId", required = false) Long artistId,
@@ -93,12 +77,12 @@ public class SongController {
             @RequestParam(value = "songFile", required = false) MultipartFile musicFile,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
 
-        tktSong updatedSong = songService.updateSong(id, title, artistId, albumId, musicFile, imageFile);
+        SongResponse updatedSong = songService.updateSong(id, title, artistId, albumId, musicFile, imageFile);
         return ResponseEntity.ok(updatedSong);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<tktSong> getSong(@PathVariable Long id) {
+    public ResponseEntity<SongResponse> getSong(@PathVariable Long id) {
         return ResponseEntity.ok(songService.getSong(id));
     }
 

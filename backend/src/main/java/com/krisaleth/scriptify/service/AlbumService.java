@@ -4,6 +4,7 @@ import com.krisaleth.scriptify.entity.tktAlbum;
 import com.krisaleth.scriptify.entity.tktArtist;
 import com.krisaleth.scriptify.repository.AlbumRepository;
 import com.krisaleth.scriptify.repository.ArtistRepository;
+import com.krisaleth.scriptify.response.AlbumResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -37,7 +38,7 @@ public class AlbumService {
     private String bucketName;
 
     private String uploadImageToR2(MultipartFile file) throws IOException {
-        if (file == null || file.isEmpty()) return "images/default-album.png";
+        if (file == null || file.isEmpty()) return "assets/default-album.png";
 
         String originalName = file.getOriginalFilename();
         String extension = "";
@@ -45,7 +46,7 @@ public class AlbumService {
             extension = originalName.substring(originalName.lastIndexOf("."));
         }
 
-        String fileName = "images/" + UUID.randomUUID().toString() + extension;
+        String fileName = "albums/" + UUID.randomUUID().toString() + extension;
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
@@ -72,8 +73,44 @@ public class AlbumService {
         }
     }
 
+    private AlbumResponse convertToAlbumResponse(tktAlbum album) {
+        if (album == null) return null;
+
+        // 1. Map thông tin Artist (Chỉ lấy ID và Name để chặn loop)
+        AlbumResponse.ArtistShortResponse artistShort = null;
+        if (album.getArtist() != null) {
+            artistShort = AlbumResponse.ArtistShortResponse.builder()
+                    .id(album.getArtist().getId())
+                    .name(album.getArtist().getName())
+                    .build();
+        }
+
+        // 2. Map danh sách bài hát trong Album (nếu có)
+        List<AlbumResponse.SongShortResponse> songShorts = (album.getSongs() != null)
+                ? album.getSongs().stream()
+                  .map(song -> AlbumResponse.SongShortResponse.builder()
+                               .id(song.getId())
+                               .title(song.getTitle())
+                               .duration(song.getDuration())
+                               .viewCount(song.getViewCount())
+                               .build())
+                  .toList()
+                : java.util.Collections.emptyList();
+
+        // 3. Build Response cuối cùng
+        return AlbumResponse.builder()
+                .id(album.getId())
+                .title(album.getTitle())
+                .releaseYear(album.getReleaseYear())
+                .coverImageUrl(album.getCoverImageUrl())
+                .artist(artistShort)
+                .songCount(songShorts.size())
+                .songs(songShorts)
+                .build();
+    }
+
     @Transactional
-    public tktAlbum create(String title, Integer releaseYear, Long artistId, MultipartFile imageFile) {
+    public AlbumResponse create(String title, Integer releaseYear, Long artistId, MultipartFile imageFile) {
         if (title == null || title.isBlank())
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tiêu đề không được trống");
 
@@ -87,15 +124,15 @@ public class AlbumService {
             album.setReleaseYear(releaseYear);
             album.setArtist(artist);
             album.setCoverImageUrl(savedPath);
-            return albumRepository.save(album);
+            return convertToAlbumResponse(albumRepository.save(album));
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi Cloud Storage");
         }
     }
 
     @Transactional
-    public tktAlbum update(Long id, String title, Integer releaseYear, Long artistId, MultipartFile imageFile) {
-        tktAlbum existing = getById(id);
+    public AlbumResponse update(Long id, String title, Integer releaseYear, Long artistId, MultipartFile imageFile) {
+        tktAlbum existing = albumRepository.findById(id).orElseThrow();
 
         if (title != null) existing.setTitle(title);
         if (releaseYear != null) existing.setReleaseYear(releaseYear);
@@ -116,12 +153,12 @@ public class AlbumService {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi cập nhật ảnh");
             }
         }
-        return albumRepository.save(existing);
+        return convertToAlbumResponse(albumRepository.save(existing));
     }
 
     @Transactional
     public void delete(Long id) {
-        tktAlbum album = getById(id);
+        tktAlbum album = albumRepository.findById(id).orElseThrow();
         String imagePath = album.getCoverImageUrl();
         try {
             albumRepository.delete(album);
@@ -132,34 +169,30 @@ public class AlbumService {
     }
 
     @Transactional(readOnly = true)
-    public List<tktAlbum> findAllByArtistId(Long artistId) {
+    public Page<AlbumResponse> findAllByArtistId(Long artistId) {
         if (!artistRepository.existsById(artistId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Nghệ sĩ không tồn tại");
         }
-        return albumRepository.findByTktArtist_TktIdOrderByTktReleaseYearDesc(artistId);
+        Pageable pageable = PageRequest.of(0, 20);
+        return albumRepository.findByTktArtist_TktIdOrderByTktReleaseYearDesc(artistId, pageable).map(this::convertToAlbumResponse);
     }
 
     @Transactional(readOnly = true)
-    public tktAlbum getById(Long id) {
-        return albumRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Album không tồn tại"));
+    public AlbumResponse getById(Long id) {
+        return convertToAlbumResponse(albumRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Album không tồn tại")));
     }
 
     @Transactional(readOnly = true)
-    public Page<tktAlbum> search(String title, int page, int size) {
+    public Page<AlbumResponse> search(String title, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "tktId"));
         return (title != null && !title.isBlank())
-                ? albumRepository.findByTktTitleContainingIgnoreCase(title, pageable)
-                : albumRepository.findAll(pageable);
+                ? albumRepository.findByTktTitleContainingIgnoreCase(title, pageable).map(this::convertToAlbumResponse)
+                : albumRepository.findAll(pageable).map(this::convertToAlbumResponse);
     }
 
     @Transactional(readOnly = true)
-    public Page<tktAlbum> getAllPaginated(Pageable pageable) {
-        return albumRepository.findAll(pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public List<tktAlbum> getAll() {
-        return albumRepository.findAll(Sort.by(Sort.Direction.ASC, "tktTitle"));
+    public List<AlbumResponse> getAll() {
+        return albumRepository.findAll(Sort.by(Sort.Direction.ASC, "tktTitle")).stream().map(this::convertToAlbumResponse).toList();
     }
 }

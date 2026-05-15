@@ -1,6 +1,7 @@
 package com.krisaleth.scriptify.controller;
 
 import com.krisaleth.scriptify.entity.tktAlbum;
+import com.krisaleth.scriptify.response.AlbumResponse;
 import com.krisaleth.scriptify.service.AlbumService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,7 +22,7 @@ public class AlbumController {
     private final AlbumService albumService;
 
     @GetMapping
-    public ResponseEntity<Page<tktAlbum>> searchAlbums(
+    public ResponseEntity<Page<AlbumResponse>> searchAlbums(
             @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
@@ -29,17 +30,17 @@ public class AlbumController {
     }
 
     @GetMapping("/all-list")
-    public ResponseEntity<List<tktAlbum>> getAllAlbumsList() {
+    public ResponseEntity<List<AlbumResponse>> getAllAlbumsList() {
         return ResponseEntity.ok(albumService.getAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<tktAlbum> getAlbumById(@PathVariable Long id) {
+    public ResponseEntity<AlbumResponse> getAlbumById(@PathVariable Long id) {
         return ResponseEntity.ok(albumService.getById(id));
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<tktAlbum> createAlbum(
+    public ResponseEntity<AlbumResponse> createAlbum(
             @RequestParam("title") String title,
             @RequestParam(value = "releaseYear", required = false) Integer releaseYear,
             @RequestParam("artistId") Long artistId,
@@ -49,7 +50,7 @@ public class AlbumController {
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<tktAlbum> updateAlbum(
+    public ResponseEntity<AlbumResponse> updateAlbum(
             @PathVariable Long id,
             @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "releaseYear", required = false) Integer releaseYear,
@@ -65,7 +66,7 @@ public class AlbumController {
     }
 
     @GetMapping("/artist/{artistId}")
-    public ResponseEntity<List<tktAlbum>> getAlbumsByArtist(@PathVariable Long artistId) {
+    public ResponseEntity<Page<AlbumResponse>> getAlbumsByArtist(@PathVariable Long artistId) {
         return ResponseEntity.ok(albumService.findAllByArtistId(artistId));
     }
 }

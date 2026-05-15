@@ -255,7 +255,7 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
               disabled={loading} 
               className="w-full bg-green-500 text-black font-black py-8 rounded-[1.5rem] hover:bg-green-400 transition-all active:scale-95 shadow-2xl shadow-green-500/10 text-base italic tracking-tighter"
             >
-              {loading ? <Loader2 className="animate-spin w-7 h-7" /> : "XÁC NHẬN CẬP NHẬT CLOUD"}
+              {loading ? <Loader2 className="animate-spin w-7 h-7" /> : "XÁC NHẬN"}
             </Button>
           </DialogFooter>
         </form>

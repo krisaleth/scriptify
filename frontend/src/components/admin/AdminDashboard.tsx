@@ -4,15 +4,15 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import Swal from 'sweetalert2';
 
-// Import các components con
 import { SongSection } from "./sections/SongSection";
 import { ArtistSection } from "./sections/ArtistSection";
 import { AlbumSection } from "./sections/AlbumSection";
 import { UserSection } from "./sections/UserSection";
 import { EntityDialog } from "./sections/EntityDialog";
 import { AdminSearchControl } from "./sections/AdminSearchControl";
-import { apiRequest } from "@/utils/apiClient";
+import { apiRequest } from "@/utils/apiClient"; 
 
 const API_BASE = "/api";
 
@@ -37,17 +37,43 @@ export function AdminDashboard() {
   }, [mainTab]);
 
   const handleDelete = async (path: string, id: number) => {
-    if (!window.confirm("Bạn chắc chắn muốn xoá mục này chứ? Thao tác này không thể hoàn tác!")) return;
-    
-    try {
-      const res = await apiRequest(`${API_BASE}/${path}/${id}`, {
-        method: "DELETE",
-      });
+    const result = await Swal.fire({
+      title: "Bạn chắc chắn chứ?",
+      text: "Thao tác này sẽ xoá vĩnh viễn dữ liệu và không thể hoàn tác!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33", 
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Vâng, xoá nó!",
+      cancelButtonText: "Huỷ bỏ",
+      background: "#1f2937", 
+      color: "#fff"
+    });
 
-      toast.success("Xoá thành công khỏi Cloud!");
-      triggerRefresh();
-    } catch (err: any) {
-      toast.error(err.message || "Không thể xoá. Hãy check ràng buộc dữ liệu!");
+    if (result.isConfirmed) {
+      try {
+        const res = await fetch(`${API_BASE}/${path}/${id}`, {
+          method: "DELETE",
+        });
+
+        if (res.ok) {
+          Swal.fire({
+            title: "Đã xoá!",
+            text: "Mục này đã bay màu khỏi hệ thống.",
+            icon: "success",
+            timer: 1500,
+            showConfirmButton: false,
+            background: "#1f2937",
+            color: "#fff"
+          });
+          triggerRefresh();
+        } else {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.message || "Lỗi khi xoá");
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Không thể xoá. Kiểm tra lại database sếp ơi!");
+      }
     }
   };
 

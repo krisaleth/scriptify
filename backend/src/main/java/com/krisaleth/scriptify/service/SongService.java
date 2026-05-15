@@ -6,8 +6,10 @@ import com.krisaleth.scriptify.repository.AlbumRepository;
 import com.krisaleth.scriptify.repository.ArtistRepository;
 import com.krisaleth.scriptify.repository.SongRepository;
 import com.krisaleth.scriptify.config.FileUtils;
+import com.krisaleth.scriptify.response.SongResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,7 +41,7 @@ public class SongService {
      * HÀM LƯU FILE LÊN R2 (Thay thế savePhysicalFile)
      */
     private String uploadToR2(MultipartFile file, String folder) throws IOException {
-        // Tạo path tương đối: music/uuid_tenfile.mp3
+
         String originalName = file.getOriginalFilename();
         String extension = "";
         if (originalName != null && originalName.contains(".")) {
@@ -57,12 +59,9 @@ public class SongService {
 
         s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
 
-        return fileName; // Trả về Relative Path để lưu DB
+        return fileName;
     }
 
-    /**
-     * HÀM XÓA FILE TRÊN R2 (Thay thế deletePhysicalFile)
-     */
     private void deleteFromR2(String relativePath) {
         if (relativePath != null && !relativePath.contains("default-cover.png")) {
             try {
@@ -77,14 +76,37 @@ public class SongService {
         }
     }
 
-    public Page<tktSong> getAllSongs(Pageable pageable) {
-        // Sau này sếp có thể filter nhạc lậu, nhạc ẩn ở đây
-        return songRepository.findAll(pageable);
+    private SongResponse convertToSongResponse(tktSong song) {
+        return SongResponse.builder()
+                .id(song.getId())
+                .title(song.getTitle())
+                .duration(song.getDuration())
+                .filePath(song.getFilePath())
+                .imageUrl(song.getImageUrl())
+                .viewCount(song.getViewCount())
+                .likeCount(song.getLikeCount())
+                .createdAt(song.getCreatedAt())
+                .artist(SongResponse.ArtistShortResponse.builder()
+                        .id(song.getArtist().getId())
+                        .name(song.getArtist().getName())
+                        .build())
+                .albumTitle(song.getAlbum() != null ? song.getAlbum().getTitle() : null)
+                .build();
+    }
+
+    public Page<SongResponse> getAllSongs(Pageable pageable) {
+        return songRepository.findAll(pageable).map(this::convertToSongResponse);
+    }
+
+    public Page<SongResponse> searchSongs(String keyword, Pageable pageable) {
+        return songRepository.findByTktTitleContainingIgnoreCaseOrTktAlbum_TktTitleContainingIgnoreCase(keyword, keyword, pageable)
+                .map(this::convertToSongResponse);
     }
 
     @Transactional
-    public tktSong updateSong(Long id, String title, Long artistId, Long albumId, MultipartFile musicFile, MultipartFile imageFile) {
-        tktSong existingTktSong = getSong(id);
+    public SongResponse updateSong(Long id, String title, Long artistId, Long albumId, MultipartFile musicFile, MultipartFile imageFile) {
+        tktSong existingTktSong = songRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy ID: " + id));
 
         if (title != null && !title.isBlank()) {
             existingTktSong.setTitle(title);
@@ -116,18 +138,17 @@ public class SongService {
                 existingTktSong.setImageUrl(relativePath);
             }
 
-            return songRepository.save(existingTktSong);
+            return convertToSongResponse(songRepository.save(existingTktSong));
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi upload R2");
         }
     }
 
     @Transactional
-    public tktSong createSong(String title, Long artistId, Long albumId, MultipartFile musicFile, MultipartFile imageFile) {
+    public SongResponse createSong(String title, Long artistId, Long albumId, MultipartFile musicFile, MultipartFile imageFile) {
         tktArtist tktArtist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Nghệ sĩ không tồn tại"));
 
-        // Kiểm tra file nhạc trước khi lấy duration
         if (musicFile == null || musicFile.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File nhạc không được để trống");
         }
@@ -135,11 +156,9 @@ public class SongService {
         int duration = FileUtils.getMp3Duration(musicFile);
 
         try {
-            // Upload nhạc lên folder "music"
             String musicPath = uploadToR2(musicFile, "music");
 
-            // Mặc định ảnh
-            String imagePath = "images/default-cover.png";
+            String imagePath = "assets/default-cover.png";
             if (imageFile != null && !imageFile.isEmpty()) {
                 imagePath = uploadToR2(imageFile, "images");
             }
@@ -150,14 +169,13 @@ public class SongService {
             tktSong.setArtist(tktArtist);
             tktSong.setViewCount(0L);
             tktSong.setLikeCount(0);
-            tktSong.setFilePath(musicPath); // Lưu music/uuid_name.mp3
-            tktSong.setImageUrl(imagePath); // Lưu images/uuid_name.jpg
+            tktSong.setFilePath(musicPath);
+            tktSong.setImageUrl(imagePath);
 
             if (albumId != null) {
                 albumRepository.findById(albumId).ifPresent(tktSong::setAlbum);
             }
-
-            return songRepository.save(tktSong);
+            return convertToSongResponse(songRepository.save(tktSong));
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi lưu file lên Cloud");
         }
@@ -165,20 +183,24 @@ public class SongService {
 
     @Transactional
     public void deleteSong(Long id) {
-        tktSong tktSong = getSong(id);
-        deleteFromR2(tktSong.getFilePath());
-        deleteFromR2(tktSong.getImageUrl());
+        tktSong tktSong = songRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy ID: " + id));
+        String musicPath = tktSong.getFilePath();
+        String imagePath = tktSong.getImageUrl();
+        if (musicPath != null) {
+            deleteFromR2(musicPath);
+        }
+
+        if (imagePath != null && !imagePath.contains("default-cover.png")) {
+            deleteFromR2(imagePath);
+        }
         songRepository.delete(tktSong);
     }
 
     @Transactional(readOnly = true)
-    public tktSong getSong(Long id) {
-        return songRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy ID: " + id));
-    }
-
-    public Page<tktSong> searchSongs(String keyword, Pageable pageable) {
-        return songRepository.findByTktTitleContainingIgnoreCaseOrTktAlbum_TktTitleContainingIgnoreCase(keyword, keyword, pageable);
+    public SongResponse getSong(Long id) {
+        return convertToSongResponse(songRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy ID: " + id)));
     }
 
     @Transactional
