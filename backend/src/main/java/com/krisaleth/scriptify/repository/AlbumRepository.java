@@ -1,6 +1,6 @@
 package com.krisaleth.scriptify.repository;
 
-import com.krisaleth.scriptify.entity.Album;
+import com.krisaleth.scriptify.entity.tktAlbum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,28 +11,22 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface AlbumRepository extends JpaRepository<Album, Long> {
-    // Album from artist
-    List<Album> findByArtist_IdOrderByReleaseYearDesc(Long artistId);
+public interface AlbumRepository extends JpaRepository<tktAlbum, Long> {
 
-    // New album from artist
-    List<Album> findTop3ByArtist_IdOrderByReleaseYearDesc(Long artistId);
+    List<tktAlbum> findByTktArtist_TktIdOrderByTktReleaseYearDesc(Long artistId);
 
-    // Search by name
-    Page<Album> findByTitleContainingIgnoreCase(String title, Pageable pageable);
+    List<tktAlbum> findTop3ByTktArtist_TktIdOrderByTktReleaseYearDesc(Long artistId);
 
-    // Find all album in a year
-    List<Album> findByReleaseYear(Integer releaseYear);
+    Page<tktAlbum> findByTktTitleContainingIgnoreCase(String title, Pageable pageable);
 
-    // Find all album in a gap between 2 years
-    List<Album> findByReleaseYearBetween(Integer releaseYearStart, Integer releaseYearEnd);
+    List<tktAlbum> findByTktReleaseYear(Integer releaseYear);
 
-    // Top 10 newest albums
-    List<Album> findTop10ByOrderByReleaseYearDesc();
+    List<tktAlbum> findByTktReleaseYearBetween(Integer start, Integer end);
 
-    // Search album by artist name
-    List<Album> findByArtist_NameContainingIgnoreCase(String name);
+    List<tktAlbum> findTop10ByOrderByTktReleaseYearDesc();
 
-    @Query("SELECT a FROM Album a JOIN FETCH a.artist WHERE a.title LIKE %:title%")
-    List<Album> findByTitleWithArtist(@Param("title") String title);
+    List<tktAlbum> findByTktArtist_TktNameContainingIgnoreCase(String name);
+
+    @Query("SELECT a FROM tktAlbum a JOIN FETCH a.tktArtist WHERE a.tktTitle LIKE %:title%")
+    List<tktAlbum> findByTitleWithArtist(@Param("title") String title);
 }

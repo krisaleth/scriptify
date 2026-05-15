@@ -3,11 +3,10 @@ package com.krisaleth.scriptify.controller;
 import com.krisaleth.scriptify.dto.UserLoginDto;
 import com.krisaleth.scriptify.dto.UserRegisterDto;
 import com.krisaleth.scriptify.dto.VerifyUserDto;
-import com.krisaleth.scriptify.entity.Users;
+import com.krisaleth.scriptify.entity.tktUsers;
 import com.krisaleth.scriptify.response.LoginResponse;
 import com.krisaleth.scriptify.service.AuthenticationService;
 import com.krisaleth.scriptify.service.JwtService;
-import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -22,24 +21,19 @@ public class AuthenticationController {
     private final JwtService jwtService;
     private final AuthenticationService authenticationService;
 
-    // 1. ĐĂNG KÝ (SIGNUP)
     @PostMapping("/register")
-    public ResponseEntity<Users> register(@ModelAttribute UserRegisterDto registerUserDto) {
-        Users registeredUser = authenticationService.signUp(registerUserDto);
+    public ResponseEntity<tktUsers> register(@ModelAttribute UserRegisterDto registerUserDto) {
+        tktUsers registeredUser = authenticationService.signUp(registerUserDto);
         return ResponseEntity.ok(registeredUser);
     }
 
-    // 2. ĐĂNG NHẬP (LOGIN) -> Trả về Token và Expiration
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> authenticate(@RequestBody UserLoginDto loginUserDto) {
-        // 1. Gọi Service để check email/pass
-        Users authenticatedUser = authenticationService.authenticate(loginUserDto);
+        tktUsers authenticatedUser = authenticationService.authenticate(loginUserDto);
 
-        // 2. Tạo JWT Token
         String jwtToken = jwtService.generateToken(authenticatedUser);
         long expirationMillis = jwtService.getExpirationTime();
 
-        // 3. Tạo HttpOnly Cookie
         ResponseCookie jwtCookie = ResponseCookie.from("jwt", jwtToken)
                 .httpOnly(true)
                 .secure(false)
@@ -48,9 +42,8 @@ public class AuthenticationController {
                 .sameSite("Lax")
                 .build();
 
-        // 4. Trả về Response
         LoginResponse loginResponse = new LoginResponse();
-        loginResponse.setExpiresIn(jwtService.getExpirationTime());
+        loginResponse.setExpiresIn(expirationMillis);
         loginResponse.setUser(authenticatedUser);
 
         return ResponseEntity.ok()
@@ -58,7 +51,6 @@ public class AuthenticationController {
                 .body(loginResponse);
     }
 
-    // 3. XÁC THỰC EMAIL
     @PostMapping("/verify")
     public ResponseEntity<?> verifyUser(VerifyUserDto verifyUserDto) {
         try {
@@ -69,7 +61,6 @@ public class AuthenticationController {
         }
     }
 
-    // 4. GỬI LẠI MÃ XÁC THỰC
     @PostMapping("/resend")
     public ResponseEntity<?> resendVerificationCode(@RequestParam String email) {
         try {

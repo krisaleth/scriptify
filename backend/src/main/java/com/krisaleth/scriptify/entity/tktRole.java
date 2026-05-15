@@ -1,6 +1,6 @@
 package com.krisaleth.scriptify.entity;
 
-public enum Role {
+public enum tktRole {
     USER,
     ADMIN
 }

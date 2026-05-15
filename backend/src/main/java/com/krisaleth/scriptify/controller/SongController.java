@@ -1,6 +1,6 @@
 package com.krisaleth.scriptify.controller;
 
-import com.krisaleth.scriptify.entity.Song;
+import com.krisaleth.scriptify.entity.tktSong;
 import com.krisaleth.scriptify.service.SongService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,10 +31,10 @@ public class SongController {
      */
     @GetMapping("/{id}/play")
     public ResponseEntity<Void> playSong(@PathVariable Long id) {
-        Song song = songService.getSong(id);
+        tktSong tktSong = songService.getSong(id);
         songService.incrementViewCount(id);
 
-        String cloudUrl = publicUrl + "/" + song.getFilePath();
+        String cloudUrl = publicUrl + "/" + tktSong.getFilePath();
 
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(cloudUrl))
@@ -46,7 +46,7 @@ public class SongController {
      * Bỏ Sort.Direction.DESC vì @PageableDefault cần chuỗi hoặc Enum cụ thể
      */
     @GetMapping
-    public ResponseEntity<Page<Song>> getSongs(
+    public ResponseEntity<Page<tktSong>> getSongs(
             @RequestParam(required = false) String query,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         
@@ -60,20 +60,20 @@ public class SongController {
 
     // --- THÊM NHẠC ---
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Song> createSong(
+    public ResponseEntity<tktSong> createSong(
             @RequestParam("title") String title,
             @RequestParam("artistId") Long artistId,
             @RequestParam(value = "albumId", required = false) Long albumId,
             @RequestParam("songFile") MultipartFile musicFile,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
 
-        Song savedSong = songService.createSong(title, artistId, albumId, musicFile, imageFile);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedSong);
+        tktSong savedTktSong = songService.createSong(title, artistId, albumId, musicFile, imageFile);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedTktSong);
     }
 
     // --- CẬP NHẬT NHẠC ---
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Song> updateSong(
+    public ResponseEntity<tktSong> updateSong(
             @PathVariable Long id,
             @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "artistId", required = false) Long artistId,
@@ -81,12 +81,12 @@ public class SongController {
             @RequestParam(value = "songFile", required = false) MultipartFile musicFile,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
 
-        Song updatedSong = songService.updateSong(id, title, artistId, albumId, musicFile, imageFile);
-        return ResponseEntity.ok(updatedSong);
+        tktSong updatedTktSong = songService.updateSong(id, title, artistId, albumId, musicFile, imageFile);
+        return ResponseEntity.ok(updatedTktSong);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Song> getSong(@PathVariable Long id) {
+    public ResponseEntity<tktSong> getSong(@PathVariable Long id) {
         return ResponseEntity.ok(songService.getSong(id));
     }
 

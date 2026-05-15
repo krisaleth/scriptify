@@ -1,7 +1,7 @@
 package com.krisaleth.scriptify.controller;
 
-import com.krisaleth.scriptify.entity.Song;
-import com.krisaleth.scriptify.entity.Users;
+import com.krisaleth.scriptify.entity.tktSong;
+import com.krisaleth.scriptify.entity.tktUsers;
 import com.krisaleth.scriptify.response.UserResponse;
 import com.krisaleth.scriptify.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ public class UserController {
     public ResponseEntity<UserResponse> authenticatedUser(Authentication authentication) {
         if (authentication == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 
-        Users user = userService.getMyProfile(authentication.getName());
+        tktUsers user = userService.getMyProfile(authentication.getName());
         return ResponseEntity.ok(new UserResponse(
                 user.getId(),
                 user.getNickname(),
@@ -47,15 +47,15 @@ public class UserController {
      * CẬP NHẬT PROFILE (Đồng bộ với UserService.updateProfile)
      */
     @PutMapping(value = "/update-profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Users> updateProfile(
+    public ResponseEntity<tktUsers> updateProfile(
             @RequestParam(value = "nickname", required = false) String nickname, // Khớp với biến nickname ở Service
             @RequestParam(value = "avatar", required = false) MultipartFile avatarFile, // Khớp với biến avatarFile ở Service
             Authentication authentication) {
 
-        Users currentUser = userService.getUserByEmail(authentication.getName());
+        tktUsers currentUser = userService.getUserByEmail(authentication.getName());
 
         // Gọi Service: updateProfile(Long userId, String nickname, MultipartFile avatarFile)
-        Users updatedUser = userService.updateProfile(currentUser.getId(), nickname, avatarFile);
+        tktUsers updatedUser = userService.updateProfile(currentUser.getId(), nickname, avatarFile);
 
         return ResponseEntity.ok(updatedUser);
     }
@@ -69,7 +69,7 @@ public class UserController {
             @RequestParam String newPassword,
             Authentication authentication) {
 
-        Users currentUser = userService.getUserByEmail(authentication.getName());
+        tktUsers currentUser = userService.getUserByEmail(authentication.getName());
 
         // Gọi Service: changePassword(Long userId, String currentPassword, String newPassword)
         userService.changePassword(currentUser.getId(), currentPassword, newPassword);
@@ -81,7 +81,7 @@ public class UserController {
      * LẤY DANH SÁCH YÊU THÍCH (Cho mục Heart Beats ở Profile)
      */
     @GetMapping("/favorites")
-    public ResponseEntity<Set<Song>> getFavorites(Authentication authentication) {
+    public ResponseEntity<Set<tktSong>> getFavorites(Authentication authentication) {
         return ResponseEntity.ok(userService.getFavoriteSongs(authentication.getName()));
     }
 
@@ -90,7 +90,7 @@ public class UserController {
      */
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/all")
-    public ResponseEntity<Page<Users>> getAllUsers(
+    public ResponseEntity<Page<tktUsers>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
         Pageable pageable = PageRequest.of(page, size);

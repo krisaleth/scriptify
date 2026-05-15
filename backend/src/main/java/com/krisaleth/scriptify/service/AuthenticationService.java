@@ -3,8 +3,8 @@ package com.krisaleth.scriptify.service;
 import com.krisaleth.scriptify.dto.UserLoginDto;
 import com.krisaleth.scriptify.dto.UserRegisterDto;
 import com.krisaleth.scriptify.dto.VerifyUserDto;
-import com.krisaleth.scriptify.entity.Role;
-import com.krisaleth.scriptify.entity.Users;
+import com.krisaleth.scriptify.entity.tktRole;
+import com.krisaleth.scriptify.entity.tktUsers;
 import com.krisaleth.scriptify.repository.UsersRepository;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor // Tự động tạo Constructor cho các final fields
+@RequiredArgsConstructor
 public class AuthenticationService {
 
     private final UsersRepository usersRepository;
@@ -29,70 +28,70 @@ public class AuthenticationService {
     private final CloudStorageService cloudStorageService;
 
     @Transactional
-    public Users signUp(UserRegisterDto input) {
-        Users users = new Users();
+    public tktUsers signUp(UserRegisterDto input) {
+        tktUsers user = new tktUsers();
         String nickname = input.getNickname();
+
         if (nickname == null || nickname.isBlank()) {
             nickname = input.getEmail().split("@")[0];
         }
-        if (usersRepository.existsByNickname(nickname)) {
+
+        if (usersRepository.existsByTktNickname(nickname)) {
             nickname = nickname + System.currentTimeMillis() % 1000;
         }
-        users.setNickname(nickname);
 
-        if (usersRepository.findByEmail(input.getEmail()).isPresent()) {
+        user.setNickname(nickname);
+
+        if (usersRepository.existsByTktEmail(input.getEmail())) {
             throw new RuntimeException("Email này đã được sử dụng rồi bạn ơi!");
         }
-        users.setEmail(input.getEmail());
-        users.setPassword(passwordEncoder.encode(input.getPassword()));
 
-        users.setRole(Role.USER);
-        users.setVerificationCode(generateVerificationCode());
-        users.setVerificationExpiration(LocalDateTime.now().plusMinutes(10));
-        users.setEnabled(false);
+        user.setEmail(input.getEmail());
+        user.setPassword(passwordEncoder.encode(input.getPassword()));
+        user.setRole(tktRole.USER);
+        user.setVerificationCode(generateVerificationCode());
+        user.setVerificationExpiration(LocalDateTime.now().plusMinutes(10));
+        user.setEnabled(false);
 
-        // 2. Xử lý lưu Avatar lên Cloudflare R2
         if (input.getAvatarFile() != null && !input.getAvatarFile().isEmpty()) {
-            // Dùng service R2 để upload vào folder 'avatars'
             String cloudPath = cloudStorageService.uploadFile(input.getAvatarFile(), "avatars");
-            users.setAvatarUrl(cloudPath);
+            user.setAvatarUrl(cloudPath);
         } else {
-            users.setAvatarUrl("assets/default-avatar.png");
+            user.setAvatarUrl("assets/default-avatar.png");
         }
 
-        // 3. Gửi mail và lưu vào DB
-        sendVerificationEmail(users);
-        return usersRepository.save(users);
+        sendVerificationEmail(user);
+        return usersRepository.save(user);
     }
 
-    public Users authenticate(UserLoginDto input) {
-        Users users = usersRepository.findByEmail(input.getEmail())
+    public tktUsers authenticate(UserLoginDto input) {
+        tktUsers user = usersRepository.findByTktEmail(input.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(input.getEmail(), input.getPassword())
         );
 
-        if (!users.isEnabled()) {
+        if (!user.isEnabled()) {
             throw new RuntimeException("Account not verified!");
         }
-        return users;
+        return user;
     }
 
     @Transactional
     public void verifyUser(VerifyUserDto input) {
-        Users users = usersRepository.findByEmail(input.getEmail())
+        tktUsers user = usersRepository.findByTktEmail(input.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (users.getVerificationExpiration().isBefore(LocalDateTime.now())) {
+        if (user.getVerificationExpiration().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Verification has expired!");
         }
 
-        if (users.getVerificationCode().equals(input.getVerificationCode())) {
-            users.setEnabled(true);
-            users.setVerificationCode(null);
-            users.setVerificationExpiration(null);
-            usersRepository.save(users);
+        if (user.getVerificationCode().equals(input.getVerificationCode())) {
+            user.setEnabled(true);
+            user.setVerificationCode(null);
+            user.setVerificationExpiration(null);
+            usersRepository.save(user);
         } else {
             throw new RuntimeException("Invalid verification code!");
         }
@@ -100,22 +99,22 @@ public class AuthenticationService {
 
     @Transactional
     public void resendVerificationCode(String email) {
-        Users users = usersRepository.findByEmail(email)
+        tktUsers user = usersRepository.findByTktEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (users.isEnabled()) {
+        if (user.isEnabled()) {
             throw new RuntimeException("User is already verified");
         }
 
-        users.setVerificationCode(generateVerificationCode());
-        users.setVerificationExpiration(LocalDateTime.now().plusMinutes(10));
-        sendVerificationEmail(users);
-        usersRepository.save(users);
+        user.setVerificationCode(generateVerificationCode());
+        user.setVerificationExpiration(LocalDateTime.now().plusMinutes(10));
+        sendVerificationEmail(user);
+        usersRepository.save(user);
     }
 
-    public void sendVerificationEmail(Users users) {
+    public void sendVerificationEmail(tktUsers user) {
         String subject = "Account Verification";
-        String verificationCode = users.getVerificationCode();
+        String verificationCode = user.getVerificationCode();
         String htmlMessage = "<html>"
                 + "<head><meta charset=\"UTF-8\"></head>"
                 + "<body style=\"font-family: Arial, sans-serif;\">"
@@ -130,7 +129,7 @@ public class AuthenticationService {
                 + "</body>"
                 + "</html>";
         try {
-            emailService.sendVerificationEmail(users.getEmail(), subject, htmlMessage);
+            emailService.sendVerificationEmail(user.getEmail(), subject, htmlMessage);
         } catch (MessagingException e) {
             e.printStackTrace();
         }

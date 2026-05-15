@@ -1,17 +1,17 @@
 package com.krisaleth.scriptify.response;
 
-import com.krisaleth.scriptify.entity.Users; // Import entity User của bạn
+import com.krisaleth.scriptify.entity.tktUsers; // Import entity User của bạn
 
 public class LoginResponse {
     private String token;
     private Long expiresIn;
-    private Users user; // ✅ Thêm trường này để Sidebar có data nạp ngay
+    private tktUsers user; // ✅ Thêm trường này để Sidebar có data nạp ngay
 
     public LoginResponse() {
     }
 
     // Constructor đầy đủ
-    public LoginResponse(String token, Long expiresIn, Users user) {
+    public LoginResponse(String token, Long expiresIn, tktUsers user) {
         this.token = token;
         this.expiresIn = expiresIn;
         this.user = user;
@@ -26,6 +26,6 @@ public class LoginResponse {
     public void setExpiresIn(Long expiresIn) { this.expiresIn = expiresIn; }
 
     // ✅ Getter/Setter cho User
-    public Users getUser() { return user; }
-    public void setUser(Users user) { this.user = user; }
+    public tktUsers getUser() { return user; }
+    public void setUser(tktUsers user) { this.user = user; }
 }

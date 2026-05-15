@@ -1,6 +1,6 @@
 package com.krisaleth.scriptify.repository;
 
-import com.krisaleth.scriptify.entity.Playlist;
+import com.krisaleth.scriptify.entity.tktPlaylist;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -13,33 +13,25 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface PlaylistRepository extends JpaRepository<Playlist, Long> {
+public interface PlaylistRepository extends JpaRepository<tktPlaylist, Long> {
 
-    // 1. Lấy playlist của User (Dùng EntityGraph để lấy luôn thông tin User trong 1 câu query)
-    @EntityGraph(attributePaths = {"user"})
-    List<Playlist> findByUser_Id(Long userId);
+    @EntityGraph(attributePaths = {"tktUsers"})
+    List<tktPlaylist> findByTktUsers_TktId(Long userId);
 
-    // 2. Lấy playlist công khai (Có phân trang để app mượt hơn)
-    Page<Playlist> findByIsPublicTrue(Pageable pageable);
+    Page<tktPlaylist> findByTktIsPublicTrue(Pageable pageable);
 
-    // 3. Tìm kiếm Playlist công khai theo tên (Dành cho tính năng Search)
-    Page<Playlist> findByNameContainingIgnoreCaseAndIsPublicTrue(String name, Pageable pageable);
+    Page<tktPlaylist> findByTktNameContainingIgnoreCaseAndTktIsPublicTrue(String name, Pageable pageable);
 
-    // 4. Chống hack IDOR (Sếp giữ cái này là rất chuẩn)
-    Optional<Playlist> findByIdAndUser_Id(Long id, Long userId);
+    Optional<tktPlaylist> findByTktIdAndTktUsers_TktId(Long id, Long userId);
 
-    // 5. Kiểm tra quyền sở hữu nhanh (Dùng cho các logic validate đơn giản)
-    boolean existsByIdAndUser_Id(Long id, Long userId);
+    boolean existsByTktIdAndTktUsers_TktId(Long id, Long userId);
 
-    // 6. Đếm bài hát (Tối ưu query)
-    @Query("SELECT SIZE(p.songs) FROM Playlist p WHERE p.id = :playlistId")
+    @Query("SELECT SIZE(p.tktSongs) FROM tktPlaylist p WHERE p.tktId = :playlistId")
     int countSongsInPlaylist(@Param("playlistId") Long playlistId);
 
-    // 7. Check trùng bài hát (Giữ nguyên logic của sếp)
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END " +
-            "FROM Playlist p JOIN p.songs s WHERE p.id = :playlistId AND s.id = :songId")
+            "FROM tktPlaylist p JOIN p.tktSongs s WHERE p.tktId = :playlistId AND s.tktId = :songId")
     boolean isSongInPlaylist(@Param("playlistId") Long playlistId, @Param("songId") Long songId);
 
-    // 8. Lấy danh sách Playlist "Nổi bật" (Ví dụ: 5 playlist công khai mới nhất)
-    List<Playlist> findTop5ByIsPublicTrueOrderByCreatedAtDesc();
+    List<tktPlaylist> findTop5ByTktIsPublicTrueOrderByTktCreatedAtDesc();
 }

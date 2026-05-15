@@ -2,9 +2,9 @@ package com.krisaleth.scriptify.service;
 
 import com.krisaleth.scriptify.dto.PlaylistCreateDto;
 import com.krisaleth.scriptify.dto.PlaylistUpdateDto;
-import com.krisaleth.scriptify.entity.Playlist;
-import com.krisaleth.scriptify.entity.Song;
-import com.krisaleth.scriptify.entity.Users;
+import com.krisaleth.scriptify.entity.tktPlaylist;
+import com.krisaleth.scriptify.entity.tktSong;
+import com.krisaleth.scriptify.entity.tktUsers;
 import com.krisaleth.scriptify.repository.PlaylistRepository;
 import com.krisaleth.scriptify.repository.SongRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,51 +31,46 @@ import java.util.UUID;
 public class PlaylistService {
     private final PlaylistRepository playlistRepository;
     private final SongRepository songRepository;
-    private final S3Client s3Client; // ✅ Thêm để upload R2
+    private final S3Client s3Client;
 
     @Value("${r2.bucket-name}")
     private String bucketName;
 
     private static final int MAX_SONGS_PER_PLAYLIST = 200;
 
-    // --- QUERIES ---
-
     @Transactional(readOnly = true)
-    public List<Playlist> listMyPlaylists(Users user) {
+    public List<tktPlaylist> listMyPlaylists(tktUsers user) {
         if (user == null || user.getId() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập");
         }
-        return playlistRepository.findByUser_Id(user.getId());
+        return playlistRepository.findByTktUsers_TktId(user.getId());
     }
 
     @Transactional(readOnly = true)
-    public Page<Playlist> listPublicPlaylists(Pageable pageable) {
-        return playlistRepository.findByIsPublicTrue(pageable);
+    public Page<tktPlaylist> listPublicPlaylists(Pageable pageable) {
+        return playlistRepository.findByTktIsPublicTrue(pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<Playlist> searchPublicPlaylists(String query, Pageable pageable) {
-        return playlistRepository.findByNameContainingIgnoreCaseAndIsPublicTrue(query, pageable);
+    public Page<tktPlaylist> searchPublicPlaylists(String query, Pageable pageable) {
+        return playlistRepository.findByTktNameContainingIgnoreCaseAndTktIsPublicTrue(query, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Playlist getForOwner(Long playlistId, Users user) {
-        return playlistRepository.findByIdAndUser_Id(playlistId, user.getId())
+    public tktPlaylist getForOwner(Long playlistId, tktUsers user) {
+        return playlistRepository.findByTktIdAndTktUsers_TktId(playlistId, user.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Không có quyền truy cập playlist này"));
     }
 
-    // --- ACTIONS ---
-
     @Transactional
-    public Playlist create(PlaylistCreateDto dto, Users user) {
-        Playlist playlist = new Playlist();
+    public tktPlaylist create(PlaylistCreateDto dto, tktUsers user) {
+        tktPlaylist playlist = new tktPlaylist();
         playlist.setName(dto.getName());
         playlist.setDescription(dto.getDescription());
-        playlist.setUser(user);
+        playlist.setUsers(user);
         playlist.setIsPublic(dto.getIsPublic() != null ? dto.getIsPublic() : true);
         playlist.setSongs(new HashSet<>());
 
-        // ✅ XỬ LÝ UPLOAD THUMBNAIL (Sửa lỗi getThumbnailUrl)
         if (dto.getThumbnail() != null && !dto.getThumbnail().isEmpty()) {
             try {
                 String path = uploadToR2(dto.getThumbnail());
@@ -97,19 +92,16 @@ public class PlaylistService {
     }
 
     @Transactional
-    public Playlist update(Long playlistId, PlaylistUpdateDto dto, Users user) {
-        Playlist playlist = getForOwner(playlistId, user);
+    public tktPlaylist update(Long playlistId, PlaylistUpdateDto dto, tktUsers user) {
+        tktPlaylist playlist = getForOwner(playlistId, user);
 
         if (dto.getName() != null) playlist.setName(dto.getName());
         if (dto.getDescription() != null) playlist.setDescription(dto.getDescription());
         if (dto.getIsPublic() != null) playlist.setIsPublic(dto.getIsPublic());
 
-        // ✅ XỬ LÝ ĐỔI THUMBNAIL
         if (dto.getThumbnail() != null && !dto.getThumbnail().isEmpty()) {
             try {
-                // Xóa ảnh cũ trên R2 để tiết kiệm dung lượng
                 deleteFromR2(playlist.getThumbnailUrl());
-                // Upload ảnh mới
                 String path = uploadToR2(dto.getThumbnail());
                 playlist.setThumbnailUrl(path);
             } catch (IOException e) {
@@ -121,17 +113,15 @@ public class PlaylistService {
     }
 
     @Transactional
-    public void delete(Long playlistId, Users user) {
-        Playlist playlist = getForOwner(playlistId, user);
-        deleteFromR2(playlist.getThumbnailUrl()); // Xóa ảnh trên R2 khi xóa playlist
+    public void delete(Long playlistId, tktUsers user) {
+        tktPlaylist playlist = getForOwner(playlistId, user);
+        deleteFromR2(playlist.getThumbnailUrl());
         playlistRepository.delete(playlist);
     }
 
-    // --- SONG MANAGEMENT ---
-
     @Transactional
-    public Playlist addSong(Long playlistId, Users user, Long songId) {
-        Playlist playlist = getForOwner(playlistId, user);
+    public tktPlaylist addSong(Long playlistId, tktUsers user, Long songId) {
+        tktPlaylist playlist = getForOwner(playlistId, user);
         if (playlistRepository.isSongInPlaylist(playlistId, songId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Bài hát đã có trong Playlist");
         }
@@ -139,7 +129,7 @@ public class PlaylistService {
             throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Playlist đầy");
         }
 
-        Song song = songRepository.findById(songId)
+        tktSong song = songRepository.findById(songId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bài hát"));
 
         playlist.getSongs().add(song);
@@ -147,26 +137,24 @@ public class PlaylistService {
     }
 
     @Transactional
-    public Playlist removeSong(Long playlistId, Users user, Long songId) {
-        Playlist playlist = getForOwner(playlistId, user);
+    public tktPlaylist removeSong(Long playlistId, tktUsers user, Long songId) {
+        tktPlaylist playlist = getForOwner(playlistId, user);
         if (!playlistRepository.isSongInPlaylist(playlistId, songId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Bài hát không có trong playlist");
         }
-        Song song = songRepository.findById(songId).orElseThrow();
+        tktSong song = songRepository.findById(songId).orElseThrow();
         playlist.getSongs().remove(song);
         return playlistRepository.save(playlist);
     }
 
-    // --- HELPERS ---
-
-    private void addSongsInternal(Playlist playlist, List<Long> songIds) {
+    private void addSongsInternal(tktPlaylist playlist, List<Long> songIds) {
         List<Long> uniqueIds = songIds.stream().distinct().toList();
         int currentCount = playlist.getId() != null ? playlistRepository.countSongsInPlaylist(playlist.getId()) : 0;
         if (currentCount + uniqueIds.size() > MAX_SONGS_PER_PLAYLIST) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Vượt quá giới hạn bài hát");
         }
-        List<Song> foundSongs = songRepository.findAllById(uniqueIds);
-        playlist.getSongs().addAll(foundSongs);
+        List<tktSong> songs = songRepository.findAllById(uniqueIds);
+        playlist.getSongs().addAll(songs);
     }
 
     private String uploadToR2(MultipartFile file) throws IOException {

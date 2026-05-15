@@ -2,8 +2,8 @@ package com.krisaleth.scriptify.controller;
 
 import com.krisaleth.scriptify.dto.PlaylistCreateDto;
 import com.krisaleth.scriptify.dto.PlaylistUpdateDto;
-import com.krisaleth.scriptify.entity.Playlist;
-import com.krisaleth.scriptify.entity.Users;
+import com.krisaleth.scriptify.entity.tktPlaylist;
+import com.krisaleth.scriptify.entity.tktUsers;
 import com.krisaleth.scriptify.repository.UsersRepository;
 import com.krisaleth.scriptify.service.PlaylistService;
 import lombok.RequiredArgsConstructor;
@@ -26,21 +26,21 @@ public class PlaylistController {
     private final PlaylistService playlistService;
     private final UsersRepository usersRepository;
 
-    private Users getCurrentUser(Authentication authentication) {
+    private tktUsers getCurrentUser(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Vui lòng đăng nhập");
         }
-        return usersRepository.findByEmail(authentication.getName())
+        return usersRepository.findByTktEmail(authentication.getName())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Tài khoản không tồn tại"));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<List<Playlist>> getMyPlaylists(Authentication auth) {
+    public ResponseEntity<List<tktPlaylist>> getMyPlaylists(Authentication auth) {
         return ResponseEntity.ok(playlistService.listMyPlaylists(getCurrentUser(auth)));
     }
 
     @GetMapping("/public")
-    public ResponseEntity<Page<Playlist>> getPublicPlaylists(
+    public ResponseEntity<Page<tktPlaylist>> getPublicPlaylists(
             @RequestParam(required = false) String search,
             @PageableDefault(size = 10) Pageable pageable) {
 
@@ -54,7 +54,7 @@ public class PlaylistController {
      * ✅ TẠO PLAYLIST: Chuyển sang @ModelAttribute để nhận File Thumbnail
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Playlist> createPlaylist(
+    public ResponseEntity<tktPlaylist> createPlaylist(
             @ModelAttribute PlaylistCreateDto dto, // Đổi từ @RequestBody
             Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -65,7 +65,7 @@ public class PlaylistController {
      * ✅ CẬP NHẬT PLAYLIST: Hỗ trợ đổi ảnh bìa hoặc đổi tên/mô tả
      */
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Playlist> updatePlaylist(
+    public ResponseEntity<tktPlaylist> updatePlaylist(
             @PathVariable Long id,
             @ModelAttribute PlaylistUpdateDto dto, // Đổi từ @RequestBody
             Authentication auth) {
@@ -81,7 +81,7 @@ public class PlaylistController {
     // --- QUẢN LÝ BÀI HÁT TRONG PLAYLIST (Các API này không dùng File nên giữ nguyên) ---
 
     @PostMapping("/{id}/songs/{songId}")
-    public ResponseEntity<Playlist> addSongToPlaylist(
+    public ResponseEntity<tktPlaylist> addSongToPlaylist(
             @PathVariable Long id,
             @PathVariable Long songId,
             Authentication auth) {
@@ -89,7 +89,7 @@ public class PlaylistController {
     }
 
     @DeleteMapping("/{id}/songs/{songId}")
-    public ResponseEntity<Playlist> removeSongFromPlaylist(
+    public ResponseEntity<tktPlaylist> removeSongFromPlaylist(
             @PathVariable Long id,
             @PathVariable Long songId,
             Authentication auth) {

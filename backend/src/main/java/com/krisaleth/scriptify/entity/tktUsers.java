@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,76 +19,77 @@ import java.util.*;
 @Entity
 @Getter
 @Setter
-@Table(name = "users")
+@Table(name = "tkt_users")
+@Accessors(prefix = "tkt")
 @AllArgsConstructor
 @NoArgsConstructor
-public class Users implements UserDetails {
+public class tktUsers implements UserDetails {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Dùng IDENTITY cho MySQL
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long tktId;
 
     @Column(unique = true, nullable = false)
-    private String nickname;
+    private String tktNickname;
 
     @Column(unique = true, nullable = false)
-    private String email;
+    private String tktEmail;
 
     @Column(nullable = false)
     @JsonIgnore
-    private String password;
+    private String tktPassword;
 
-    private boolean enabled;
+    private boolean tktEnabled;
 
-    @Column(name = "verification_code")
+    @Column(name = "tkt_verification_code")
     @JsonIgnore
-    private String verificationCode;
+    private String tktVerificationCode;
 
-    @Column(name = "verification_expiration")
+    @Column(name = "tkt_verification_expiration")
     @JsonIgnore
-    private LocalDateTime verificationExpiration;
-    
+    private LocalDateTime tktVerificationExpiration;
+
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private tktRole tktRole;
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "tkt_created_at", updatable = false)
+    private LocalDateTime tktCreatedAt = LocalDateTime.now();
 
-    @Column(name = "avatar_url")
-    private String avatarUrl = "default-avatar.png";
+    @Column(name = "tkt_avatar_url")
+    private String tktAvatarUrl = "default-avatar.png";
 
     @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    @Column(name = "tkt_updated_at")
+    private LocalDateTime tktUpdatedAt;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "tktUsers")
     @JsonIgnore
-    private List<Playlist> playlists = new ArrayList<>();
+    private List<tktPlaylist> tktPlaylists = new ArrayList<>();
 
     @ManyToMany
     @JsonIgnoreProperties
     @JoinTable(
-            name = "user_favourites", // Hibernate tự tạo bảng tên này
-            joinColumns = @JoinColumn(name = "user_id"), // Cột nối tới bảng Users
-            inverseJoinColumns = @JoinColumn(name = "song_id") // Cột nối tới bảng Songs
+            name = "tkt_user_favourites",
+            joinColumns = @JoinColumn(name = "tkt_user_id"),
+            inverseJoinColumns = @JoinColumn(name = "tkt_song_id")
     )
-    private Set<Song> favoriteSongs = new HashSet<>();
+    private Set<tktSong> tktFavoriteSongs = new HashSet<>();
 
-    public Users(String nickname, String email, String password) {
-        this.nickname = nickname;
-        this.email = email;
-        this.password = password;
+    public tktUsers(String nickname, String email, String password) {
+        this.tktNickname = nickname;
+        this.tktEmail = email;
+        this.tktPassword = password;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        Role resolvedRole = this.role == null ? Role.USER : this.role;
+        tktRole resolvedRole = this.tktRole == null ? tktRole.USER : this.tktRole;
         return List.of(new SimpleGrantedAuthority("ROLE_" + resolvedRole.name()));
     }
 
     @JsonIgnore
     @Override
     public String getUsername() {
-        return this.email;
+        return this.tktEmail;
     }
 
     @Override
@@ -107,15 +109,15 @@ public class Users implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return enabled;
+        return tktEnabled;
     }
 
     public boolean getEnabled() {
-        return enabled;
-    }
-    @Override
-    public String getPassword() {
-        return this.password;
+        return tktEnabled;
     }
 
+    @Override
+    public String getPassword() {
+        return this.tktPassword;
+    }
 }

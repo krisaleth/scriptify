@@ -1,6 +1,6 @@
 package com.krisaleth.scriptify.service;
 
-import com.krisaleth.scriptify.entity.Artist;
+import com.krisaleth.scriptify.entity.tktArtist;
 import com.krisaleth.scriptify.repository.ArtistRepository;
 import com.krisaleth.scriptify.response.ArtistResponse;
 import lombok.RequiredArgsConstructor;
@@ -68,27 +68,27 @@ public class ArtistService {
     // --- CÁC PHƯƠNG THỨC CHÍNH ---
 
     @Transactional
-    public Artist create(String name, String bio, MultipartFile imageFile) {
+    public tktArtist create(String name, String bio, MultipartFile imageFile) {
         if (name == null || name.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên nghệ sĩ không được để trống");
         }
 
         try {
             String relativePath = uploadImageToR2(imageFile);
-            Artist artist = new Artist();
-            artist.setName(name.trim());
-            artist.setBio(bio != null ? bio.trim() : "");
-            artist.setImageUrl(relativePath); // Lưu path: artists/uuid_name.jpg
+            tktArtist tktArtist = new tktArtist();
+            tktArtist.setName(name.trim());
+            tktArtist.setBio(bio != null ? bio.trim() : "");
+            tktArtist.setImageUrl(relativePath); // Lưu path: artists/uuid_name.jpg
 
-            return artistRepository.save(artist);
+            return artistRepository.save(tktArtist);
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi lưu ảnh lên Cloud");
         }
     }
 
     @Transactional
-    public Artist update(Long id, String name, String bio, MultipartFile imageFile) {
-        Artist existing = getById(id);
+    public tktArtist update(Long id, String name, String bio, MultipartFile imageFile) {
+        tktArtist existing = getById(id);
 
         if (name != null && !name.isBlank()) existing.setName(name.trim());
         if (bio != null) existing.setBio(bio.trim());
@@ -108,10 +108,10 @@ public class ArtistService {
 
     @Transactional
     public void delete(Long id) {
-        Artist artist = getById(id);
+        tktArtist tktArtist = getById(id);
         try {
-            String imageUrl = artist.getImageUrl();
-            artistRepository.delete(artist);
+            String imageUrl = tktArtist.getImageUrl();
+            artistRepository.delete(tktArtist);
             deleteFromR2(imageUrl); // Xóa trên Cloud sau khi xóa DB thành công
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(
@@ -123,9 +123,9 @@ public class ArtistService {
 
     @Transactional(readOnly = true)
     public List<ArtistResponse> getAllWithViews() {
-        List<Artist> artists = artistRepository.findAllWithSongsFetch();
+        List<tktArtist> tktArtists = artistRepository.findAllWithSongsFetch();
 
-        return artists.stream().map(artist -> {
+        return tktArtists.stream().map(artist -> {
             long totalViews = artist.getSongs().stream()
                     .mapToLong(s -> s.getViewCount() != null ? s.getViewCount() : 0L)
                     .sum();
@@ -158,22 +158,22 @@ public class ArtistService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Artist> search(String name, int page, int size) {
+    public Page<tktArtist> search(String name, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         if (name == null || name.isBlank()) {
             return artistRepository.findAll(pageable);
         }
-        return artistRepository.findByNameContainingIgnoreCase(name, pageable);
+        return artistRepository.findByTktNameContainingIgnoreCase(name, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Artist getById(Long id) {
+    public tktArtist getById(Long id) {
         return artistRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy nghệ sĩ ID: " + id));
     }
 
     @Transactional(readOnly = true)
-    public List<Artist> getAllArtistsList() {
+    public List<tktArtist> getAllArtistsList() {
         return artistRepository.findAll(Sort.by(Sort.Direction.ASC, "name"));
     }
 }

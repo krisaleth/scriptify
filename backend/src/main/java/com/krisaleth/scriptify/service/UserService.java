@@ -1,7 +1,7 @@
 package com.krisaleth.scriptify.service;
 
-import com.krisaleth.scriptify.entity.Song;
-import com.krisaleth.scriptify.entity.Users;
+import com.krisaleth.scriptify.entity.tktSong;
+import com.krisaleth.scriptify.entity.tktUsers;
 import com.krisaleth.scriptify.repository.SongRepository;
 import com.krisaleth.scriptify.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,40 +35,28 @@ public class UserService {
     @Value("${r2.bucket-name}")
     private String bucketName;
 
-    /**
-     * ✅ 1. LẤY THÔNG TIN CÁ NHÂN (Fix lỗi dòng 36 ở Controller)
-     */
     @Transactional(readOnly = true)
-    public Users getMyProfile(String email) {
+    public tktUsers getMyProfile(String email) {
         return getUserByEmail(email);
     }
 
-    /**
-     * ✅ 2. LẤY TẤT CẢ USER (Fix lỗi dòng 97 ở Controller)
-     */
     @Transactional(readOnly = true)
-    public Page<Users> getAllUsers(Pageable pageable) {
+    public Page<tktUsers> getAllUsers(Pageable pageable) {
         return usersRepository.findAll(pageable);
     }
 
-    /**
-     * ✅ 3. XÓA NGƯỜI DÙNG (Fix lỗi dòng 106 ở Controller)
-     */
     @Transactional
     public void deleteUser(Long id) {
-        Users user = getUserById(id);
-        // Xóa ảnh trên R2 trước khi xóa user trong DB
+        tktUsers user = getUserById(id);
         if (user.getAvatarUrl() != null) {
             deleteFromR2(user.getAvatarUrl());
         }
         usersRepository.delete(user);
     }
 
-    // --- CÁC HÀM SẾP ĐÃ CÓ (Giữ nguyên bên dưới) ---
-
     @Transactional
     public void changePassword(Long userId, String currentPassword, String newPassword) {
-        Users user = getUserById(userId);
+        tktUsers user = getUserById(userId);
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu hiện tại không chính xác");
         }
@@ -77,8 +65,8 @@ public class UserService {
     }
 
     @Transactional
-    public Users updateProfile(Long userId, String nickname, MultipartFile avatarFile) {
-        Users existingUser = getUserById(userId);
+    public tktUsers updateProfile(Long userId, String nickname, MultipartFile avatarFile) {
+        tktUsers existingUser = getUserById(userId);
         if (nickname != null && !nickname.isBlank()) {
             existingUser.setNickname(nickname);
         }
@@ -97,8 +85,8 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Set<Song> getFavoriteSongs(String email) {
-        Users user = usersRepository.findByEmail(email)
+    public Set<tktSong> getFavoriteSongs(String email) {
+        tktUsers user = usersRepository.findByTktEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         user.getFavoriteSongs().size();
         return user.getFavoriteSongs();
@@ -106,8 +94,8 @@ public class UserService {
 
     @Transactional
     public void toggleFavorite(String email, Long songId) {
-        Users user = getUserByEmail(email);
-        Song song = songRepository.findById(songId)
+        tktUsers user = getUserByEmail(email);
+        tktSong song = songRepository.findById(songId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
 
         if (user.getFavoriteSongs().contains(song)) {
@@ -144,11 +132,13 @@ public class UserService {
         }
     }
 
-    public Users getUserById(Long id) {
-        return usersRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User ID not found"));
+    public tktUsers getUserById(Long id) {
+        return usersRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User ID not found"));
     }
 
-    public Users getUserByEmail(String email) {
-        return usersRepository.findByEmail(email).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Email not found"));
+    public tktUsers getUserByEmail(String email) {
+        return usersRepository.findByTktEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Email not found"));
     }
 }
