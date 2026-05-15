@@ -15,16 +15,20 @@ import java.util.List;
 @Setter
 @Accessors(prefix = "tkt")
 public class tktAlbum {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long tktId;
+
     private String tktTitle;
+
     private Integer tktReleaseYear;
+
     private String tktCoverImageUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tkt_artist_id")
-    @JsonIgnoreProperties("tktAlbum")
+    @JsonIgnoreProperties({"tktAlbums", "tktSongs", "hibernateLazyInitializer", "handler"})
     private tktArtist tktArtist;
 
     @OneToMany(mappedBy = "tktAlbum")

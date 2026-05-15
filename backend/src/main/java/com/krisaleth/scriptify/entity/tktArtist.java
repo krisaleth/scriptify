@@ -26,11 +26,11 @@ public class tktArtist {
 
     private String tktImageUrl;
 
-    @OneToMany(mappedBy = "tktArtist")
+    @OneToMany(mappedBy = "tktArtist", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<tktAlbum> tktAlbums;
 
-    @OneToMany(mappedBy = "tktArtist")
+    @OneToMany(mappedBy = "tktArtist", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<tktSong> tktSongs;
 }

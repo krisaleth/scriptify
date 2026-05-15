@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -67,20 +68,46 @@ public class ArtistController {
      * Dùng cho Admin Dashboard để quản lý danh sách
      */
     @GetMapping
-    public ResponseEntity<Page<tktArtist>> searchArtists(
+    public ResponseEntity<Page<ArtistResponse>> searchArtists(
             @RequestParam(required = false) String name,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(artistService.search(name, page, size));
-    }
 
-    /**
-     * LẤY DANH SÁCH RÚT GỌN
-     * Dùng cho các ô Select (Dropdown) khi tạo bài hát mới
-     */
-    @GetMapping("/all")
-    public ResponseEntity<List<tktArtist>> getAllArtists() {
-        return ResponseEntity.ok(artistService.getAllArtistsList());
+        Page<tktArtist> artistPage = artistService.search(name, page, size);
+
+        Page<ArtistResponse> responsePage = artistPage.map(artist -> {
+            // Tính toán lượt view từ danh sách bài hát (prefix tkt)
+            long totalViews = (artist.getSongs() != null) ? artist.getSongs().stream()
+                                                               .mapToLong(s -> s.getViewCount() != null ? s.getViewCount() : 0L)
+                                                               .sum() : 0L;
+
+            // Map danh sách 5 bài hát đứng đầu (nếu cần hiển thị ở list)
+            List<ArtistResponse.SongShortResponse> topSongs = (artist.getSongs() != null) ?
+                    artist.getSongs().stream()
+                    .sorted((s1, s2) -> Long.compare(
+                            s2.getViewCount() != null ? s2.getViewCount() : 0L,
+                            s1.getViewCount() != null ? s1.getViewCount() : 0L))
+                    .limit(5)
+                    .map(s -> ArtistResponse.SongShortResponse.builder()
+                              .id(s.getId())
+                              .title(s.getTitle())
+                              .viewCount(s.getViewCount())
+                              .imageUrl(s.getImageUrl())
+                              .build())
+                    .toList() : Collections.emptyList();
+
+            return ArtistResponse.builder()
+                    .id(artist.getId())
+                    .name(artist.getName())
+                    .bio(artist.getBio())
+                    .imageUrl(artist.getImageUrl())
+                    .totalViews(totalViews)
+                    .songCount(artist.getSongs() != null ? artist.getSongs().size() : 0)
+                    .topSongs(topSongs)
+                    .build();
+        });
+
+        return ResponseEntity.ok(responsePage);
     }
 
     @GetMapping("/{id:\\d+}")

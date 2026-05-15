@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { getResourceUrl } from "@/utils/urlHelper";
-import { apiRequest } from "@/utils/apiClient"; // ✅ Sử dụng apiClient thông minh
+import { apiRequest } from "@/utils/apiClient"; 
 
 interface Props {
-  searchQuery: string; // ✅ Nhận từ khóa từ AdminDashboard truyền xuống
+  searchQuery: string; 
   refresh: number;
   onEdit: (artist: any) => void;
   onDelete: (id: number) => void;
@@ -23,9 +23,8 @@ export function ArtistSection({ searchQuery, refresh, onEdit, onDelete }: Props)
   const fetchArtists = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiRequest(`${API_BASE}/artists/all`);
+      const data = await apiRequest(`${API_BASE}/artists`);
       if (data) {
-        // Xử lý cả 2 trường hợp: Backend trả về mảng hoặc Object phân trang
         setArtists(Array.isArray(data) ? data : data.content || []);
       }
     } catch (err) {
@@ -54,7 +53,7 @@ export function ArtistSection({ searchQuery, refresh, onEdit, onDelete }: Props)
           <TableRow className="border-white/5 text-zinc-500 uppercase text-[10px] font-black tracking-[0.2em] h-14 italic">
             <TableHead className="w-[100px] text-center">Ảnh</TableHead>
             <TableHead>Tên Nghệ Sĩ</TableHead>
-            <TableHead className="max-w-[300px]">Tiểu sử Cloud</TableHead>
+            <TableHead className="max-w-[300px]">Tiểu sử</TableHead>
             <TableHead className="text-right pr-10">Hành động</TableHead>
           </TableRow>
         </TableHeader>
@@ -62,7 +61,7 @@ export function ArtistSection({ searchQuery, refresh, onEdit, onDelete }: Props)
           {loading ? (
             <TableRow className="border-white/5">
               <TableCell colSpan={4} className="text-center py-20 text-zinc-600 font-black uppercase text-[10px] tracking-widest animate-pulse italic">
-                Đang quét danh sách từ Scriptify Cloud...
+                Đang quét danh sách từ Scriptify...
               </TableCell>
             </TableRow>
           ) : filteredArtists.length === 0 ? (

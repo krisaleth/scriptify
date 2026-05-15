@@ -13,7 +13,8 @@ import java.util.Set;
 @Entity
 @Table(name = "tkt_songs")
 @Accessors(prefix = "tkt")
-@Getter @Setter
+@Getter
+@Setter
 public class tktSong {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,15 +40,15 @@ public class tktSong {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tkt_artist_id", nullable = false)
-    @JsonIgnoreProperties({"tktSongs", "tktAlbums"}) // Cực kỳ quan trọng để cắt đứt vòng lặp
+    @JsonIgnoreProperties({"tktSongs", "tktAlbums", "hibernateLazyInitializer", "handler"})
     private tktArtist tktArtist;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tkt_album_id")
-    @JsonIgnoreProperties("tktSongs")
+    @JsonIgnoreProperties({"tktSongs", "hibernateLazyInitializer", "handler"})
     private tktAlbum tktAlbum;
 
     @ManyToMany(mappedBy = "tktSongs")
-    @JsonIgnoreProperties("tktSongs")
+    @JsonIgnoreProperties({"tktSongs", "hibernateLazyInitializer", "handler"})
     private Set<tktPlaylist> tktPlaylists;
 }

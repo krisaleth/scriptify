@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { getResourceUrl } from "@/utils/urlHelper";
-import { apiRequest } from "@/utils/apiClient"; // ✅ Sử dụng người gác cổng thông minh
+import { apiRequest } from "@/utils/apiClient";
 
 interface SongSectionProps {
-  searchQuery: string; // ✅ Nhận từ khóa từ Dashboard truyền xuống
+  searchQuery: string;
   refresh: number;
   onEdit: (song: any) => void;
   onDelete: (id: number) => void;
@@ -19,7 +19,6 @@ export function SongSection({ searchQuery, refresh, onEdit, onDelete }: SongSect
   const [songs, setSongs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Fetch data dùng apiRequest để tự động xử lý khi Token hỏng/hết hạn
   const fetchSongs = useCallback(async () => {
     setLoading(true);
     try {
