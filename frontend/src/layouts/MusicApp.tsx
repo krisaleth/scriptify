@@ -115,7 +115,8 @@ export default function MusicApp() {
   }, [songs, currentTrackId, handlePlayTrack]);
 
   return (
-    <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden font-sans select-none tracking-tight">
+    // ✅ Đã xóa bg-black text-white, thay bằng hệ thống biến Theme
+    <div className="flex flex-col h-screen w-full bg-background text-foreground transition-colors duration-300 overflow-hidden font-sans select-none tracking-tight">
       <audio
         ref={audioRef}
         // "Key" thần thánh: Giúp React reset hoàn toàn thẻ audio khi đổi bài hát
@@ -128,7 +129,8 @@ export default function MusicApp() {
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <Sidebar onPlayTrack={handlePlayTrack} />
-        <main className="flex-1 overflow-y-auto bg-gradient-to-b from-zinc-900 to-black custom-scrollbar border-l border-zinc-800/50">
+        {/* ✅ Đã xóa gradient kẹt màu (from-zinc-900 to-black) và sửa màu viền */}
+        <main className="flex-1 overflow-y-auto bg-background custom-scrollbar border-l border-border transition-colors duration-300">
           <Outlet context={{ handlePlayTrack, currentTrackId, isPlaying, allSongs: songs }} />
         </main>
       </div>
