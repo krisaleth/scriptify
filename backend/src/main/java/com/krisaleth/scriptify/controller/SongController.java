@@ -1,12 +1,13 @@
 package com.krisaleth.scriptify.controller;
 
 import com.krisaleth.scriptify.entity.tktSong;
+import com.krisaleth.scriptify.response.SongResponse;
 import com.krisaleth.scriptify.service.SongService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort; // PHẢI CÓ IMPORT NÀY
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,44 +22,56 @@ import java.net.URI;
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class SongController {
+
     private final SongService songService;
 
     @Value("${r2.public-url}")
     private String publicUrl;
 
-    /**
-     * PHÁT NHẠC (REDIRECT STREAMING)
-     */
     @GetMapping("/{id}/play")
     public ResponseEntity<Void> playSong(@PathVariable Long id) {
-        tktSong tktSong = songService.getSong(id);
+        tktSong song = songService.getSong(id);
         songService.incrementViewCount(id);
 
-        String cloudUrl = publicUrl + "/" + tktSong.getFilePath();
+        String cloudUrl = publicUrl + "/" + song.getFilePath();
 
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(cloudUrl))
                 .build();
     }
 
-    /**
-     * ✅ LẤY DANH SÁCH NHẠC & SEARCH (Đã Fix Ambiguous mapping)
-     * Bỏ Sort.Direction.DESC vì @PageableDefault cần chuỗi hoặc Enum cụ thể
-     */
     @GetMapping
-    public ResponseEntity<Page<tktSong>> getSongs(
+    public ResponseEntity<Page<SongResponse>> getSongs(
             @RequestParam(required = false) String query,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        
+            @PageableDefault(size = 20, sort = "tktCreatedAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Page<tktSong> songPage;
+
         if (query != null && !query.isBlank()) {
-            // Đảm bảo trong SongService đã đổi hàm searchSongs nhận thêm Pageable
-            return ResponseEntity.ok(songService.searchSongs(query, pageable));
+            songPage = songService.searchSongs(query, pageable);
+        } else {
+            songPage = songService.getAllSongs(pageable);
         }
-        
-        return ResponseEntity.ok(songService.getAllSongs(pageable));
+
+        Page<SongResponse> responsePage = songPage.map(song -> SongResponse.builder()
+                .id(song.getId())
+                .title(song.getTitle())
+                .duration(song.getDuration())
+                .filePath(song.getFilePath())
+                .imageUrl(song.getImageUrl())
+                .viewCount(song.getViewCount())
+                .likeCount(song.getLikeCount())
+                .createdAt(song.getCreatedAt())
+                .artist(SongResponse.ArtistShortResponse.builder()
+                        .id(song.getArtist().getId())
+                        .name(song.getArtist().getName())
+                        .build())
+                .albumTitle(song.getAlbum() != null ? song.getAlbum().getTitle() : null)
+                .build());
+
+        return ResponseEntity.ok(responsePage);
     }
 
-    // --- THÊM NHẠC ---
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<tktSong> createSong(
             @RequestParam("title") String title,
@@ -67,11 +80,10 @@ public class SongController {
             @RequestParam("songFile") MultipartFile musicFile,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
 
-        tktSong savedTktSong = songService.createSong(title, artistId, albumId, musicFile, imageFile);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedTktSong);
+        tktSong savedSong = songService.createSong(title, artistId, albumId, musicFile, imageFile);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedSong);
     }
 
-    // --- CẬP NHẬT NHẠC ---
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<tktSong> updateSong(
             @PathVariable Long id,
@@ -81,8 +93,8 @@ public class SongController {
             @RequestParam(value = "songFile", required = false) MultipartFile musicFile,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
 
-        tktSong updatedTktSong = songService.updateSong(id, title, artistId, albumId, musicFile, imageFile);
-        return ResponseEntity.ok(updatedTktSong);
+        tktSong updatedSong = songService.updateSong(id, title, artistId, albumId, musicFile, imageFile);
+        return ResponseEntity.ok(updatedSong);
     }
 
     @GetMapping("/{id}")

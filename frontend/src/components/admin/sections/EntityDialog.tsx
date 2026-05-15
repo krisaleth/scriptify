@@ -36,7 +36,7 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
 
     if (type === 'music' || type === 'albums') {
       try {
-        const res = await fetch(`${API_BASE}/artists/all`, fetchOptions);
+        const res = await fetch(`${API_BASE}/artists`, fetchOptions);
         if (res.ok) {
           const data = await res.json();
           setArtists(Array.isArray(data) ? data : data.content || []);
@@ -78,7 +78,6 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
     e.preventDefault();
     setLoading(true);
     
-    // 2. Khởi tạo FormData để gửi File
     const body = new FormData();
     const endpointMap: Record<string, string> = { music: "songs", artists: "artists", albums: "albums" };
     const endpoint = endpointMap[type];
@@ -106,7 +105,6 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
       const res = await fetch(url, {
         method: editItem ? "PUT" : "POST",
         credentials: "include", 
-        // ⚠️ LƯU Ý: Tuyệt đối KHÔNG set Content-Type khi gửi FormData
         body
       });
 

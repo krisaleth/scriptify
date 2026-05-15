@@ -37,16 +37,10 @@ public class SecurityConfiguration {
                 // 2. Disable CSRF vì tui mình dùng JWT/Stateless
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
-                        // Khi BE có context /api, requestMatchers CHỈ cần ghi phần đuôi
                         .requestMatchers("/auth/**", "/error").permitAll()
-
-                        // ✅ Sửa lỗi 403 cho endpoint /me (vốn cần đăng nhập nhưng load lúc init)
                         .requestMatchers("/user/me").permitAll()
-
-                        // ✅ Cho phép lấy data công khai
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/songs/**", "/artists/**", "/albums/**").permitAll()
-
-                        // Tất cả các thao tác khác (Admin, Upload...) yêu cầu đăng nhập
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
