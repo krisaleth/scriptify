@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { ShieldCheck, Plus, Music2, Mic2, Library, Users as UsersIcon } from "lucide-react";
+import { ShieldCheck, Plus, Music2, Mic2, Library, Users as UsersIcon, Home } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -11,11 +12,12 @@ import { AlbumSection } from "./sections/AlbumSection";
 import { UserSection } from "./sections/UserSection";
 import { EntityDialog } from "./sections/EntityDialog";
 import { AdminSearchControl } from "./sections/AdminSearchControl";
-import { apiRequest } from "@/utils/apiClient"; // ✅ Dùng người gác cổng thông minh
+import { apiRequest } from "@/utils/apiClient";
 
 const API_BASE = "/api";
 
 export function AdminDashboard() {
+  const navigate = useNavigate();
   const [mainTab, setMainTab] = useState("music");
   const [searchQuery, setSearchQuery] = useState(""); 
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -24,7 +26,6 @@ export function AdminDashboard() {
   
   const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
 
-  // Thay đổi placeholder theo tab
   const searchPlaceholder = useMemo(() => {
     switch (mainTab) {
       case "music": return "Tìm tên bài hát...";
@@ -35,9 +36,8 @@ export function AdminDashboard() {
     }
   }, [mainTab]);
 
-  // ✅ Sử dụng apiRequest để xóa (Tự lo phần credentials/cookie)
   const handleDelete = async (path: string, id: number) => {
-    if (!window.confirm("bạn chắc chắn muốn xoá mục này chứ? Thao tác này không thể hoàn tác!")) return;
+    if (!window.confirm("Bạn chắc chắn muốn xoá mục này chứ? Thao tác này không thể hoàn tác!")) return;
     
     try {
       const res = await apiRequest(`${API_BASE}/${path}/${id}`, {
@@ -52,50 +52,61 @@ export function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 md:p-10 selection:bg-green-500/30">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 p-6 md:p-10 selection:bg-primary/30">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* HEADER AREA */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
+          
           <div>
-            <h1 className="text-4xl font-black italic tracking-tighter flex items-center gap-4 text-green-500">
-              <ShieldCheck className="w-12 h-12 drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]" /> 
-              SCRIPTIFY ADMIN
+            <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter flex items-center gap-3 text-primary">
+              <ShieldCheck className="w-10 h-10 drop-shadow-md" /> 
+              ADMIN
             </h1>
-            <p className="text-zinc-600 text-[10px] font-black uppercase tracking-[0.4em] italic mt-2 ml-16">
-              Cloud Control Center
+            <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.4em] italic mt-1 ml-14">
+              Cloud Control
             </p>
           </div>
 
           <div className="flex items-center gap-4 w-full lg:w-auto">
-            {/* THANH SEARCH CÙNG CẤP VỚI NÚT THÊM */}
+            {/* THANH SEARCH */}
             <AdminSearchControl 
               placeholder={searchPlaceholder} 
               onSearch={setSearchQuery} 
               tabValue={mainTab} 
             />
 
+            {/* NÚT THÊM */}
             {mainTab !== "user" && (
               <Button 
                 onClick={() => { setEditItem(null); setDialogOpen(true); }}
-                className="bg-green-500 text-black font-black px-6 h-12 rounded-xl hover:scale-105 transition-all shadow-lg italic shrink-0"
+                className="bg-primary text-primary-foreground font-black px-6 h-12 rounded-xl hover:scale-105 transition-all shadow-lg italic shrink-0"
               >
                 <Plus className="mr-2 w-5 h-5 stroke-[3px]" /> THÊM
               </Button>
             )}
+
+            {/* ✅ NÚT HOME (Dùng thẻ HTML thuần để chống lỗi) */}
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center justify-center w-12 h-12 bg-white border border-border text-foreground rounded-xl hover:bg-primary hover:text-primary-foreground hover:scale-105 transition-all shadow-lg shrink-0 group"
+              title="Trở về Trang Chủ"
+            >
+              <Home className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+            </button>
           </div>
         </div>
 
         {/* TABS & SECTIONS */}
         <Tabs value={mainTab} onValueChange={setMainTab} className="space-y-6">
-          <TabsList className="bg-zinc-950 border border-white/5 p-1.5 rounded-2xl h-14 w-full justify-start overflow-x-auto no-scrollbar sm:w-auto">
-            <TabsTrigger value="music" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-green-500 data-[state=active]:text-black">Nhạc</TabsTrigger>
-            <TabsTrigger value="artists" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-green-500 data-[state=active]:text-black">Nghệ sĩ</TabsTrigger>
-            <TabsTrigger value="albums" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-green-500 data-[state=active]:text-black">Albums</TabsTrigger>
-            <TabsTrigger value="user" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-green-500 data-[state=active]:text-black">Users</TabsTrigger>
+          <TabsList className="bg-secondary/50 border border-border p-1.5 rounded-2xl h-14 w-full justify-start overflow-x-auto no-scrollbar sm:w-auto">
+            <TabsTrigger value="music" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Nhạc</TabsTrigger>
+            <TabsTrigger value="artists" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Nghệ sĩ</TabsTrigger>
+            <TabsTrigger value="albums" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Albums</TabsTrigger>
+            <TabsTrigger value="user" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Users</TabsTrigger>
           </TabsList>
 
-          <div className="bg-zinc-900/10 rounded-[2.5rem] border border-white/5 p-8 min-h-[600px] backdrop-blur-md shadow-2xl relative">
+          <div className="bg-secondary/20 rounded-[2.5rem] border border-border p-8 min-h-[600px] backdrop-blur-md shadow-lg relative">
             <TabsContent value="music" className="mt-0 outline-none">
               <SongSection 
                 searchQuery={searchQuery} 
