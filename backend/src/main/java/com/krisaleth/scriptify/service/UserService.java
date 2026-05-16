@@ -1,9 +1,12 @@
 package com.krisaleth.scriptify.service;
 
+import com.krisaleth.scriptify.dto.ChangePasswordDto;
 import com.krisaleth.scriptify.entity.tktSong;
 import com.krisaleth.scriptify.entity.tktUsers;
 import com.krisaleth.scriptify.repository.SongRepository;
 import com.krisaleth.scriptify.repository.UsersRepository;
+import com.krisaleth.scriptify.response.SongResponse;
+import com.krisaleth.scriptify.response.UserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -20,8 +23,9 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+
+import static java.util.stream.Collectors.toSet;
 
 @Service
 @RequiredArgsConstructor
@@ -35,19 +39,66 @@ public class UserService {
     @Value("${r2.bucket-name}")
     private String bucketName;
 
+    private UserResponse convertToResponse(tktUsers user) {
+        if (user == null) return null;
+
+        Set<Long> favIds = new HashSet<>();
+        List<UserResponse.FavoriteSongShort> favShorts = new ArrayList<>();
+
+        if (user.getFavoriteSongs() != null) {
+            user.getFavoriteSongs().forEach(song -> {
+                favIds.add(song.getId());
+
+                favShorts.add(UserResponse.FavoriteSongShort.builder()
+                        .id(song.getId())
+                        .title(song.getTitle())
+                        .imageUrl(song.getImageUrl())
+                        .build());
+            });
+        }
+
+        return UserResponse.builder()
+                .id(user.getId())
+                .nickname(user.getNickname())
+                .email(user.getEmail())
+                .role(user.getRole() != null ? user.getRole().name() : "USER")
+                .avatarUrl(user.getAvatarUrl() != null ? user.getAvatarUrl() : "assets/default-avatar.png")
+                .favoriteSongIds(favIds)
+                .favoriteSongs(favShorts)
+                .build();
+    }
+
+    private SongResponse convertToSongResponse(tktSong song) {
+        return SongResponse.builder()
+                .id(song.getId())
+                .title(song.getTitle())
+                .duration(song.getDuration())
+                .filePath(song.getFilePath())
+                .imageUrl(song.getImageUrl())
+                .viewCount(song.getViewCount())
+                .likeCount(song.getLikeCount())
+                .createdAt(song.getCreatedAt())
+                .artist(SongResponse.ArtistShortResponse.builder()
+                        .id(song.getArtist().getId())
+                        .name(song.getArtist().getName())
+                        .build())
+                .albumTitle(song.getAlbum() != null ? song.getAlbum().getTitle() : null)
+                .build();
+    }
+
     @Transactional(readOnly = true)
-    public tktUsers getMyProfile(String email) {
+    public UserResponse getMyProfile(String email) {
         return getUserByEmail(email);
     }
 
     @Transactional(readOnly = true)
-    public Page<tktUsers> getAllUsers(Pageable pageable) {
-        return usersRepository.findAll(pageable);
+    public Page<UserResponse> getAllUsers(Pageable pageable) {
+        return usersRepository.findAll(pageable).map(this::convertToResponse);
     }
 
     @Transactional
     public void deleteUser(Long id) {
-        tktUsers user = getUserById(id);
+        tktUsers user = usersRepository.findById(id).orElseThrow();
         if (user.getAvatarUrl() != null) {
             deleteFromR2(user.getAvatarUrl());
         }
@@ -56,7 +107,7 @@ public class UserService {
 
     @Transactional
     public void changePassword(Long userId, String currentPassword, String newPassword) {
-        tktUsers user = getUserById(userId);
+        tktUsers user = usersRepository.findById(userId).orElseThrow();
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu hiện tại không chính xác");
         }
@@ -65,14 +116,15 @@ public class UserService {
     }
 
     @Transactional
-    public tktUsers updateProfile(Long userId, String nickname, MultipartFile avatarFile) {
-        tktUsers existingUser = getUserById(userId);
+    public UserResponse updateProfile(Long userId, String nickname, MultipartFile avatarFile) {
+        tktUsers existingUser = usersRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         if (nickname != null && !nickname.isBlank()) {
             existingUser.setNickname(nickname);
         }
         if (avatarFile != null && !avatarFile.isEmpty()) {
             try {
-                if (!"/avatars/default-avatar.png".equals(existingUser.getAvatarUrl())) {
+                if (!"/assets/default-avatar.png".equals(existingUser.getAvatarUrl())) {
                     deleteFromR2(existingUser.getAvatarUrl());
                 }
                 String newPath = uploadAvatarToR2(avatarFile);
@@ -81,20 +133,20 @@ public class UserService {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi upload ảnh lên R2");
             }
         }
-        return usersRepository.save(existingUser);
+        return convertToResponse(usersRepository.save(existingUser));
     }
 
     @Transactional(readOnly = true)
-    public Set<tktSong> getFavoriteSongs(String email) {
+    public Set<SongResponse> getFavoriteSongs(String email) {
         tktUsers user = usersRepository.findByTktEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         user.getFavoriteSongs().size();
-        return user.getFavoriteSongs();
+        return user.getFavoriteSongs().stream().map(this::convertToSongResponse).collect(toSet());
     }
 
     @Transactional
     public void toggleFavorite(String email, Long songId) {
-        tktUsers user = getUserByEmail(email);
+        tktUsers user = usersRepository.findByTktEmail(email).orElseThrow();
         tktSong song = songRepository.findById(songId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
 
@@ -107,6 +159,24 @@ public class UserService {
         }
         usersRepository.save(user);
         songRepository.save(song);
+    }
+
+    @Transactional
+    public void changePassword(String email, ChangePasswordDto request) {
+        tktUsers user = usersRepository.findByTktEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu cũ không chính xác!");
+        }
+
+        // 3. Kiểm tra mật khẩu mới không được trùng mật khẩu cũ
+        if (request.getOldPassword().equals(request.getNewPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu mới phải khác mật khẩu cũ sếp ơi!");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        usersRepository.save(user);
     }
 
     private String uploadAvatarToR2(MultipartFile file) throws IOException {
@@ -132,13 +202,13 @@ public class UserService {
         }
     }
 
-    public tktUsers getUserById(Long id) {
-        return usersRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User ID not found"));
+    public UserResponse getUserById(Long id) {
+        return convertToResponse(usersRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User ID not found")));
     }
 
-    public tktUsers getUserByEmail(String email) {
-        return usersRepository.findByTktEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Email not found"));
+    public UserResponse getUserByEmail(String email) {
+        return convertToResponse(usersRepository.findByTktEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Email not found")));
     }
 }

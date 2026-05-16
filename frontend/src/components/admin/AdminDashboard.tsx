@@ -115,7 +115,7 @@ export function AdminDashboard() {
             {/* ✅ NÚT HOME (Dùng thẻ HTML thuần để chống lỗi) */}
             <button
               onClick={() => navigate('/')}
-              className="flex items-center justify-center w-12 h-12 bg-white border border-border text-foreground rounded-xl hover:bg-primary hover:text-primary-foreground hover:scale-105 transition-all shadow-lg shrink-0 group"
+              className="flex items-center justify-center w-12 h-12 bg-secondary border border-border text-foreground rounded-xl hover:bg-primary hover:text-primary-foreground hover:scale-105 transition-all shadow-lg shrink-0 group"
               title="Trở về Trang Chủ"
             >
               <Home className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />

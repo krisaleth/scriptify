@@ -168,7 +168,6 @@ export function Sidebar({ onPlayTrack }: { onPlayTrack: (id: number) => void }) 
           )}
         </nav>
 
-        {/* 🟢 Cloud Vault Section */}
         {user && (
           <div className="space-y-1">
             <div className="flex items-center justify-between px-4 mb-3">

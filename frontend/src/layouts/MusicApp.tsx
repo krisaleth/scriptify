@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Sidebar } from "./sidebar";
+import { Sidebar } from "./Sidebar";
 import { MusicPlayer } from "./MusicPlayer";
 import { getResourceUrl } from "@/utils/urlHelper";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -47,7 +47,6 @@ export default function MusicApp() {
     }
   }, [currentTrackId, songs]);
 
-  // 3. Thực hiện Play/Pause khi trạng thái hoặc Bài hát thay đổi
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentSong) return;
@@ -64,9 +63,8 @@ export default function MusicApp() {
     } else {
       audio.pause();
     }
-  }, [isPlaying, currentSong]); // Theo dõi cả currentSong để phát ngay khi đổi bài
+  }, [isPlaying, currentSong]);
 
-  // 4. Cập nhật Volume thực tế cho thẻ Audio
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
@@ -115,11 +113,9 @@ export default function MusicApp() {
   }, [songs, currentTrackId, handlePlayTrack]);
 
   return (
-    // ✅ Đã xóa bg-black text-white, thay bằng hệ thống biến Theme
     <div className="flex flex-col h-screen w-full bg-background text-foreground transition-colors duration-300 overflow-hidden font-sans select-none tracking-tight">
       <audio
         ref={audioRef}
-        // "Key" thần thánh: Giúp React reset hoàn toàn thẻ audio khi đổi bài hát
         key={currentSong?.id} 
         src={currentSong ? getResourceUrl(currentSong.filePath) : undefined}
         onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
