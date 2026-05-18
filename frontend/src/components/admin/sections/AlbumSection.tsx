@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { getResourceUrl } from "@/utils/urlHelper";
-import { apiRequest } from "@/utils/apiClient"; // ✅ Dùng apiClient sếp vừa tạo
+import { apiRequest } from "@/utils/apiClient"; // Dùng apiClient sếp vừa tạo
 
 interface Props {
-  searchQuery: string; // ✅ Nhận keyword từ Dashboard
+  searchQuery: string; // Nhận keyword từ Dashboard
   refresh: number;
   onEdit: (album: any) => void;
   onDelete: (id: number) => void;
@@ -22,7 +22,7 @@ export function AlbumSection({ searchQuery, refresh, onEdit, onDelete }: Props) 
   const fetchAlbums = useCallback(async () => {
     try {
       setIsLoading(true);
-      // ✅ Dùng apiRequest để tự động xử lý Token hết hạn
+      // Dùng apiRequest để tự động xử lý Token hết hạn
       const data = await apiRequest(`${API_BASE}/albums?size=100`);
       if (data) {
         setAlbums(data.content || (Array.isArray(data) ? data : []));
@@ -38,7 +38,7 @@ export function AlbumSection({ searchQuery, refresh, onEdit, onDelete }: Props) 
     fetchAlbums();
   }, [refresh, fetchAlbums]);
 
-  // ✅ Logic tìm kiếm Client-side cực nhanh
+  // Logic tìm kiếm Client-side cực nhanh
   const filteredAlbums = useMemo(() => {
     return albums.filter((album) =>
       album.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -47,10 +47,10 @@ export function AlbumSection({ searchQuery, refresh, onEdit, onDelete }: Props) 
   }, [albums, searchQuery]);
 
   return (
-    <Card className="bg-zinc-950 border-white/5 overflow-hidden rounded-[2rem] shadow-2xl">
+    <Card className="bg-card border-border overflow-hidden rounded-[2rem] shadow-lg transition-colors duration-300">
       <Table>
-        <TableHeader className="bg-white/5">
-          <TableRow className="border-white/5 text-zinc-500 uppercase text-[10px] font-black tracking-[0.2em] h-14 italic">
+        <TableHeader className="bg-secondary/50 transition-colors duration-300">
+          <TableRow className="border-border text-muted-foreground uppercase text-[10px] font-black tracking-[0.2em] h-14 italic transition-colors duration-300 hover:bg-transparent">
             <TableHead className="w-24 text-center">Bìa Cloud</TableHead>
             <TableHead>Tên Album</TableHead>
             <TableHead>Nghệ Sĩ</TableHead>
@@ -60,32 +60,45 @@ export function AlbumSection({ searchQuery, refresh, onEdit, onDelete }: Props) 
         </TableHeader>
         <TableBody>
           {isLoading ? (
-            <TableRow><TableCell colSpan={5} className="text-center py-20 animate-pulse font-black text-zinc-600 italic">ĐANG TRUY XUẤT DỮ LIỆU...</TableCell></TableRow>
+            <TableRow className="border-border hover:bg-transparent transition-colors duration-300">
+              <TableCell colSpan={5} className="text-center py-20 animate-pulse font-black text-muted-foreground italic">
+                ĐANG TRUY XUẤT DỮ LIỆU...
+              </TableCell>
+            </TableRow>
           ) : filteredAlbums.length === 0 ? (
-            <TableRow><TableCell colSpan={5} className="text-center py-20 text-zinc-700 font-black italic uppercase">Không tìm thấy kết quả phù hợp</TableCell></TableRow>
+            <TableRow className="border-border hover:bg-transparent transition-colors duration-300">
+              <TableCell colSpan={5} className="text-center py-20 text-muted-foreground/70 font-black italic uppercase">
+                Không tìm thấy kết quả phù hợp
+              </TableCell>
+            </TableRow>
           ) : (
             filteredAlbums.map((album) => (
-              <TableRow key={album.id} className="border-white/5 hover:bg-white/5 transition-all h-20 group">
+              <TableRow key={album.id} className="border-border hover:bg-accent transition-colors duration-300 h-20 group">
                 <TableCell className="text-center">
                   <img 
                     src={getResourceUrl(album.coverImageUrl)} 
-                    className="w-12 h-12 inline-block object-cover rounded-lg border border-white/5 group-hover:scale-110 transition-all shadow-lg"
+                    className="w-12 h-12 inline-block object-cover rounded-lg border border-border group-hover:scale-110 transition-transform shadow-sm"
+                    alt={album.title}
                     onError={(e) => (e.currentTarget.src = "/assets/default-cover.png")}
                   />
                 </TableCell>
-                <TableCell className="font-black text-zinc-200 uppercase italic">
+                <TableCell className="font-black text-foreground uppercase italic transition-colors duration-300">
                   {album.title}
                 </TableCell>
-                <TableCell className="text-zinc-500 text-[11px] font-black uppercase italic">
+                <TableCell className="text-muted-foreground text-[11px] font-black uppercase italic transition-colors duration-300">
                   {album.artist?.name}
                 </TableCell>
-                <TableCell className="text-center font-black text-zinc-600 text-xs">
+                <TableCell className="text-center font-black text-muted-foreground text-xs transition-colors duration-300">
                   {album.releaseYear}
                 </TableCell>
                 <TableCell className="text-right pr-10">
                   <div className="flex justify-end gap-2 transition-all">
-                    <Button variant="ghost" size="icon" onClick={() => onEdit(album)} className="text-blue-400 hover:bg-blue-400/10 rounded-xl h-9 w-9"><Pencil size={16}/></Button>
-                    <Button variant="ghost" size="icon" onClick={() => onDelete(album.id)} className="text-red-500 hover:bg-red-400/10 rounded-xl h-9 w-9"><Trash2 size={16}/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => onEdit(album)} className="text-blue-500 hover:bg-blue-500/10 hover:text-blue-600 rounded-xl h-9 w-9 transition-colors">
+                      <Pencil size={16}/>
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => onDelete(album.id)} className="text-destructive hover:bg-destructive/10 hover:text-destructive rounded-xl h-9 w-9 transition-colors">
+                      <Trash2 size={16}/>
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>

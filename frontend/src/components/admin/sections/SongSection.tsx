@@ -37,7 +37,7 @@ export function SongSection({ searchQuery, refresh, onEdit, onDelete }: SongSect
     fetchSongs();
   }, [refresh, fetchSongs]);
 
-  // ✅ Logic tìm kiếm đa năng: Tên bài, Nghệ sĩ hoặc Album
+  // Logic tìm kiếm đa năng: Tên bài, Nghệ sĩ hoặc Album
   const filteredSongs = useMemo(() => {
     const query = searchQuery.toLowerCase();
     return songs.filter((song) =>
@@ -48,10 +48,10 @@ export function SongSection({ searchQuery, refresh, onEdit, onDelete }: SongSect
   }, [songs, searchQuery]);
 
   return (
-    <Card className="bg-zinc-950 border-white/5 overflow-hidden rounded-[2rem] shadow-2xl">
+    <Card className="bg-card border-border overflow-hidden rounded-[2rem] shadow-lg transition-colors duration-300">
       <Table>
-        <TableHeader className="bg-white/5">
-          <TableRow className="border-white/5 text-zinc-500 uppercase text-[10px] font-black tracking-[0.2em] h-14 italic">
+        <TableHeader className="bg-secondary/50 transition-colors duration-300">
+          <TableRow className="border-border text-muted-foreground uppercase text-[10px] font-black tracking-[0.2em] h-14 italic hover:bg-transparent transition-colors duration-300">
             <TableHead className="w-[100px] text-center">Bìa</TableHead>
             <TableHead>Tiêu đề</TableHead>
             <TableHead>Nghệ sĩ</TableHead>
@@ -61,42 +61,42 @@ export function SongSection({ searchQuery, refresh, onEdit, onDelete }: SongSect
         </TableHeader>
         <TableBody>
           {loading ? (
-            <TableRow className="border-white/5">
-              <TableCell colSpan={5} className="text-center py-20 text-zinc-600 font-black uppercase text-[10px] tracking-widest animate-pulse italic">
+            <TableRow className="border-border hover:bg-transparent transition-colors duration-300">
+              <TableCell colSpan={5} className="text-center py-20 text-muted-foreground font-black uppercase text-[10px] tracking-widest animate-pulse italic">
                 Đang quét kho nhạc từ Scriptify Cloud...
               </TableCell>
             </TableRow>
           ) : filteredSongs.length === 0 ? (
-            <TableRow className="border-white/5">
-              <TableCell colSpan={5} className="text-center py-20 text-zinc-700 font-black uppercase text-[10px] tracking-widest italic">
+            <TableRow className="border-border hover:bg-transparent transition-colors duration-300">
+              <TableCell colSpan={5} className="text-center py-20 text-muted-foreground/70 font-black uppercase text-[10px] tracking-widest italic">
                 {searchQuery ? "Không tìm thấy bài hát nào khớp với từ khóa." : "Kho nhạc hiện tại đang trống rỗng."}
               </TableCell>
             </TableRow>
           ) : (
             filteredSongs.map((song) => (
-              <TableRow key={song.id} className="border-white/5 hover:bg-white/5 transition-all h-20 group">
+              <TableRow key={song.id} className="border-border hover:bg-accent transition-colors duration-300 h-20 group">
                 <TableCell className="text-center">
                   <img 
                     src={getResourceUrl(song.imageUrl)} 
-                    className="w-12 h-12 inline-block object-cover border border-white/5 rounded-lg shadow-xl group-hover:scale-110 transition-transform duration-500"
+                    className="w-12 h-12 inline-block object-cover border border-border rounded-lg shadow-sm group-hover:scale-110 transition-transform duration-500"
                     alt={song.title}
                     onError={(e) => (e.currentTarget.src = "/assets/default-cover.png")}
                   />
                 </TableCell>
-                <TableCell className="font-black text-zinc-200">
+                <TableCell className="font-black text-foreground transition-colors duration-300">
                   <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-6 bg-green-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <span className="uppercase italic tracking-tight group-hover:text-green-500 transition-colors">
+                    <div className="w-1.5 h-6 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <span className="uppercase italic tracking-tight group-hover:text-primary transition-colors">
                       {song.title}
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className="text-zinc-500 text-[11px] font-black uppercase italic tracking-wider">
+                <TableCell className="text-muted-foreground text-[11px] font-black uppercase italic tracking-wider transition-colors duration-300">
                   {song.artist?.name || "Nghệ sĩ ẩn danh"}
                 </TableCell>
-                <TableCell className="text-zinc-500 text-[11px] font-black uppercase italic tracking-wider opacity-60">
+                <TableCell className="text-muted-foreground text-[11px] font-black uppercase italic tracking-wider opacity-80 transition-colors duration-300">
                   {song.album?.title ? (
-                    <span className="text-zinc-400 group-hover:text-zinc-200 transition-colors">{song.album.title}</span>
+                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">{song.album.title}</span>
                   ) : (
                     "Single"
                   )}
@@ -107,7 +107,7 @@ export function SongSection({ searchQuery, refresh, onEdit, onDelete }: SongSect
                       variant="ghost" 
                       size="icon" 
                       onClick={() => onEdit(song)} 
-                      className="text-blue-400 hover:bg-blue-400/10 hover:text-blue-300 h-9 w-9 rounded-xl transition-all"
+                      className="text-blue-500 hover:bg-blue-500/10 hover:text-blue-600 h-9 w-9 rounded-xl transition-colors"
                     >
                       <Pencil size={16} className="stroke-[2.5px]"/>
                     </Button>
@@ -115,7 +115,7 @@ export function SongSection({ searchQuery, refresh, onEdit, onDelete }: SongSect
                       variant="ghost" 
                       size="icon" 
                       onClick={() => onDelete(song.id)} 
-                      className="text-red-500 hover:bg-red-500/10 hover:text-red-400 h-9 w-9 rounded-xl transition-all"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 w-9 rounded-xl transition-colors"
                     >
                       <Trash2 size={16} className="stroke-[2.5px]"/>
                     </Button>
