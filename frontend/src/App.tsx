@@ -20,14 +20,14 @@ export default function App() {
     <>
       {/* 1. Cấu hình Toaster cho toàn bộ App */}
       <Toaster 
-        theme="dark" 
+        theme="system" 
         position="top-right" 
         richColors 
         duration={3000}
         expand={true}
         className="toaster group"
         toastOptions={{
-          className: "group font-sans border-zinc-800 bg-zinc-900 text-white shadow-2xl",
+          className: "group font-sans border-border bg-card text-card-foreground shadow-2xl transition-colors duration-300",
         }}
       />
       <GlobalAuthModal/>
