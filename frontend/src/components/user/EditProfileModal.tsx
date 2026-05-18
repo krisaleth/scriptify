@@ -70,7 +70,8 @@ export default function EditProfileModal({ isOpen, mode, onClose }: Props) {
           setUser(updatedUser);
           toast.success("Hồ sơ đã được cập nhật!");
         } else {
-          toast.success("Đổi mật khẩu thành công!", { icon: "🟢" });
+          // Bỏ icon emoji màu xanh cứng
+          toast.success("Đổi mật khẩu thành công!");
         }
         onClose();
       } else {
@@ -88,29 +89,30 @@ export default function EditProfileModal({ isOpen, mode, onClose }: Props) {
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/90 backdrop-blur-md" />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-background/90 backdrop-blur-md" />
           
           <motion.div
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            className="relative w-full max-w-md bg-[#0A0A0A] border border-white/10 rounded-[2.5rem] p-8 shadow-2xl overflow-hidden"
+            // Chuyển màu nền sang theme card
+            className="relative w-full max-w-md bg-card border border-border rounded-[2.5rem] p-8 shadow-2xl overflow-hidden transition-colors duration-300"
           >
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#1DB954]/10 blur-[80px] rounded-full" />
+            {/* Ánh sáng nền tỏa ra theo màu Primary */}
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 blur-[80px] rounded-full transition-colors" />
 
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-xs font-black text-white uppercase italic tracking-[0.2em] flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-[#1DB954]/10">
-                  {mode === "info" ? <UserCircle className="text-[#1DB954]" size={18} /> : <ShieldCheck className="text-[#1DB954]" size={18} />}
+              <h2 className="text-xs font-black text-foreground uppercase italic tracking-[0.2em] flex items-center gap-3 transition-colors">
+                <div className="p-2 rounded-lg bg-primary/10 transition-colors">
+                  {mode === "info" ? <UserCircle className="text-primary" size={18} /> : <ShieldCheck className="text-primary" size={18} />}
                 </div>
                 {mode === "info" ? "Edit Profile" : "Security Settings"}
               </h2>
 
-              {/* ✅ NÚT X ĐÃ ĐƯỢC FIX Ở ĐÂY */}
               <button 
-                type="button" // Chặn trigger submit
+                type="button" 
                 onClick={onClose} 
-                className="text-zinc-500 hover:text-white transition-colors p-2 rounded-full hover:bg-white/5 z-50"
+                className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-full hover:bg-secondary z-50"
               >
                 <X size={20} />
               </button>
@@ -122,49 +124,50 @@ export default function EditProfileModal({ isOpen, mode, onClose }: Props) {
                   <div className="space-y-2 text-center mb-4">
                     <div 
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-24 h-24 rounded-full mx-auto bg-zinc-900 border border-white/10 overflow-hidden mb-2 cursor-pointer group relative"
+                      className="w-24 h-24 rounded-full mx-auto bg-secondary border border-border overflow-hidden mb-2 cursor-pointer group relative shadow-md transition-colors"
                     >
                        <img 
                          src={avatarPreview.startsWith('blob') ? avatarPreview : getResourceUrl(avatarPreview)} 
                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
                          alt="Avatar"
+                         onError={(e) => (e.currentTarget.src = "/assets/default-avatar.png")}
                        />
-                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                         <Camera size={20} className="text-white" />
+                       <div className="absolute inset-0 bg-background/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-[2px]">
+                         <Camera size={20} className="text-foreground" />
                        </div>
                     </div>
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-                    <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest italic">Click image to upload</span>
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest italic transition-colors">Click image to upload</span>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1 italic">Nickname</label>
+                  <div className="space-y-2 group">
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 italic transition-colors group-focus-within:text-primary">Nickname</label>
                     <input 
                       value={nickname}
                       onChange={(e) => setNickname(e.target.value)}
-                      className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 text-white focus:border-[#1DB954]/40 outline-none transition-all font-medium" 
+                      className="w-full bg-secondary/50 border border-border rounded-2xl px-5 py-4 text-foreground focus:border-primary/40 focus:ring-1 focus:ring-primary/40 outline-none transition-all font-medium placeholder:text-muted-foreground/50 shadow-sm" 
                       placeholder="Tên mới của sếp..." 
                     />
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1 italic">Mật khẩu hiện tại</label>
+                  <div className="space-y-2 group">
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 italic transition-colors group-focus-within:text-primary">Mật khẩu hiện tại</label>
                     <input 
                       type="password" 
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 text-white focus:border-[#1DB954]/40 outline-none transition-all" 
+                      className="w-full bg-secondary/50 border border-border rounded-2xl px-5 py-4 text-foreground focus:border-primary/40 focus:ring-1 focus:ring-primary/40 outline-none transition-all placeholder:text-muted-foreground/50 shadow-sm" 
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1 italic">Mật khẩu mới</label>
+                  <div className="space-y-2 group">
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 italic transition-colors group-focus-within:text-primary">Mật khẩu mới</label>
                     <input 
                       type="password" 
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 text-white focus:border-[#1DB954]/40 outline-none transition-all" 
+                      className="w-full bg-secondary/50 border border-border rounded-2xl px-5 py-4 text-foreground focus:border-primary/40 focus:ring-1 focus:ring-primary/40 outline-none transition-all placeholder:text-muted-foreground/50 shadow-sm" 
                     />
                   </div>
                 </>
@@ -172,7 +175,7 @@ export default function EditProfileModal({ isOpen, mode, onClose }: Props) {
 
               <button
                 disabled={loading}
-                className="w-full bg-[#1DB954] hover:bg-[#1ed760] text-black font-black py-4 rounded-2xl transition-all shadow-[0_8px_24px_rgba(29,185,84,0.2)] flex items-center justify-center gap-2 uppercase tracking-widest text-xs italic active:scale-95 disabled:opacity-50"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black py-4 rounded-2xl transition-all shadow-[0_8px_24px_rgba(var(--primary),0.2)] flex items-center justify-center gap-2 uppercase tracking-widest text-xs italic active:scale-95 disabled:opacity-50"
               >
                 {loading ? "Processing..." : <><Save size={16} /> Save Changes</>}
               </button>

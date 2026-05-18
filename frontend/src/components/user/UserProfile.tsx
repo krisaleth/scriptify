@@ -86,7 +86,6 @@ export default function ProfilePage() {
 
   return (
     <>
-      {/* Đã gỡ bg-black, thay bằng bg-background, đồng bộ màu kéo bôi đen */}
       <div className="min-h-screen relative overflow-hidden bg-background selection:bg-primary/30 font-sans transition-colors duration-300">
         
         {/* Background Gradients: Đổi màu xanh cứng sang CSS Variable màu của Theme */}
@@ -95,7 +94,7 @@ export default function ProfilePage() {
 
         <div className="relative z-10 max-w-6xl mx-auto px-8 py-16">
           
-          {/* 🟢 Profile Header */}
+          {/* Profile Header */}
           <motion.div
             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
             className="mb-20 flex flex-col md:flex-row items-center md:items-end gap-10 text-center md:text-left"
@@ -103,7 +102,6 @@ export default function ProfilePage() {
             <div className="relative group">
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                // Đổi bg-zinc-900 -> bg-secondary, hover viền xanh cứng -> hover:border-primary/50
                 className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden border-2 border-border shadow-2xl relative z-10 bg-secondary transition-all duration-500 group-hover:border-primary/50"
               >
                 <img 
@@ -140,7 +138,7 @@ export default function ProfilePage() {
             </div>
           </motion.div>
 
-          {/* 🟢 Playlists Section */}
+          {/* Playlists Section */}
           <section className="mb-20">
             <div className="flex items-center justify-between mb-8 group/title">
                <div className="flex items-center gap-4">
@@ -197,7 +195,7 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          {/* 🟢 Heart Beats Section */}
+          {/* Heart Beats Section */}
           <section>
             <div className="flex items-center gap-4 mb-8 group/title">
                <h2 className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.4em] italic group-hover/title:text-primary transition-colors">Heart Beats</h2>
@@ -213,7 +211,7 @@ export default function ProfilePage() {
                     <h4 className="text-foreground font-bold truncate text-[13px] uppercase italic tracking-tight">{song.title}</h4>
                     <p className="text-primary text-[9px] font-black uppercase tracking-widest truncate mt-0.5 opacity-70">{song.artist?.name}</p>
                   </div>
-                  <Heart size={12} className="text-primary fill-primary mr-3" />
+                  <Heart size={12} className="text-primary fill-current mr-3" />
                 </motion.div>
               ))}
             </div>

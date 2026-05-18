@@ -52,7 +52,8 @@ export default function CreatePlaylistModal({ isOpen, onClose, onSuccess }: Prop
       });
 
       if (response.ok) {
-        toast.success("Đã tạo Playlist mới!", { icon: "✨" });
+        // Đã bỏ icon emoji
+        toast.success("Đã tạo Playlist mới!");
         setName("");
         setDescription("");
         setImageFile(null);
@@ -77,30 +78,31 @@ export default function CreatePlaylistModal({ isOpen, onClose, onSuccess }: Prop
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            className="absolute inset-0 bg-background/80 backdrop-blur-md"
           />
 
           <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-md bg-[#0A0A0A] border border-white/10 rounded-[2.5rem] p-8 shadow-2xl overflow-hidden"
+            // Chuyển màu nền cứng thành bg-card
+            className="relative w-full max-w-md bg-card border border-border rounded-[2.5rem] p-8 shadow-2xl overflow-hidden transition-colors duration-300"
           >
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#1DB954]/10 blur-[80px] rounded-full" />
+            {/* Glow effect ăn theo màu primary */}
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 blur-[80px] rounded-full transition-colors" />
 
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-sm font-black text-white uppercase italic tracking-[0.2em] flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-[#1DB954]/10">
-                   <Music2 className="text-[#1DB954]" size={18} />
+              <h2 className="text-sm font-black text-foreground uppercase italic tracking-[0.2em] flex items-center gap-3 transition-colors">
+                <div className="p-2 rounded-lg bg-primary/10 transition-colors">
+                   <Music2 className="text-primary" size={18} />
                 </div>
                 New Playlist
               </h2>
               
-              {/* ✅ NÚT X ĐÃ ĐƯỢC FIX Ở ĐÂY */}
               <button 
                 type="button"
                 onClick={onClose} 
-                className="p-2 rounded-full hover:bg-white/5 text-zinc-500 hover:text-white transition-all z-50"
+                className="p-2 rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground transition-all z-50"
               >
                 <X size={20} />
               </button>
@@ -110,67 +112,67 @@ export default function CreatePlaylistModal({ isOpen, onClose, onSuccess }: Prop
               <div className="flex justify-center mb-4">
                 <div 
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-36 h-36 rounded-2xl border-2 border-dashed border-white/10 bg-zinc-900/50 flex flex-col items-center justify-center cursor-pointer hover:border-[#1DB954]/40 transition-all overflow-hidden relative group shadow-xl"
+                  className="w-36 h-36 rounded-2xl border-2 border-dashed border-border bg-secondary/50 flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 transition-all overflow-hidden relative group shadow-lg"
                 >
                   {preview ? (
                     <img src={preview} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Preview" />
                   ) : (
                     <>
-                      <Camera size={28} className="text-zinc-700 mb-2 group-hover:text-[#1DB954] transition-colors" />
-                      <span className="text-[9px] font-black uppercase text-zinc-600 tracking-widest italic">Add Cover</span>
+                      <Camera size={28} className="text-muted-foreground mb-2 group-hover:text-primary transition-colors" />
+                      <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest italic transition-colors">Add Cover</span>
                     </>
                   )}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                     <Camera size={24} className="text-white" />
+                  <div className="absolute inset-0 bg-background/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                     <Camera size={24} className="text-foreground" />
                   </div>
                 </div>
                 <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1 italic">Playlist Name</label>
+              <div className="space-y-2 group">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 italic transition-colors group-focus-within:text-primary">Playlist Name</label>
                 <input
                   autoFocus
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Giai điệu đang chill..."
-                  className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-[#1DB954]/40 transition-all placeholder:text-zinc-800 font-medium"
+                  className="w-full bg-secondary/50 border border-border rounded-2xl px-5 py-4 text-foreground focus:outline-none focus:border-primary/40 transition-all placeholder:text-muted-foreground/50 font-medium shadow-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1 italic">Description</label>
+              <div className="space-y-2 group">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 italic transition-colors group-focus-within:text-primary">Description</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Vài dòng cảm xúc cho list này sếp ơi..."
                   rows={2}
-                  className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-[#1DB954]/40 transition-all resize-none placeholder:text-zinc-800 font-medium"
+                  className="w-full bg-secondary/50 border border-border rounded-2xl px-5 py-4 text-foreground focus:outline-none focus:border-primary/40 transition-all resize-none placeholder:text-muted-foreground/50 font-medium shadow-sm"
                 />
               </div>
 
-              <div className="flex items-center justify-between p-5 bg-white/[0.02] rounded-2xl border border-white/5 group hover:bg-white/[0.04] transition-colors">
+              <div className="flex items-center justify-between p-5 bg-secondary/30 rounded-2xl border border-border group hover:bg-secondary/50 transition-colors shadow-sm">
                 <div className="flex items-center gap-4">
-                  <div className={`p-2 rounded-xl transition-colors ${isPublic ? 'bg-[#1DB954]/10' : 'bg-zinc-900'}`}>
-                    {isPublic ? <Globe size={18} className="text-[#1DB954]" /> : <Lock size={18} className="text-zinc-500" />}
+                  <div className={`p-2 rounded-xl transition-colors ${isPublic ? 'bg-primary/10' : 'bg-background'}`}>
+                    {isPublic ? <Globe size={18} className="text-primary" /> : <Lock size={18} className="text-muted-foreground" />}
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[11px] font-black text-zinc-200 uppercase tracking-wider">Public Mode</span>
-                    <span className="text-[9px] text-zinc-600 font-bold uppercase italic">{isPublic ? 'Everyone' : 'Only You'}</span>
+                    <span className="text-[11px] font-black text-foreground uppercase tracking-wider transition-colors">Public Mode</span>
+                    <span className="text-[9px] text-muted-foreground font-bold uppercase italic transition-colors">{isPublic ? 'Everyone' : 'Only You'}</span>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsPublic(!isPublic)}
-                  className={`w-12 h-6 rounded-full transition-all relative ${isPublic ? 'bg-[#1DB954]' : 'bg-zinc-800'}`}
+                  className={`w-12 h-6 rounded-full transition-all relative ${isPublic ? 'bg-primary' : 'bg-secondary'}`}
                 >
-                  <motion.div animate={{ x: isPublic ? 26 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg" />
+                  <motion.div animate={{ x: isPublic ? 26 : 4 }} className="absolute top-1 w-4 h-4 bg-primary-foreground rounded-full shadow-md border border-border/50" />
                 </button>
               </div>
 
               <button
                 disabled={isSubmitting}
-                className="w-full bg-[#1DB954] hover:bg-[#1ed760] text-black font-black py-4 rounded-2xl transition-all shadow-[0_10px_30px_rgba(29,185,84,0.2)] active:scale-[0.98] disabled:opacity-50 uppercase tracking-widest text-xs italic flex items-center justify-center gap-2"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black py-4 rounded-2xl transition-all shadow-[0_10px_30px_rgba(var(--primary),0.2)] active:scale-[0.98] disabled:opacity-50 uppercase tracking-widest text-xs italic flex items-center justify-center gap-2"
               >
                 {isSubmitting ? "Uploading..." : <><Save size={16} /> Create Playlist</>}
               </button>

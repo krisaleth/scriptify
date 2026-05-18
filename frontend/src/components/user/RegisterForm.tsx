@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Camera, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
-// ✅ Dùng đường dẫn tương đối để đi qua Proxy nội bộ Docker/Vite
+// Dùng đường dẫn tương đối để đi qua Proxy nội bộ Docker/Vite
 const API_BASE = "/api";
 
 export function RegisterForm() {
@@ -90,14 +90,16 @@ export function RegisterForm() {
   };
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-black p-4">
-      <Card className="w-full max-w-md border-white/5 bg-zinc-950 text-white shadow-[0_20px_50px_rgba(34,197,94,0.1)] rounded-[2.5rem] overflow-hidden border-t-green-500/20 border-t-8">
+    // Chuyển nền tổng thành bg-background
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 transition-colors duration-300">
+      {/* Đổi bg-zinc-950, text-white sang Theme Card */}
+      <Card className="w-full max-w-md border-border bg-card text-card-foreground shadow-2xl shadow-primary/10 rounded-[2.5rem] overflow-hidden border-t-primary/50 border-t-8 transition-colors duration-300">
         <CardHeader className="space-y-1 pt-10 px-10">
           <div className="flex items-center gap-2 mb-2">
-            <ShieldCheck className="text-green-500 w-5 h-5" />
-            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600 italic">Secure Registration</span>
+            <ShieldCheck className="text-primary w-5 h-5 transition-colors" />
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic transition-colors">Secure Registration</span>
           </div>
-          <CardTitle className="text-4xl font-black italic tracking-tighter text-green-500 uppercase leading-none">
+          <CardTitle className="text-4xl font-black italic tracking-tighter text-primary uppercase leading-none transition-colors">
             Gia nhập <br /> Scriptify
           </CardTitle>
         </CardHeader>
@@ -105,38 +107,38 @@ export function RegisterForm() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-5 px-10 pt-4">
             {/* Nickname */}
-            <div className="space-y-2">
-              <Label className="text-zinc-500 font-black text-[10px] uppercase ml-1 italic tracking-widest">bạn tên là gì?</Label>
+            <div className="space-y-2 group">
+              <Label className="text-muted-foreground font-black text-[10px] uppercase ml-1 italic tracking-widest group-focus-within:text-primary transition-colors">bạn tên là gì?</Label>
               <Input
                 name="nickname"
                 placeholder="Exampled"
                 required
-                className="border-white/5 bg-white/5 h-14 focus-visible:ring-green-500/30 rounded-2xl italic transition-all"
+                className="border-border bg-secondary/50 text-foreground h-14 focus-visible:ring-primary/50 rounded-2xl italic transition-all placeholder:text-muted-foreground/50"
               />
             </div>
 
             {/* Email */}
-            <div className="space-y-2">
-              <Label className="text-zinc-400 font-black text-[10px] uppercase ml-1 italic tracking-widest">Email (Nhận mã OTP)</Label>
+            <div className="space-y-2 group">
+              <Label className="text-muted-foreground font-black text-[10px] uppercase ml-1 italic tracking-widest group-focus-within:text-primary transition-colors">Email (Nhận mã OTP)</Label>
               <Input
                 name="email"
                 type="email"
                 required
-                placeholder="youremail@enample.com"
-                className="border-white/5 bg-white/5 h-14 focus-visible:ring-green-500/30 rounded-2xl italic transition-all"
+                placeholder="youremail@example.com"
+                className="border-border bg-secondary/50 text-foreground h-14 focus-visible:ring-primary/50 rounded-2xl italic transition-all placeholder:text-muted-foreground/50"
               />
             </div>
 
             {/* Avatar Upload */}
             <div className="space-y-2">
-              <Label className="text-zinc-500 font-black text-[10px] uppercase ml-1 italic tracking-widest">Ảnh đại diện</Label>
-              <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
+              <Label className="text-muted-foreground font-black text-[10px] uppercase ml-1 italic tracking-widest transition-colors">Ảnh đại diện</Label>
+              <div className="flex items-center gap-4 bg-secondary/30 p-4 rounded-2xl border border-border transition-colors">
                 <div className="relative group flex-shrink-0">
-                  <div className="h-16 w-16 rounded-full border-2 border-dashed border-zinc-800 flex items-center justify-center bg-zinc-900 overflow-hidden shadow-inner">
+                  <div className="h-16 w-16 rounded-full border-2 border-dashed border-border flex items-center justify-center bg-secondary overflow-hidden shadow-inner transition-colors group-hover:border-primary/50">
                     {avatarPreview ? (
                       <img src={avatarPreview} className="h-full w-full object-cover" alt="Preview" />
                     ) : (
-                      <Camera className="text-zinc-700 w-6 h-6" />
+                      <Camera className="text-muted-foreground w-6 h-6 group-hover:text-primary transition-colors" />
                     )}
                   </div>
                   <Input
@@ -147,7 +149,7 @@ export function RegisterForm() {
                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                   />
                 </div>
-                <div className="text-[10px] text-zinc-600 italic font-bold leading-tight">
+                <div className="text-[10px] text-muted-foreground italic font-bold leading-tight transition-colors">
                   {avatarPreview ? "Mướt đấy sếp! Ảnh này lên Cloud là bao nghệ." : "Chọn một tấm ảnh thật cá tính nhé bạn."}
                 </div>
               </div>
@@ -155,30 +157,31 @@ export function RegisterForm() {
 
             {/* Password Row */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-zinc-500 font-black text-[10px] uppercase tracking-tighter ml-1 italic">Mật khẩu</Label>
+              <div className="space-y-2 group">
+                <Label className="text-muted-foreground font-black text-[10px] uppercase tracking-tighter ml-1 italic group-focus-within:text-primary transition-colors">Mật khẩu</Label>
                 <Input
                   name="password"
                   type="password"
                   required
                   minLength={8}
-                  className="border-white/5 bg-white/5 h-14 rounded-2xl italic"
+                  className="border-border bg-secondary/50 text-foreground h-14 focus-visible:ring-primary/50 rounded-2xl italic transition-all"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-zinc-500 font-black text-[10px] uppercase tracking-tighter ml-1 italic">Xác nhận</Label>
+              <div className="space-y-2 group">
+                <Label className="text-muted-foreground font-black text-[10px] uppercase tracking-tighter ml-1 italic group-focus-within:text-primary transition-colors">Xác nhận</Label>
                 <Input
                   name="confirm_password"
                   type="password"
                   required
-                  className="border-white/5 bg-white/5 h-14 rounded-2xl italic"
+                  className="border-border bg-secondary/50 text-foreground h-14 focus-visible:ring-primary/50 rounded-2xl italic transition-all"
                 />
               </div>
             </div>
 
             {error && (
-              <div className="text-[10px] font-black text-red-500 uppercase italic bg-red-500/5 p-3 rounded-xl border border-red-500/10 animate-in fade-in zoom-in-95 tracking-widest text-center">
-                ⚠️ {error}
+              // Đổi đỏ cứng thành biến destructive
+              <div className="text-[10px] font-black text-destructive uppercase italic bg-destructive/10 p-3 rounded-xl border border-destructive/20 animate-in fade-in zoom-in-95 tracking-widest text-center transition-colors">
+                ⚠ {error}
               </div>
             )}
           </CardContent>
@@ -187,7 +190,8 @@ export function RegisterForm() {
             <Button 
               type="submit" 
               disabled={isLoading}
-              className="w-full bg-green-500 text-black hover:bg-green-400 font-black uppercase italic h-16 rounded-[1.5rem] shadow-2xl shadow-green-500/10 active:scale-95 transition-all text-lg tracking-tighter"
+              // Nút Primary chuẩn Theme
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-black uppercase italic h-16 rounded-[1.5rem] shadow-2xl shadow-primary/20 active:scale-95 transition-all text-lg tracking-tighter"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
@@ -196,9 +200,10 @@ export function RegisterForm() {
                 </div>
               ) : "Khởi tạo tài khoản"}
             </Button>
-            <p className="text-zinc-600 text-center text-[10px] font-black uppercase tracking-widest italic">
+            <p className="text-muted-foreground text-center text-[10px] font-black uppercase tracking-widest italic transition-colors">
               Đã là thành viên?{" "}
-              <Link to="/login" className="text-white hover:text-green-500 transition-colors underline underline-offset-4 decoration-white/5">Đăng nhập</Link>
+              {/* Link đổi màu tương ứng */}
+              <Link to="/login" className="text-foreground hover:text-primary transition-colors underline underline-offset-4 decoration-border hover:decoration-primary/50">Đăng nhập</Link>
             </p>
           </CardFooter>
         </form>

@@ -51,18 +51,20 @@ export function AlbumsView() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-background min-h-screen">
+      // ✅ Đã chèn transition-colors vào màn hình Loading
+      <div className="flex-1 flex items-center justify-center bg-background min-h-screen transition-colors duration-300">
         <Loader2 className="w-12 h-12 text-primary animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background pb-32 custom-scrollbar">
+    // ✅ Chèn transition-colors vào wrapper tổng
+    <div className="flex-1 overflow-y-auto bg-background pb-32 custom-scrollbar transition-colors duration-300">
       {/* Header Flat Design */}
       <div className="pt-12 pb-8 px-8">
-        <h2 className="text-4xl font-black text-foreground mb-2 tracking-tighter uppercase italic">Albums</h2>
-        <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em] italic">Khám phá những tuyệt phẩm từ Scriptify Cloud</p>
+        <h2 className="text-4xl font-black text-foreground mb-2 tracking-tighter uppercase italic transition-colors">Albums</h2>
+        <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em] italic transition-colors">Khám phá những tuyệt phẩm từ Scriptify Cloud</p>
         
         <div className="relative mt-8 max-w-md group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -71,7 +73,7 @@ export function AlbumsView() {
             placeholder="Tìm tên album hoặc nghệ sĩ..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-secondary/50 text-foreground placeholder-muted-foreground rounded-full py-3.5 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all border border-border"
+            className="w-full bg-secondary/50 text-foreground placeholder-muted-foreground rounded-full py-3.5 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all border border-border shadow-sm"
           />
         </div>
       </div>
@@ -87,9 +89,9 @@ export function AlbumsView() {
                 <div
                   key={album.id}
                   onClick={() => navigate(`/album/${album.id}`)}
-                  className="bg-secondary/30 p-4 rounded-2xl hover:bg-accent transition-all cursor-pointer group shadow-md border border-transparent hover:border-border"
+                  className="bg-secondary/30 p-4 rounded-2xl hover:bg-accent transition-colors duration-300 cursor-pointer group shadow-md border border-transparent hover:border-border"
                 >
-                  <div className="relative mb-4 overflow-hidden rounded-xl aspect-square shadow-lg border border-border">
+                  <div className="relative mb-4 overflow-hidden rounded-xl aspect-square shadow-sm border border-border transition-colors">
                     <img
                       src={getResourceUrl(album.coverImageUrl)}
                       alt={album.title}
@@ -114,24 +116,24 @@ export function AlbumsView() {
                   <h4 className="text-foreground font-black truncate mb-1 group-hover:text-primary transition-colors uppercase italic tracking-tight">
                     {album.title}
                   </h4>
-                  <p className="text-[10px] text-muted-foreground truncate font-black uppercase tracking-widest">
+                  <p className="text-[10px] text-muted-foreground truncate font-black uppercase tracking-widest transition-colors">
                     {album.artist?.name || 'Nghệ sĩ ẩn danh'}
                   </p>
                   
                   <div className="flex items-center gap-2 mt-4">
-                    <span className="text-[9px] bg-background/80 text-primary px-2 py-0.5 rounded-full font-black border border-border">
+                    <span className="text-[9px] bg-background text-primary px-2 py-0.5 rounded-full font-black border border-border transition-colors shadow-sm">
                       {album.releaseYear || '2026'}
                     </span>
-                    <span className="text-[8px] text-muted-foreground font-black uppercase tracking-[0.2em] italic">• Album</span>
+                    <span className="text-[8px] text-muted-foreground font-black uppercase tracking-[0.2em] italic transition-colors">• Album</span>
                   </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-32 bg-secondary/10 rounded-3xl border border-dashed border-border">
-            <Music size={48} className="mb-4 text-muted-foreground/30 animate-pulse" />
-            <p className="text-muted-foreground font-black uppercase text-[10px] tracking-widest italic">Hệ thống Cloud chưa tìm thấy dữ liệu</p>
+          <div className="flex flex-col items-center justify-center py-32 bg-secondary/20 rounded-3xl border border-dashed border-border transition-colors">
+            <Music size={48} className="mb-4 text-muted-foreground/30 animate-pulse transition-colors" />
+            <p className="text-muted-foreground font-black uppercase text-[10px] tracking-widest italic transition-colors">Hệ thống Cloud chưa tìm thấy dữ liệu</p>
           </div>
         )}
       </div>

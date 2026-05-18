@@ -6,7 +6,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import { getResourceUrl } from '@/utils/urlHelper';
 import { Song, MusicContextType } from '@/types/song';
-import { apiRequest } from '@/utils/apiClient'; // ✅ Import người gác cổng
+import { apiRequest } from '@/utils/apiClient'; // Import người gác cổng
 
 const API_BASE = "/api";
 
@@ -30,7 +30,7 @@ export function HomeView() {
     }
   };
 
-  // ✅ Dùng apiRequest: Không sợ lỗi 400/401
+  // Dùng apiRequest: Không sợ lỗi 400/401
   const fetchOnlyFavorites = useCallback(async () => {
     if (!user) { setFavorites([]); return; }
     const data = await apiRequest(`${API_BASE}/favorites`);
@@ -98,19 +98,19 @@ export function HomeView() {
   }, []);
 
   if (isLoading) return (
-    <div className="flex-1 flex items-center justify-center bg-background min-h-screen">
+    <div className="flex-1 flex items-center justify-center bg-background min-h-screen transition-colors duration-300">
       <Loader2 className="w-10 h-10 text-primary animate-spin" />
     </div>
   );
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background pb-40 custom-scrollbar select-none overflow-x-hidden">
+    <div className="flex-1 overflow-y-auto bg-background pb-40 custom-scrollbar select-none overflow-x-hidden transition-colors duration-300">
       
-      {/* 🟢 HEADER */}
-      <div className="bg-gradient-to-b from-primary/10 to-transparent pt-16 pb-12 px-8">
+      {/* HEADER */}
+      <div className="bg-gradient-to-b from-primary/10 to-transparent pt-16 pb-12 px-8 transition-colors duration-300">
         <div className="flex items-center gap-3 mb-4">
           <Sparkles className="w-6 h-6 text-primary animate-pulse" />
-          <h2 className="text-5xl font-black text-foreground tracking-tighter italic uppercase">{greeting}</h2>
+          <h2 className="text-5xl font-black text-foreground tracking-tighter italic uppercase transition-colors">{greeting}</h2>
         </div>
         
         <div className="relative mt-10 max-w-xl group">
@@ -125,18 +125,18 @@ export function HomeView() {
         </div>
       </div>
 
-      {/* 🟢 THỊNH HÀNH */}
+      {/* THỊNH HÀNH */}
       <div className="px-8 mb-20">
         <div className="flex items-center justify-between mb-8">
-          <h3 className="text-2xl font-black text-foreground italic tracking-tighter uppercase flex items-center gap-4">
-            Thịnh hành <div className="h-px w-20 bg-gradient-to-r from-primary to-transparent"></div>
+          <h3 className="text-2xl font-black text-foreground italic tracking-tighter uppercase flex items-center gap-4 transition-colors">
+            Thịnh hành <div className="h-px w-20 bg-gradient-to-r from-primary to-transparent transition-colors"></div>
           </h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {popularTracks.map((track, idx) => (
             <div key={track.id} className="relative group">
-               <div className="absolute -top-3 -left-3 w-8 h-8 bg-primary text-primary-foreground text-xs font-black flex items-center justify-center rounded-full z-20 italic shadow-lg shadow-primary/40 border-2 border-background">
+               <div className="absolute -top-3 -left-3 w-8 h-8 bg-primary text-primary-foreground text-xs font-black flex items-center justify-center rounded-full z-20 italic shadow-lg shadow-primary/40 border-2 border-background transition-colors duration-300">
                  #{idx + 1}
                </div>
                <TrackCardHorizontal 
@@ -150,10 +150,10 @@ export function HomeView() {
         </div>
       </div>
 
-      {/* 🟢 DÀNH RIÊNG CHO bạn */}
+      {/* DÀNH RIÊNG CHO BẠN */}
       <div className="px-8">
         <div className="flex items-center justify-between mb-8">
-          <h3 className="text-2xl font-black text-foreground italic tracking-tighter uppercase">Dành riêng cho bạn</h3>
+          <h3 className="text-2xl font-black text-foreground italic tracking-tighter uppercase transition-colors">Dành riêng cho bạn</h3>
           <div className="flex gap-2">
             <button onClick={() => scroll('left')} className="w-10 h-10 rounded-full bg-secondary border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all shadow-sm">
               <ChevronLeft size={20} />
@@ -190,7 +190,7 @@ function TrackCardHorizontal({ track, isFav, onPlay, onToggleFav }: any) {
       <div className="relative w-16 h-16 flex-shrink-0" onClick={onPlay}>
         <img 
           src={getResourceUrl(track.imageUrl)} 
-          className="w-full h-full object-cover rounded-xl shadow-sm border border-border" 
+          className="w-full h-full object-cover rounded-xl shadow-sm border border-border transition-colors" 
           alt={track.title} 
           onError={(e) => (e.currentTarget.src = "/assets/default-cover.png")} 
         />
@@ -201,13 +201,13 @@ function TrackCardHorizontal({ track, isFav, onPlay, onToggleFav }: any) {
       </div>
       <div className="flex-1 min-w-0" onClick={onPlay}>
         <h4 className="text-foreground font-black truncate text-sm uppercase italic tracking-tight mb-1 group-hover:text-primary transition-colors">{track.title}</h4>
-        <p className="text-[10px] text-muted-foreground truncate font-black uppercase tracking-widest">{track.artist?.name}</p>
+        <p className="text-[10px] text-muted-foreground truncate font-black uppercase tracking-widest transition-colors">{track.artist?.name}</p>
       </div>
       <div className="flex flex-col items-center min-w-[35px]">
         <button onClick={(e) => { e.stopPropagation(); onToggleFav(); }} className={cn("transition-all active:scale-150 p-2", isFav ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
           <Heart className={cn("w-6 h-6", isFav && "fill-current")} />
         </button>
-        <span className={cn("text-[10px] font-black", isFav ? "text-primary" : "text-muted-foreground")}>{track.likeCount || 0}</span>
+        <span className={cn("text-[10px] font-black transition-colors", isFav ? "text-primary" : "text-muted-foreground")}>{track.likeCount || 0}</span>
       </div>
     </div>
   );
@@ -227,7 +227,7 @@ function TrackCardVertical({ track, isFav, onPlay, onToggleFav }: any) {
       </div>
       <h4 className="text-foreground font-black truncate mb-2 text-base uppercase italic tracking-tighter group-hover:text-primary transition-colors">{track.title}</h4>
       <div className="flex justify-between items-center">
-        <p className="text-[10px] text-muted-foreground truncate font-black uppercase tracking-[0.1em] max-w-[55%] italic">{track.artist?.name}</p>
+        <p className="text-[10px] text-muted-foreground truncate font-black uppercase tracking-[0.1em] max-w-[55%] italic transition-colors">{track.artist?.name}</p>
         <button onClick={(e) => { e.stopPropagation(); onToggleFav(); }} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all active:scale-125 shadow-sm", isFav ? "bg-primary/10 border-primary/30 text-primary" : "bg-background/80 border-border text-muted-foreground hover:text-foreground")}>
           <span className="text-[10px] font-black">{track.likeCount || 0}</span>
           <Heart className={cn("w-3.5 h-3.5", isFav && "fill-current")} />

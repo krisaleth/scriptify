@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, ArrowLeft, ShieldCheck, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
-// ✅ Dùng đường dẫn tương đối để đi xuyên qua Proxy nội bộ Docker
+// Dùng đường dẫn tương đối để đi xuyên qua Proxy nội bộ Docker
 const API_BASE = "/api";
 
 export function OTPForm() {
@@ -101,25 +101,27 @@ export function OTPForm() {
   };
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-black p-4">
-      <Card className="w-full max-w-md border-white/5 bg-zinc-950 text-white shadow-[0_20px_50px_rgba(34,197,94,0.1)] rounded-[2.5rem] overflow-hidden border-t-green-500/20 border-t-8">
+    // Chuyển nền tổng thành bg-background
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 transition-colors duration-300">
+      {/* Đổi bg-zinc-950, text-white sang Theme Card */}
+      <Card className="w-full max-w-md border-border bg-card text-card-foreground shadow-2xl shadow-primary/10 rounded-[2.5rem] overflow-hidden border-t-primary/50 border-t-8 transition-colors duration-300">
         <CardHeader className="space-y-2 text-center pt-12 px-8">
-          <div className="mx-auto w-14 h-14 bg-green-500/5 rounded-full flex items-center justify-center mb-4 border border-green-500/10">
-            <ShieldCheck className="text-green-500 w-7 h-7" />
+          <div className="mx-auto w-14 h-14 bg-secondary/50 rounded-full flex items-center justify-center mb-4 border border-border transition-colors">
+            <ShieldCheck className="text-primary w-7 h-7 transition-colors" />
           </div>
-          <CardTitle className="text-4xl font-black italic tracking-tighter text-green-500 uppercase leading-none">
+          <CardTitle className="text-4xl font-black italic tracking-tighter text-primary uppercase leading-none transition-colors">
             Xác thực OTP
           </CardTitle>
-          <div className="text-zinc-600 text-[10px] font-black leading-relaxed uppercase tracking-[0.2em] italic">
+          <div className="text-muted-foreground text-[10px] font-black leading-relaxed uppercase tracking-[0.2em] italic transition-colors">
             Giai điệu đã gửi tới: <br />
-            <span className="text-zinc-400 lowercase select-all">{email}</span>
+            <span className="text-foreground/70 lowercase select-all transition-colors">{email}</span>
           </div>
         </CardHeader>
         
         <form onSubmit={handleVerify}>
           <CardContent className="space-y-8 px-10 pt-6">
-            <div className="space-y-4">
-              <Label htmlFor="verification-code" className="text-zinc-600 font-black text-[10px] uppercase tracking-[0.3em] block text-center italic">
+            <div className="space-y-4 group">
+              <Label htmlFor="verification-code" className="text-muted-foreground font-black text-[10px] uppercase tracking-[0.3em] block text-center italic transition-colors group-focus-within:text-primary">
                 Nhập 6 mã số định danh
               </Label>
               <Input
@@ -131,13 +133,14 @@ export function OTPForm() {
                 required
                 autoFocus
                 placeholder="000000"
-                className="border-white/5 bg-white/5 text-white placeholder:text-zinc-900 focus-visible:ring-green-500/30 text-center text-5xl font-black tracking-[0.4em] h-24 rounded-3xl transition-all italic"
+                className="border-border bg-secondary/50 text-foreground placeholder:text-muted-foreground/30 focus-visible:ring-primary/50 text-center text-5xl font-black tracking-[0.4em] h-24 rounded-3xl transition-all italic"
               />
             </div>
 
             {error && (
-              <div className="rounded-2xl bg-red-500/5 p-4 text-[10px] font-black text-red-500 border border-red-500/10 text-center uppercase italic tracking-widest animate-in fade-in slide-in-from-top-1">
-                ⚠️ {error}
+              // Đổi đỏ cứng thành biến destructive, bỏ icon Emoji
+              <div className="rounded-2xl bg-destructive/10 p-4 text-[10px] font-black text-destructive border border-destructive/20 text-center uppercase italic tracking-widest animate-in fade-in slide-in-from-top-1 transition-colors">
+                {error}
               </div>
             )}
           </CardContent>
@@ -146,19 +149,20 @@ export function OTPForm() {
             <Button 
               type="submit" 
               disabled={isLoading || otp.length < 6}
-              className="w-full bg-green-500 text-black hover:bg-green-400 font-black uppercase italic h-16 rounded-[1.5rem] shadow-2xl shadow-green-500/20 active:scale-95 transition-all disabled:opacity-20 text-lg tracking-tighter"
+              // Nút Primary chuẩn Theme
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-black uppercase italic h-16 rounded-[1.5rem] shadow-2xl shadow-primary/20 active:scale-95 transition-all disabled:opacity-30 text-lg tracking-tighter"
             >
               {isLoading ? <Loader2 className="h-7 w-7 animate-spin" /> : "Kích hoạt tài khoản"}
             </Button>
             
             <div className="flex flex-col space-y-8 w-full text-center">
-              <p className="text-zinc-600 text-[10px] font-black uppercase tracking-widest italic">
+              <p className="text-muted-foreground text-[10px] font-black uppercase tracking-widest italic transition-colors">
                 Chưa nhận được mã?{" "}
                 <button 
                   onClick={handleResendCode}
                   disabled={isResending || countdown > 0}
                   type="button" 
-                  className="text-white hover:text-green-500 transition-colors disabled:text-zinc-800 ml-1 underline underline-offset-4 decoration-white/5"
+                  className="text-foreground hover:text-primary transition-colors disabled:text-muted-foreground/50 ml-1 underline underline-offset-4 decoration-border hover:decoration-primary/50"
                 >
                   {isResending ? (
                     <RefreshCw className="w-3 h-3 animate-spin inline mr-1" />
@@ -169,7 +173,7 @@ export function OTPForm() {
               
               <Link
                 to="/login"
-                className="flex items-center justify-center gap-2 text-zinc-700 font-black hover:text-zinc-400 transition-all uppercase text-[9px] tracking-[0.3em] italic"
+                className="flex items-center justify-center gap-2 text-muted-foreground font-black hover:text-foreground transition-all uppercase text-[9px] tracking-[0.3em] italic"
               >
                 <ArrowLeft className="w-3 h-3" />
                 Hủy kết nối
