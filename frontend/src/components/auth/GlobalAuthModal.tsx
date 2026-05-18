@@ -18,8 +18,8 @@ export function GlobalAuthModal() {
     <AnimatePresence>
       {isAuthModalOpen && (
         <Dialog open={isAuthModalOpen} onOpenChange={closeAuthModal}>
-          {/* Lớp phủ mờ toàn màn hình - Tăng độ mờ để nổi bật modal */}
-          <DialogOverlay className="bg-black/80 backdrop-blur-md z-[100]" />
+          {/* Lớp phủ mờ toàn màn hình - Đã đổi bg-black thành bg-background để tự ăn theo Theme */}
+          <DialogOverlay className="bg-background/80 backdrop-blur-md z-[100] transition-colors duration-300" />
           
           <DialogContent 
             onPointerDownOutside={(e) => e.preventDefault()}
@@ -31,22 +31,22 @@ export function GlobalAuthModal() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ type: "spring", damping: 20, stiffness: 300 }}
-              // Đây mới là cái khung thực sự che phủ nội dung
-              className="bg-zinc-950 border border-zinc-800 p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_30px_rgba(34,197,94,0.1)] w-full overflow-hidden"
+              // Thay màu cứng bằng biến Theme card, viền border, tự động tạo bóng theo primary
+              className="bg-card border border-border p-8 rounded-[2.5rem] shadow-2xl shadow-primary/10 w-full overflow-hidden transition-colors duration-300"
             >
               <div className="space-y-6">
                 <div className="flex justify-center md:justify-start">
-                  <div className="p-3 rounded-2xl bg-green-500/10 border border-green-500/20">
-                    <LogIn className="w-8 h-8 text-green-500" />
+                  <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 transition-colors duration-300">
+                    <LogIn className="w-8 h-8 text-primary transition-colors duration-300" />
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <h2 className="text-3xl font-black italic tracking-tighter text-white uppercase">
-                    Private <span className="text-green-500">Lounge</span>
+                  <h2 className="text-3xl font-black italic tracking-tighter text-foreground uppercase transition-colors duration-300">
+                    Private <span className="text-primary transition-colors duration-300">Lounge</span>
                   </h2>
-                  <p className="text-zinc-400 text-sm md:text-base leading-relaxed font-medium">
-                    bạn cần đăng nhập để truy cập kho giai điệu riêng tư của mình trên <span className="text-zinc-200">Scriptify Cloud</span>.
+                  <p className="text-muted-foreground text-sm md:text-base leading-relaxed font-medium transition-colors duration-300">
+                    Bạn cần đăng nhập để truy cập kho giai điệu riêng tư của mình trên <span className="text-foreground transition-colors duration-300">Scriptify Cloud</span>.
                   </p>
                 </div>
 
@@ -54,12 +54,12 @@ export function GlobalAuthModal() {
                   <Button 
                     variant="ghost" 
                     onClick={closeAuthModal} 
-                    className="flex-1 text-zinc-500 hover:text-white hover:bg-white/5 rounded-2xl h-14 uppercase font-black tracking-widest text-[10px] italic transition-all"
+                    className="flex-1 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-2xl h-14 uppercase font-black tracking-widest text-[10px] italic transition-all duration-300"
                   >
                     Để sau
                   </Button>
                   <Button 
-                    className="flex-1 bg-green-500 text-black hover:bg-green-400 font-black rounded-2xl h-14 px-6 shadow-[0_10px_20px_rgba(34,197,94,0.2)] uppercase tracking-widest text-[10px] italic transition-all active:scale-95" 
+                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 font-black rounded-2xl h-14 px-6 shadow-lg shadow-primary/20 uppercase tracking-widest text-[10px] italic transition-all duration-300 active:scale-95" 
                     onClick={handleLogin}
                   >
                     <LogIn className="w-4 h-4 mr-2" /> Đăng nhập ngay
