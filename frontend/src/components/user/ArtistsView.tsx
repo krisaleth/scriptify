@@ -71,10 +71,7 @@ export function ArtistsView() {
   );
 
   return (
-    // FIX: padding-bottom (pb-20) vừa đủ để không bị che bởi Music Player mà không dư thừa
     <div className="w-full h-full overflow-y-auto overflow-x-hidden bg-background pb-20 custom-scrollbar select-none transition-colors duration-300">
-      
-      {/* Header & Search */}
       <div className="relative px-6 md:px-10 pt-16 pb-8 overflow-hidden transition-colors duration-300">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-primary/10 to-transparent pointer-events-none transition-colors duration-300"></div>
         <div className="relative z-10">
@@ -95,8 +92,6 @@ export function ArtistsView() {
       </div>
 
       <div className="px-6 md:px-10 space-y-16">
-        
-        {/* 1. SPOTLIGHT */}
         {!searchQuery && spotlightArtists.length > 0 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             <div className="flex items-center gap-4">
@@ -118,7 +113,6 @@ export function ArtistsView() {
                     </div>
                     
                     <div className="flex-1 text-center xl:text-left min-w-0">
-                        {/* FIX 1: Dùng whitespace-nowrap hoặc font-size responsive để không rớt 1 chữ cái */}
                         <h4 className="text-4xl md:text-5xl lg:text-6xl font-black text-foreground uppercase italic tracking-tighter leading-[0.9] mb-4 overflow-hidden text-ellipsis whitespace-nowrap xl:whitespace-normal transition-colors duration-300">
                           {artist.name}
                         </h4>
@@ -157,7 +151,6 @@ export function ArtistsView() {
           </div>
         )}
 
-        {/* 2. ALL ARTISTS GRID */}
         <div className="space-y-8">
           <div className="flex items-center justify-between border-b border-border pb-4 transition-colors duration-300">
             <div className="flex items-center gap-3">
@@ -166,7 +159,6 @@ export function ArtistsView() {
             </div>
           </div>
           
-          {/* FIX 2: Loại bỏ khoảng trắng ở cuối bằng cách dùng h-fit và tối ưu gap */}
           <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-6 w-full h-fit">
             {filteredArtists.map((artist) => (
               <div 

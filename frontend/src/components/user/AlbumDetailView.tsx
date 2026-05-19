@@ -48,7 +48,6 @@ export function AlbumDetailView() {
 
   if (isLoading) {
     return (
-      // ✅ Thêm transition-colors để lật mode mượt lúc đang loading
       <div className="flex-1 flex items-center justify-center min-h-screen bg-background transition-colors duration-300">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
       </div>
@@ -57,7 +56,6 @@ export function AlbumDetailView() {
 
   if (!album) {
     return (
-      // ✅ Thêm transition-colors
       <div className="flex-1 flex flex-col items-center justify-center bg-background gap-4 p-8 text-center transition-colors duration-300">
         <p className="text-muted-foreground text-xl font-bold uppercase tracking-widest italic">Album này không tồn tại trong Cloud!</p>
         <button onClick={() => navigate('/albums')} className="text-primary hover:text-primary/80 font-black transition-all uppercase underline decoration-primary/30 underline-offset-8">
@@ -68,7 +66,6 @@ export function AlbumDetailView() {
   }
 
   return (
-    // ✅ Thêm transition-colors vào wrapper chính
     <div className="flex-1 overflow-y-auto bg-gradient-to-b from-muted/30 to-background pb-32 custom-scrollbar transition-colors duration-300">
       {/* Header Section */}
       <div className="bg-gradient-to-b from-primary/10 to-transparent px-8 pt-8 pb-8 transition-colors duration-300">
@@ -157,7 +154,7 @@ export function AlbumDetailView() {
               <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/50 transition-colors">
                 <Music size={48} className="mb-4 opacity-50" />
                 <p className="font-black italic text-[10px] uppercase tracking-widest opacity-80 text-center">
-                    Giai điệu đang được tuồn vào Cloud... <br/>Vui lòng quay lại sau!
+                    Giai điệu đang tải... <br/>Vui lòng quay lại sau!
                 </p>
               </div>
             )}

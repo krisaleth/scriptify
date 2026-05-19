@@ -112,7 +112,6 @@ export function AdminDashboard() {
               </Button>
             )}
 
-            {/* ✅ NÚT HOME (Dùng thẻ HTML thuần để chống lỗi) */}
             <button
               onClick={() => navigate('/')}
               className="flex items-center justify-center w-12 h-12 bg-secondary border border-border text-foreground rounded-xl hover:bg-primary hover:text-primary-foreground hover:scale-105 transition-all shadow-lg shrink-0 group"

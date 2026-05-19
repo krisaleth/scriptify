@@ -43,7 +43,6 @@ export function HomeView() {
     const initData = async () => {
       try {
         setIsLoading(true);
-        // Load danh sách nhạc
         const songsData = await apiRequest(`${API_BASE}/songs?size=100`);
         if (songsData) {
           setSongs(songsData.content || (Array.isArray(songsData) ? songsData : []));
@@ -105,8 +104,6 @@ export function HomeView() {
 
   return (
     <div className="flex-1 overflow-y-auto bg-background pb-40 custom-scrollbar select-none overflow-x-hidden transition-colors duration-300">
-      
-      {/* HEADER */}
       <div className="bg-gradient-to-b from-primary/10 to-transparent pt-16 pb-12 px-8 transition-colors duration-300">
         <div className="flex items-center gap-3 mb-4">
           <Sparkles className="w-6 h-6 text-primary animate-pulse" />
@@ -181,8 +178,6 @@ export function HomeView() {
     </div>
   );
 }
-
-// --- SUB-COMPONENTS ---
 
 function TrackCardHorizontal({ track, isFav, onPlay, onToggleFav }: any) {
   return (

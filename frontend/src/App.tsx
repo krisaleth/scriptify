@@ -18,7 +18,6 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 export default function App() {
   return (
     <>
-      {/* 1. Cấu hình Toaster cho toàn bộ App */}
       <Toaster 
         theme="system" 
         position="top-right" 
@@ -59,7 +58,6 @@ export default function App() {
           <Route path="artists" element={<ArtistsView />} />
           <Route path="disclaimer" element={<DisclaimerPage />} />
 
-          {/* ✅ Route Trang cá nhân mới thêm */}
           <Route 
             path="profile" 
             element={

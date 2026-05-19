@@ -138,7 +138,6 @@ export function OTPForm() {
             </div>
 
             {error && (
-              // Đổi đỏ cứng thành biến destructive, bỏ icon Emoji
               <div className="rounded-2xl bg-destructive/10 p-4 text-[10px] font-black text-destructive border border-destructive/20 text-center uppercase italic tracking-widest animate-in fade-in slide-in-from-top-1 transition-colors">
                 {error}
               </div>
@@ -149,7 +148,6 @@ export function OTPForm() {
             <Button 
               type="submit" 
               disabled={isLoading || otp.length < 6}
-              // Nút Primary chuẩn Theme
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-black uppercase italic h-16 rounded-[1.5rem] shadow-2xl shadow-primary/20 active:scale-95 transition-all disabled:opacity-30 text-lg tracking-tighter"
             >
               {isLoading ? <Loader2 className="h-7 w-7 animate-spin" /> : "Kích hoạt tài khoản"}

@@ -83,11 +83,6 @@ public class AuthenticationService {
         tktUsers user = usersRepository.findByTktEmail(input.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        
-        if (!user.isEnabled()) {
-            throw new RuntimeException("Account not verified!");
-        }
-
         if (user.getVerificationExpiration().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Verification has expired!");
         }

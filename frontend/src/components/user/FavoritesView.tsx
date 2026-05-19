@@ -15,7 +15,6 @@ export function FavoritesView() {
   const { handlePlayTrack } = useOutletContext<MusicContextType>();
   const navigate = useNavigate();
   
-  // Lấy trạng thái từ Store toàn cục
   const user = useAuthStore((state) => state.user);
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
   
@@ -23,12 +22,10 @@ export function FavoritesView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Fetch danh sách Yêu thích
   const fetchFavourites = useCallback(async () => {
-    // Nếu chưa đăng nhập, không fetch mà bật Modal ngay
     if (!user) {
       setIsLoading(false);
-      openAuthModal(); // Gọi modal xịn từ Zustand
+      openAuthModal();
       return;
     }
 
@@ -52,7 +49,6 @@ export function FavoritesView() {
     }
   }, [user, openAuthModal]);
 
-  // 2. Sync dữ liệu
   useEffect(() => {
     fetchFavourites();
 
@@ -62,7 +58,6 @@ export function FavoritesView() {
     return () => window.removeEventListener("favoriteUpdate", handleAutoUpdate);
   }, [fetchFavourites]);
 
-  // 3. Xử lý logic khi bỏ thích
   const removeFavourite = async (musicId: number, title: string) => {
     try {
       const response = await fetch(`${API_BASE}/favorites/${musicId}`, {
@@ -97,7 +92,6 @@ export function FavoritesView() {
     </div>
   );
 
-  // Nếu không có user, render giao diện trống
   if (!user) return (
     <div className="flex-1 bg-background min-h-screen relative overflow-hidden transition-colors duration-300">
         <div className="absolute inset-0 bg-primary/10 pointer-events-none blur-3xl opacity-50" />
@@ -111,7 +105,6 @@ export function FavoritesView() {
 
   return (
     <div className="flex-1 overflow-y-auto bg-background pb-32 custom-scrollbar transition-colors duration-300">
-      {/* Header Section */}
       <div className="pt-16 pb-8 px-8">
         <div className="flex flex-col md:flex-row items-end gap-8 mb-8">
           {/* Header Image/Icon */}
