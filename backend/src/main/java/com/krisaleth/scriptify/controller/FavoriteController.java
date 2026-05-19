@@ -1,6 +1,7 @@
 package com.krisaleth.scriptify.controller;
 
-import com.krisaleth.scriptify.entity.Song;
+import com.krisaleth.scriptify.entity.tktSong;
+import com.krisaleth.scriptify.response.SongResponse;
 import com.krisaleth.scriptify.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,16 +18,16 @@ public class FavoriteController {
 
     private final UserService usersService;
 
-    // Lấy danh sách bài hát đã thích của tôi
     @GetMapping
-    public ResponseEntity<Set<Song>> getMyFavorites(Authentication auth) {
+    public ResponseEntity<Set<SongResponse>> getMyFavorites(Authentication auth) {
         return ResponseEntity.ok(usersService.getFavoriteSongs(auth.getName()));
     }
 
-    // Nút Like/Unlike bài hát
     @PostMapping("/{songId}")
     public ResponseEntity<Void> toggleLike(@PathVariable Long songId, Authentication auth) {
         usersService.toggleFavorite(auth.getName(), songId);
         return ResponseEntity.ok().build();
     }
+
+
 }

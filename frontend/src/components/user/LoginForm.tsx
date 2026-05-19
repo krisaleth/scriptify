@@ -6,15 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner"; 
-import { useAuthStore } from "@/store/useAuthStore"; // 1. Import store
+import { useAuthStore } from "@/store/useAuthStore";
+
+const API_BASE = "/api";
 
 export function LoginForm() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // 2. Lấy hàm setToken từ Zustand
-  const setToken = useAuthStore((state) => state.setToken);
+  const setUser = useAuthStore((state) => state.setUser);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -22,108 +23,110 @@ export function LoginForm() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email");
-    const password = formData.get("password");
+    const email = formData.get("email")?.toString();
+    const password = formData.get("password")?.toString();
 
     try {
-      const response = await fetch("http://localhost:8080/api/auth/login", {
+      // BƯỚC 1: GỬI REQUEST ĐĂNG NHẬP
+      const loginResponse = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      const loginData = await loginResponse.json();
 
-      if (response.ok) {
-        // 3. Sử dụng hàm setToken thay vì chỉ dùng localStorage
-        // Hàm setToken trong Store bồ viết đã bao gồm việc lưu localStorage rồi
-        setToken(data.token);
-        
-        if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
+      if (loginResponse.ok) {
+        if (loginData.user) {
+          setUser(loginData.user); 
+
+          toast.success("Mừng bạn quay lại!", {
+            description: `Chào sếp ${loginData.user.nickname || 'Unnamed'}!`,
+          });
+          navigate("/"); 
+        } else {
+          console.error("Scriptify: Login thành công nhưng response thiếu object 'user'");
+          setError("Dữ liệu phản hồi bị thiếu.");
         }
-
-        // 4. Gọi thông báo TRƯỚC khi điều hướng
-        toast.success("Mừng bồ quay trở lại Scriptify!", {
-          description: "Đăng nhập thành công rồi nhé.",
-        });
-
-        // 5. Dùng navigate để chuyển trang mượt mà
-        // Toast sẽ tiếp tục hiển thị trên trang chủ
-        navigate("/"); 
       } else {
-        if (data.code === "ACCOUNT_NOT_VERIFIED") {
+        if (loginData.message === "User is disabled" || loginData.code === "ACCOUNT_NOT_VERIFIED") {
+          toast.warning("Tài khoản chưa xác thực", {
+            description: "Đang chuyển bạn đến hệ thống xác nhận OTP..."
+          });
           navigate("/verify-otp", { state: { email: email } });
         } else {
-          setError(data.message || "Email hoặc mật khẩu không chính xác");
+          setError(loginData.message || "Email hoặc mật khẩu không đúng bạn ơi");
         }
       }
     } catch (err) {
-      setError("Không thể kết nối tới máy chủ");
+      setError("Hệ thống Cloud đang bảo trì hoặc sai cấu hình Proxy.");
+      console.error("Scriptify Login Error:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-black p-4">
-      {/* ... Phần JSX giữ nguyên ... */}
-      <Card className="w-full max-w-md border-zinc-800 bg-zinc-900 text-white shadow-2xl">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-black italic tracking-tighter text-green-500">
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 transition-colors duration-300">
+      <Card className="w-full max-w-md border-border bg-card text-card-foreground shadow-2xl shadow-primary/10 rounded-[2.5rem] overflow-hidden border-t-primary/50 border-t-8 transition-colors duration-300">
+        <CardHeader className="space-y-2 text-center pt-12 px-10">
+          <CardTitle className="text-5xl font-black italic tracking-tighter text-primary uppercase leading-none transition-colors">
             Scriptify
           </CardTitle>
-          <p className="text-zinc-400 text-sm">Mừng bồ quay trở lại!</p>
-          {error && (
-            <p className="text-sm font-medium text-red-500 bg-red-500/10 p-2 rounded mt-2 border border-red-500/20">
-              {error}
-            </p>
-          )}
+          <p className="text-muted-foreground text-[9px] font-black uppercase tracking-[0.4em] italic opacity-80">Iconic Sound System</p>
         </CardHeader>
+        
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="login-email">Email</Label>
+          <CardContent className="space-y-6 px-10 pt-4">
+            <div className="space-y-2 group">
+              <Label htmlFor="email" className="text-muted-foreground font-black text-[10px] uppercase tracking-widest italic ml-1 group-focus-within:text-primary transition-colors">Địa chỉ Email</Label>
               <Input
-                id="login-email"
+                id="email"
                 name="email"
                 type="email"
                 required
-                placeholder="ten@vi-du.com"
-                className="border-zinc-700 bg-zinc-800 text-white focus-visible:ring-green-500"
+                disabled={isLoading}
+                placeholder="email@scriptify.com"
+                className="border-border bg-secondary/50 text-foreground focus-visible:ring-primary/50 rounded-2xl h-14 transition-all italic placeholder:text-muted-foreground/50"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="login-password">Mật khẩu</Label>
+            <div className="space-y-2 group">
+              <Label htmlFor="password" className="text-muted-foreground font-black text-[10px] uppercase tracking-widest italic ml-1 group-focus-within:text-primary transition-colors">Mật khẩu</Label>
               <Input
-                id="login-password"
+                id="password"
                 name="password"
                 type="password"
                 required
-                placeholder="Nhập mật khẩu của bồ"
-                className="border-zinc-700 bg-zinc-800 text-white focus-visible:ring-green-500"
+                disabled={isLoading}
+                placeholder="••••••••"
+                className="border-border bg-secondary/50 text-foreground focus-visible:ring-primary/50 rounded-2xl h-14 transition-all italic placeholder:text-muted-foreground/50"
               />
             </div>
+
+            {error && (
+              <div className="mt-4 rounded-2xl bg-red-500/5 p-4 text-[10px] font-black text-red-500 border border-red-500/10 animate-in fade-in slide-in-from-top-1 text-center uppercase italic tracking-widest">
+                {error}
+              </div>
+            )}
           </CardContent>
-          <CardFooter className="flex flex-col gap-4 pt-2">
+
+          <CardFooter className="flex flex-col gap-6 pb-12 px-10 pt-8">
             <Button 
               type="submit" 
               disabled={isLoading}
-              className="w-full bg-green-500 text-black hover:bg-green-400 font-bold h-11 rounded-full transition-all"
+              // Đổi nút xanh thành nút Primary của Theme
+              className="w-full bg-primary text-primary-foreground font-black uppercase italic transition-all h-16 rounded-[1.5rem] shadow-2xl shadow-primary/20 active:scale-95 text-lg tracking-tighter hover:bg-primary/90"
             >
               {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <Loader2 className="h-7 w-7 animate-spin" />
               ) : (
-                "Đăng Nhập"
+                "Đăng nhập ngay"
               )}
             </Button>
-            <p className="text-zinc-400 text-center text-sm">
+            <p className="text-muted-foreground text-center text-[10px] font-black uppercase tracking-widest italic">
               Chưa có tài khoản?{" "}
-              <Link to="/register" className="text-green-400 font-medium hover:underline">
-                Đăng ký ngay
-              </Link>
+              <Link to="/register" className="text-foreground hover:text-primary transition-colors underline underline-offset-4 decoration-border">Tham gia Scriptify</Link>
             </p>
           </CardFooter>
         </form>

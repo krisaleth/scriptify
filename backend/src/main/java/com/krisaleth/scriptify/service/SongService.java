@@ -1,230 +1,228 @@
 package com.krisaleth.scriptify.service;
 
-
-import com.krisaleth.scriptify.entity.Artist;
-import com.krisaleth.scriptify.entity.Song;
-import com.krisaleth.scriptify.repository.AlbumRepository;
-import com.krisaleth.scriptify.repository.ArtistRepository;
-import com.krisaleth.scriptify.repository.SongRepository;
+import com.krisaleth.scriptify.entity.tktArtist;
+import com.krisaleth.scriptify.entity.tktPlaylist;
+import com.krisaleth.scriptify.entity.tktSong;
+import com.krisaleth.scriptify.entity.tktUsers;
+import com.krisaleth.scriptify.repository.*;
 import com.krisaleth.scriptify.config.FileUtils;
+import com.krisaleth.scriptify.response.SongResponse;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class SongService {
-
     private final SongRepository songRepository;
     private final AlbumRepository albumRepository;
     private final ArtistRepository artistRepository;
+    private final S3Client s3Client;
+    private final UsersRepository usersRepository;
+    private final PlaylistRepository playlistRepository;
 
-    @Value("${app.upload.music-dir}")
-    private String musicDir;
-
-    @Value("${app.upload.image-dir}")
-    private String imageDir;
+    @Value("${r2.bucket-name}")
+    private String bucketName;
 
     /**
-     * HÀM LƯU FILE VẬT LÝ
+     * HÀM LƯU FILE LÊN R2 (Thay thế savePhysicalFile)
      */
-    private String savePhysicalFile(MultipartFile file, String uploadDir) throws IOException {
-        Path uploadPath = Paths.get(uploadDir);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+    private String uploadToR2(MultipartFile file, String folder) throws IOException {
+
+        String originalName = file.getOriginalFilename();
+        String extension = "";
+        if (originalName != null && originalName.contains(".")) {
+            extension = originalName.substring(originalName.lastIndexOf("."));
         }
 
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Path targetPath = uploadPath.resolve(fileName);
-        Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+        // ✅ Tên file mới: folder/uuid.mp3 (Loại bỏ hoàn toàn ký tự lạ/khoảng trắng)
+        String fileName = folder + "/" + UUID.randomUUID().toString() + extension;
+
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(fileName)
+                .contentType(file.getContentType())
+                .build();
+
+        s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
 
         return fileName;
     }
 
-    /**
-     * HÀM XÓA FILE VẬT LÝ (Tự bóc tách tên file từ path DB)
-     */
-    private void deletePhysicalFile(String dir, String dbPath) {
-        if (dbPath != null && !dbPath.contains("default-cover.png")) {
+    private void deleteFromR2(String relativePath) {
+        if (relativePath != null && !relativePath.contains("default-cover.png")) {
             try {
-                // Ví dụ: dbPath = "/uploads/music/abc.mp3" -> getFileName = "abc.mp3"
-                String fileName = Paths.get(dbPath).getFileName().toString();
-                Files.deleteIfExists(Paths.get(dir).resolve(fileName));
-            } catch (IOException e) {
-                System.err.println("Lỗi xóa file: " + dbPath);
+                DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                        .bucket(bucketName)
+                        .key(relativePath)
+                        .build();
+                s3Client.deleteObject(deleteObjectRequest);
+            } catch (Exception e) {
+                System.err.println("Lỗi xóa file trên R2: " + relativePath);
             }
         }
     }
 
-    @Transactional
-    public Song updateSong(Long id, String title, Long artistId, Long albumId, MultipartFile musicFile, MultipartFile imageFile) {
-        // 1. Tìm bài hát hiện tại
-        Song existingSong = getSong(id);
+    private SongResponse convertToSongResponse(tktSong song) {
+        return SongResponse.builder()
+                .id(song.getId())
+                .title(song.getTitle())
+                .duration(song.getDuration())
+                .filePath(song.getFilePath())
+                .imageUrl(song.getImageUrl())
+                .viewCount(song.getViewCount())
+                .likeCount(song.getLikeCount())
+                .createdAt(song.getCreatedAt())
+                .artist(SongResponse.ArtistShortResponse.builder()
+                        .id(song.getArtist().getId())
+                        .name(song.getArtist().getName())
+                        .build())
+                .albumTitle(song.getAlbum() != null ? song.getAlbum().getTitle() : null)
+                .build();
+    }
 
-        // 2. Cập nhật các thông tin cơ bản nếu có truyền vào
+    public Page<SongResponse> getAllSongs(Pageable pageable) {
+        return songRepository.findAll(pageable).map(this::convertToSongResponse);
+    }
+
+    public Page<SongResponse> searchSongs(String keyword, Pageable pageable) {
+        return songRepository.findByTktTitleContainingIgnoreCaseOrTktAlbum_TktTitleContainingIgnoreCase(keyword, keyword, pageable)
+                .map(this::convertToSongResponse);
+    }
+
+    @Transactional
+    public SongResponse updateSong(Long id, String title, Long artistId, Long albumId, MultipartFile musicFile, MultipartFile imageFile) {
+        tktSong existingTktSong = songRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy ID: " + id));
+
         if (title != null && !title.isBlank()) {
-            existingSong.setTitle(title);
+            existingTktSong.setTitle(title);
         }
 
         if (artistId != null) {
-            Artist artist = artistRepository.findById(artistId)
+            tktArtist tktArtist = artistRepository.findById(artistId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Nghệ sĩ không tồn tại"));
-            existingSong.setArtist(artist);
+            existingTktSong.setArtist(tktArtist);
         }
 
         if (albumId != null) {
-            albumRepository.findById(albumId).ifPresent(existingSong::setAlbum);
+            albumRepository.findById(albumId).ifPresent(existingTktSong::setAlbum);
         }
 
         try {
-            // 3. Xử lý cập nhật File Nhạc (.mp3)
             if (musicFile != null && !musicFile.isEmpty()) {
-                // Xóa file nhạc cũ vật lý
-                deletePhysicalFile(musicDir, existingSong.getFilePath());
-
-                // Lưu file nhạc mới
-                String savedMusicName = savePhysicalFile(musicFile, musicDir);
-                existingSong.setFilePath("/uploads/music/" + savedMusicName);
-
-                // Cập nhật lại thời lượng bài hát mới
-                existingSong.setDuration(FileUtils.getMp3Duration(musicFile));
+                deleteFromR2(existingTktSong.getFilePath());
+                String relativePath = uploadToR2(musicFile, "music");
+                existingTktSong.setFilePath(relativePath);
+                existingTktSong.setDuration(FileUtils.getMp3Duration(musicFile));
             }
 
-            // 4. Xử lý cập nhật Ảnh bìa
             if (imageFile != null && !imageFile.isEmpty()) {
-                // Xóa ảnh cũ vật lý (nếu không phải ảnh mặc định)
-                deletePhysicalFile(imageDir, existingSong.getImageUrl());
-
-                // Lưu ảnh mới
-                String savedImageName = savePhysicalFile(imageFile, imageDir);
-                existingSong.setImageUrl("/uploads/images/" + savedImageName);
+                deleteFromR2(existingTktSong.getImageUrl());
+                String relativePath = uploadToR2(imageFile, "images");
+                existingTktSong.setImageUrl(relativePath);
             }
 
-            // 5. Lưu vào Database
-            return songRepository.save(existingSong);
-
+            return convertToSongResponse(songRepository.save(existingTktSong));
         } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi xảy ra khi cập nhật file hệ thống");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi upload R2");
         }
     }
 
-    /**
-     * LẤY 1 BÀI HÁT THEO ID
-     */
-    @Transactional(readOnly = true)
-    public Song getSong(Long id) {
-        return songRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy ID: " + id));
-    }
-
-    /**
-     * TẠO MỚI BÀI HÁT
-     */
     @Transactional
-    public Song createSong(String title, Long artistId, Long albumId, MultipartFile musicFile, MultipartFile imageFile) {
-        Artist artist = artistRepository.findById(artistId)
+    public SongResponse createSong(String title, Long artistId, Long albumId, MultipartFile musicFile, MultipartFile imageFile) {
+        tktArtist tktArtist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Nghệ sĩ không tồn tại"));
+
+        if (musicFile == null || musicFile.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File nhạc không được để trống");
+        }
 
         int duration = FileUtils.getMp3Duration(musicFile);
 
         try {
-            String savedMusicName = savePhysicalFile(musicFile, musicDir);
-            String savedImageName = "default-cover.png";
-            boolean isNewImage = false;
+            String musicPath = uploadToR2(musicFile, "music");
 
+            String imagePath = "assets/default-cover.png";
             if (imageFile != null && !imageFile.isEmpty()) {
-                savedImageName = savePhysicalFile(imageFile, imageDir);
-                isNewImage = true;
+                imagePath = uploadToR2(imageFile, "images");
             }
 
-            Song song = new Song();
-            song.setTitle(title);
-            song.setDuration(duration);
-            song.setArtist(artist);
-            song.setViewCount(0L);
-            song.setLikeCount(0);
-
-            // LƯU NGUYÊN PATH NHƯ AVATAR USER
-            song.setFilePath("/uploads/music/" + savedMusicName);
-            song.setImageUrl(isNewImage ? "/uploads/images/" + savedImageName : "/uploads/images/default-cover.png");
+            tktSong tktSong = new tktSong();
+            tktSong.setTitle(title);
+            tktSong.setDuration(duration);
+            tktSong.setArtist(tktArtist);
+            tktSong.setViewCount(0L);
+            tktSong.setLikeCount(0);
+            tktSong.setFilePath(musicPath);
+            tktSong.setImageUrl(imagePath);
 
             if (albumId != null) {
-                albumRepository.findById(albumId).ifPresent(song::setAlbum);
+                albumRepository.findById(albumId).ifPresent(tktSong::setAlbum);
             }
-
-            return songRepository.save(song);
-
+            return convertToSongResponse(songRepository.save(tktSong));
         } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi lưu file");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi lưu file lên Cloud");
         }
     }
 
-    /**
-     * XÓA BÀI HÁT
-     */
     @Transactional
     public void deleteSong(Long id) {
-        Song song = getSong(id);
-        deletePhysicalFile(musicDir, song.getFilePath());
-        deletePhysicalFile(imageDir, song.getImageUrl());
-        songRepository.delete(song);
-    }
+        tktSong tktSong = songRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy ID: " + id));
 
-    /**
-     * PHÁT NHẠC (STREAMING)
-     */
-    public Resource playSong(Long id) {
-        Song song = getSong(id);
-        try {
-            String fileName = Paths.get(song.getFilePath()).getFileName().toString();
-            Path path = Paths.get(musicDir).resolve(fileName).normalize();
-            Resource resource = new UrlResource(path.toUri());
-
-            if (resource.exists()) return resource;
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File không tồn tại");
-        } catch (MalformedURLException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi đường dẫn");
+        List<tktUsers> userFav = usersRepository.findByTktFavoriteSongs_TktId(id);
+        for (tktUsers user : userFav) {
+            user.getFavoriteSongs().remove(tktSong);
+            usersRepository.save(user);
         }
+        List<tktPlaylist> playListHaveSong = playlistRepository.findByTktSongs_TktId(id);
+        for (tktPlaylist playlist : playListHaveSong) {
+            playlist.getSongs().remove(tktSong);
+            playlistRepository.save(playlist);
+        }
+
+        String musicPath = tktSong.getFilePath();
+        String imagePath = tktSong.getImageUrl();
+        if (musicPath != null) {
+            deleteFromR2(musicPath);
+        }
+
+        if (imagePath != null && !imagePath.contains("default-cover.png")) {
+            deleteFromR2(imagePath);
+        }
+        songRepository.delete(tktSong);
     }
 
-    /**
-     * TÌM KIẾM & PHÂN TRANG
-     */
     @Transactional(readOnly = true)
-    public Page<Song> searchSongs(String title, String albumTitle, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        if (title != null && !title.isBlank()) {
-            return songRepository.findByTitleContainingIgnoreCase(title, pageable);
-        }
-        return songRepository.findAll(pageable);
+    public SongResponse getSong(Long id) {
+        return convertToSongResponse(songRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy ID: " + id)));
     }
 
     @Transactional
     public void incrementViewCount(Long id) {
-        songRepository.incrementViewCount(id);
+        int updatedRows = songRepository.incrementViewCount(id);
+        if (updatedRows == 0) {
+            throw new EntityNotFoundException("Không tìm thấy bài hát để tăng view");
+        }
     }
 
-    @Transactional(readOnly = true)
-    public List<Song> getAllSongsList() {
-        return songRepository.findAll();
-    }
+
 }

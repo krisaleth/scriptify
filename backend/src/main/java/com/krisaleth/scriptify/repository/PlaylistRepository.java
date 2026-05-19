@@ -1,6 +1,9 @@
 package com.krisaleth.scriptify.repository;
 
-import com.krisaleth.scriptify.entity.Playlist;
+import com.krisaleth.scriptify.entity.tktPlaylist;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,27 +13,27 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface PlaylistRepository extends JpaRepository<Playlist, Long> {
+public interface PlaylistRepository extends JpaRepository<tktPlaylist, Long> {
 
-    // 1. Lấy danh sách Playlist của một User cụ thể
-    List<Playlist> findByUser_Id(Long userId);
+    @EntityGraph(attributePaths = {"tktUsers"})
+    List<tktPlaylist> findByTktUsers_TktId(Long userId);
 
-    // 2. Lấy danh sách các Playlist được công khai
-    List<Playlist> findByIsPublicTrue();
+    Page<tktPlaylist> findByTktIsPublicTrue(Pageable pageable);
 
-    // ================= BỔ SUNG MỚI =================
+    Page<tktPlaylist> findByTktNameContainingIgnoreCaseAndTktIsPublicTrue(String name, Pageable pageable);
 
-    // 3. Tìm Playlist theo ID và UserID (Cực kỳ quan trọng để chống hack IDOR)
-    // Giúp đảm bảo User chỉ có thể thao tác (sửa/xóa/thêm nhạc) trên Playlist của chính họ
-    Optional<Playlist> findByIdAndUser_Id(Long id, Long userId);
+    Optional<tktPlaylist> findByTktIdAndTktUsers_TktId(Long id, Long userId);
 
-    // 4. Đếm tổng số lượng bài hát hiện có trong 1 Playlist
-    // Trả về int, dùng để check quy tắc "Không vượt quá 200 bài"
-    @Query("SELECT COUNT(s) FROM Playlist p JOIN p.songs s WHERE p.id = :playlistId")
+    boolean existsByTktIdAndTktUsers_TktId(Long id, Long userId);
+
+    @Query("SELECT SIZE(p.tktSongs) FROM tktPlaylist p WHERE p.tktId = :playlistId")
     int countSongsInPlaylist(@Param("playlistId") Long playlistId);
 
-    // 5. Kiểm tra xem một bài hát đã tồn tại trong Playlist chưa
-    // Trả về true nếu đã có, false nếu chưa có (Dùng để báo lỗi trùng lặp)
-    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM Playlist p JOIN p.songs s WHERE p.id = :playlistId AND s.id = :songId")
+    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END " +
+            "FROM tktPlaylist p JOIN p.tktSongs s WHERE p.tktId = :playlistId AND s.tktId = :songId")
     boolean isSongInPlaylist(@Param("playlistId") Long playlistId, @Param("songId") Long songId);
+
+    List<tktPlaylist> findTop5ByTktIsPublicTrueOrderByTktCreatedAtDesc();
+
+    List<tktPlaylist> findByTktSongs_TktId(Long songId);
 }

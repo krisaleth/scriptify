@@ -14,7 +14,7 @@ public class GlobalExceptionHandler {
         if ("Account not verified!".equals(e.getMessage())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
                     "code", "ACCOUNT_NOT_VERIFIED",
-                    "message", "Tài khoản của bồ chưa xác thực. Điền OTP nhé!"
+                    "message", "Tài khoản của bạn chưa xác thực. Điền OTP nhé!"
             ));
         }
 

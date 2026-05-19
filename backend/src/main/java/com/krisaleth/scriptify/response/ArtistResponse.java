@@ -21,6 +21,8 @@ public class ArtistResponse {
 
     @Data
     @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class SongShortResponse {
         private Long id;
         private String title;

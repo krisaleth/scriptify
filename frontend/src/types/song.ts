@@ -1,23 +1,48 @@
-// src/types/song.ts
-
-export interface Author {
-    authorid: number;
-    authorname: string;
-    url?: string; // Ảnh đại diện của nghệ sĩ
+/**
+ * Định nghĩa cấu trúc dữ liệu Nghệ sĩ
+ */
+export interface Artist {
+  id?: number;
+  name: string;
+  bio?: string;
+  imageUrl?: string;
 }
 
+/**
+ * Định nghĩa cấu trúc dữ liệu Album
+ */
+export interface Album {
+  id?: number;
+  title: string;
+  coverImageUrl?: string;
+  releaseYear?: number;
+  artist?: Artist;
+}
+
+/**
+ * Interface chính cho Bài hát (Song)
+ * Dùng để đồng bộ dữ liệu từ Backend và hiển thị trên UI
+ */
 export interface Song {
-    id: number;
-    name: string;        // Tên bài hát
-    url: string;         // Link ảnh cover hoặc link stream (tùy bồ cấu hình ở Backend)
-    authorid: number;    // ID của tác giả
-    author?: Author;     // Thông tin chi tiết tác giả (nếu Backend trả về nested object)
-    
-    // Các trường bổ sung cho logic Backend bồ vừa làm
-    likeCount: number;   // Số lượt thích (khớp với like_count trong Java)
-    commentCount?: number; 
-    
-    // Các trường optional phục vụ cho việc hiển thị
-    duration?: string;   // Thời lượng bài hát
-    category?: string;   // Thể loại (Indigo, Pop, Rock...)
+  id: number;
+  title: string;
+  duration: number;      // Thời lượng tính bằng giây
+  imageUrl: string;      // Đường dẫn ảnh lưu trên R2
+  filePath: string;      // Đường dẫn file nhạc lưu trên R2
+  viewCount: number;     // Số lượt nghe
+  likeCount: number;     // Số lượt yêu thích
+  artist?: Artist;       // Thông tin nghệ sĩ sở hữu
+  album?: Album;         // Thông tin album (nếu có)
+  createdAt?: string;
+}
+
+/**
+ * Kiểu dữ liệu cho Context dùng trong Outlet (React Router)
+ * Giúp các trang con (Home, Fav, Album) gọi được hàm phát nhạc của App
+ */
+export interface MusicContextType {
+  handlePlayTrack: (trackId: number) => void;
+  currentTrackId: number | null;
+  isPlaying: boolean;
+  allSongs: Song[];
 }

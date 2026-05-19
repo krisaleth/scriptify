@@ -1,31 +1,41 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface AuthState {
   isAuthModalOpen: boolean;
-  token: string | null; // Khai báo thêm ở đây
+  user: any | null;
+  isInitialized: boolean; // Thêm biến này để check trạng thái kiểm tra token ban đầu
+  
   openAuthModal: () => void;
   closeAuthModal: () => void;
-  setToken: (newToken: string | null) => void; // Khai báo thêm ở đây
+  setUser: (newUser: any | null) => void;
+  logout: () => void;
+  setInitialized: (val: boolean) => void; // Để báo là đã check xong với BE
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  isAuthModalOpen: false,
-  
-  // Lấy token từ localStorage ngay khi khởi tạo store
-  token: localStorage.getItem("token"), 
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      isAuthModalOpen: false,
+      user: null,
+      isInitialized: false, // Mặc định chưa check
 
-  openAuthModal: () => set({ isAuthModalOpen: true }),
-  
-  closeAuthModal: () => set({ isAuthModalOpen: false }),
+      openAuthModal: () => set({ isAuthModalOpen: true }),
+      closeAuthModal: () => set({ isAuthModalOpen: false }),
+      setInitialized: (val) => set({ isInitialized: val }),
 
-  // Hàm này cực kỳ quan trọng để "thông báo" cho toàn app khi login/logout
-  setToken: (newToken) => {
-    if (newToken) {
-      localStorage.setItem("token", newToken);
-    } else {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user"); // Xóa luôn user khi logout
+      setUser: (newUser) => set({ user: newUser, isInitialized: true }),
+
+      logout: () => {
+        set({ user: null, isAuthModalOpen: false, isInitialized: true });
+        // Xóa sạch dấu vết LocalStorage
+        localStorage.removeItem('scriptify-auth-storage');
+      },
+    }),
+    {
+      name: 'scriptify-auth-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({ user: state.user }),
     }
-    set({ token: newToken });
-  },
-}));
+  )
+);

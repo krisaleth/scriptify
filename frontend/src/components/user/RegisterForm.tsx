@@ -4,25 +4,31 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, Camera, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
+
+// Dùng đường dẫn tương đối để đi qua Proxy nội bộ Docker/Vite
+const API_BASE = "/api";
 
 export function RegisterForm() {
   const navigate = useNavigate();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
 
-  React.useEffect(() => () => {
-    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+  // Dọn dẹp bộ nhớ khi component unmount
+  React.useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
   }, [avatarPreview]);
 
   const onAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    setAvatarPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return file ? URL.createObjectURL(file) : null;
-    });
+    if (file) {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -34,157 +40,170 @@ export function RegisterForm() {
 
     const password = formData.get("password")?.toString();
     const confirmPassword = formData.get("confirm_password")?.toString();
-
-    if (password !== confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp. Bồ kiểm tra lại nhé!");
-      return;
-    }
-    setIsLoading(true);
-    
-    // Lấy email từ FormData để truyền sang trang OTP sau khi đăng ký thành công
     const email = formData.get("email")?.toString();
 
+    // 1. Client-side Validation
+    if (password !== confirmPassword) {
+      const msg = "Mật khẩu xác nhận không khớp bạn ơi!";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
-      const response = await fetch("http://localhost:8080/api/auth/register", {
+      // 2. Gọi API Đăng ký qua Proxy
+      // KHÔNG set Content-Type header để trình duyệt tự điền boundary cho FormData (Multi-part)
+      const response = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
         body: formData,
+        credentials: "include"
       });
 
-      const contentType = response.headers.get("content-type");
       let data;
+      const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         data = await response.json();
       }
 
       if (response.ok) {
-        setIsSuccess(true);
+        toast.success("Đăng ký thành công!", { 
+          description: "Check hòm thư nhận mã OTP để kích hoạt tài khoản nhé sếp." 
+        });
+        
         setTimeout(() => {
-          navigate("/verify-otp", { state: { email: email } });
-        }, 2000);
+          // Replace: true để user không back lại trang đăng ký khi đã xong
+          navigate("/verify-otp", { state: { email: email }, replace: true });
+        }, 1500);
       } else {
-        setError(data?.message || "Đăng ký thất bại. Email hoặc Tên đăng nhập có thể đã tồn tại!");
+        const serverError = data?.message || "Đăng ký thất bại, email này có thể đã tồn tại.";
+        setError(serverError);
+        toast.error(serverError);
       }
     } catch (err) {
-      setError("Không thể kết nối tới máy chủ");
+      setError("Không thể kết nối tới Proxy xác thực.");
+      toast.error("Lỗi kết nối Backend");
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isSuccess) {
-    return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-black p-4">
-        <div className="text-center animate-in fade-in zoom-in duration-300">
-          <CheckCircle2 className="mx-auto h-20 w-20 text-green-500 mb-6 animate-bounce" />
-          <h2 className="text-3xl font-bold text-white mb-2">Đăng ký thành công!</h2>
-          <p className="text-zinc-400">Đang chuẩn bị gửi mã OTP đến email của bồ...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-black p-4 sm:p-6">
-      <Card className="w-full max-w-md border-zinc-800 bg-zinc-900 text-white shadow-2xl">
-        <CardHeader className="space-y-1 text-center sm:text-left">
-          <CardTitle className="text-2xl font-bold tracking-tight">
-            Đăng ký Scriptify
+    // Chuyển nền tổng thành bg-background
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 transition-colors duration-300">
+      {/* Đổi bg-zinc-950, text-white sang Theme Card */}
+      <Card className="w-full max-w-md border-border bg-card text-card-foreground shadow-2xl shadow-primary/10 rounded-[2.5rem] overflow-hidden border-t-primary/50 border-t-8 transition-colors duration-300">
+        <CardHeader className="space-y-1 pt-10 px-10">
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldCheck className="text-primary w-5 h-5 transition-colors" />
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic transition-colors">Secure Registration</span>
+          </div>
+          <CardTitle className="text-4xl font-black italic tracking-tighter text-primary uppercase leading-none transition-colors">
+            Gia nhập <br /> Scriptify
           </CardTitle>
-          {error && (
-            <div className="mt-2 rounded-md bg-red-500/10 p-3 text-sm text-red-500 border border-red-500/20 animate-in slide-in-from-top-1">
-              {error}
-            </div>
-          )}
         </CardHeader>
+        
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="register-nickname" className="text-zinc-300">Tên đăng nhập</Label>
+          <CardContent className="space-y-5 px-10 pt-4">
+            {/* Nickname */}
+            <div className="space-y-2 group">
+              <Label className="text-muted-foreground font-black text-[10px] uppercase ml-1 italic tracking-widest group-focus-within:text-primary transition-colors">bạn tên là gì?</Label>
               <Input
-                id="register-nickname"
                 name="nickname"
-                placeholder="Nhập tên đăng nhập của bồ"
-                className="border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-green-500"
+                placeholder="Exampled"
+                required
+                className="border-border bg-secondary/50 text-foreground h-14 focus-visible:ring-primary/50 rounded-2xl italic transition-all placeholder:text-muted-foreground/50"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="register-email" className="text-zinc-300">Email</Label>
+
+            {/* Email */}
+            <div className="space-y-2 group">
+              <Label className="text-muted-foreground font-black text-[10px] uppercase ml-1 italic tracking-widest group-focus-within:text-primary transition-colors">Email (Nhận mã OTP)</Label>
               <Input
-                id="register-email"
                 name="email"
                 type="email"
                 required
-                placeholder="ten@vi-du.com"
-                className="border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-green-500"
+                placeholder="youremail@example.com"
+                className="border-border bg-secondary/50 text-foreground h-14 focus-visible:ring-primary/50 rounded-2xl italic transition-all placeholder:text-muted-foreground/50"
               />
             </div>
+
+            {/* Avatar Upload */}
             <div className="space-y-2">
-              <Label htmlFor="register-avatar" className="text-zinc-300">Ảnh đại diện</Label>
-              <Input
-                id="register-avatar"
-                name="avatarFile"
-                type="file"
-                accept="image/*"
-                onChange={onAvatarChange}
-                className="cursor-pointer border-zinc-700 bg-zinc-800 text-zinc-300 file:me-3 file:rounded-md file:border-0 file:bg-zinc-700 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white focus-visible:ring-green-500"
-              />
-              {avatarPreview && (
-                <div className="mt-3 flex items-center gap-3 rounded-md border border-zinc-800 bg-black/50 p-2">
-                  <img
-                    src={avatarPreview}
-                    alt="Xem trước ảnh"
-                    className="h-10 w-10 rounded-full object-cover border border-zinc-700 shadow-sm"
+              <Label className="text-muted-foreground font-black text-[10px] uppercase ml-1 italic tracking-widest transition-colors">Ảnh đại diện</Label>
+              <div className="flex items-center gap-4 bg-secondary/30 p-4 rounded-2xl border border-border transition-colors">
+                <div className="relative group flex-shrink-0">
+                  <div className="h-16 w-16 rounded-full border-2 border-dashed border-border flex items-center justify-center bg-secondary overflow-hidden shadow-inner transition-colors group-hover:border-primary/50">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} className="h-full w-full object-cover" alt="Preview" />
+                    ) : (
+                      <Camera className="text-muted-foreground w-6 h-6 group-hover:text-primary transition-colors" />
+                    )}
+                  </div>
+                  <Input
+                    name="avatarFile"
+                    type="file"
+                    accept="image/*"
+                    onChange={onAvatarChange}
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
                   />
-                  <p className="text-xs text-zinc-400">Avatar trông "bánh cuốn" đấy!</p>
                 </div>
-              )}
+                <div className="text-[10px] text-muted-foreground italic font-bold leading-tight transition-colors">
+                  {avatarPreview ? "Mướt đấy sếp! Ảnh này lên Cloud là bao nghệ." : "Chọn một tấm ảnh thật cá tính nhé bạn."}
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="register-password" className="text-zinc-300">Mật khẩu</Label>
-              <Input
-                id="register-password"
-                name="password"
-                type="password"
-                required
-                placeholder="Tạo mật khẩu mạnh nè"
-                className="border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-green-500"
-              />
+
+            {/* Password Row */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2 group">
+                <Label className="text-muted-foreground font-black text-[10px] uppercase tracking-tighter ml-1 italic group-focus-within:text-primary transition-colors">Mật khẩu</Label>
+                <Input
+                  name="password"
+                  type="password"
+                  required
+                  minLength={8}
+                  className="border-border bg-secondary/50 text-foreground h-14 focus-visible:ring-primary/50 rounded-2xl italic transition-all"
+                />
+              </div>
+              <div className="space-y-2 group">
+                <Label className="text-muted-foreground font-black text-[10px] uppercase tracking-tighter ml-1 italic group-focus-within:text-primary transition-colors">Xác nhận</Label>
+                <Input
+                  name="confirm_password"
+                  type="password"
+                  required
+                  className="border-border bg-secondary/50 text-foreground h-14 focus-visible:ring-primary/50 rounded-2xl italic transition-all"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password" className="text-zinc-300">Xác nhận mật khẩu</Label>
-              <Input
-                id="confirm-password"
-                name="confirm_password"
-                type="password"
-                required
-                placeholder="Nhập lại mật khẩu cho chắc"
-                className="border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-green-500"
-              />
-            </div>
+
+            {error && (
+              // Đổi đỏ cứng thành biến destructive
+              <div className="text-[10px] font-black text-destructive uppercase italic bg-destructive/10 p-3 rounded-xl border border-destructive/20 animate-in fade-in zoom-in-95 tracking-widest text-center transition-colors">
+                ⚠ {error}
+              </div>
+            )}
           </CardContent>
-          <CardFooter className="flex flex-col gap-4 pt-2">
+
+          <CardFooter className="flex flex-col gap-6 pb-12 px-10 pt-8">
             <Button 
               type="submit" 
               disabled={isLoading}
-              className="w-full bg-green-500 text-black hover:bg-green-600 font-bold text-base transition-all"
+              // Nút Primary chuẩn Theme
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-black uppercase italic h-16 rounded-[1.5rem] shadow-2xl shadow-primary/20 active:scale-95 transition-all text-lg tracking-tighter"
             >
               {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Đang tạo tài khoản...
-                </>
-              ) : (
-                "Đăng Ký Ngay"
-              )}
+                <div className="flex items-center gap-2">
+                  <Loader2 className="animate-spin w-6 h-6" />
+                  <span>Đang khởi tạo...</span>
+                </div>
+              ) : "Khởi tạo tài khoản"}
             </Button>
-            <p className="text-zinc-400 text-center text-sm">
-              Đã có tài khoản rồi?{" "}
-              <Link
-                to="/login"
-                className="text-green-400 font-medium underline-offset-4 hover:underline hover:text-green-300 transition-colors"
-              >
-                Đăng nhập
-              </Link>
+            <p className="text-muted-foreground text-center text-[10px] font-black uppercase tracking-widest italic transition-colors">
+              Đã là thành viên?{" "}
+              {/* Link đổi màu tương ứng */}
+              <Link to="/login" className="text-foreground hover:text-primary transition-colors underline underline-offset-4 decoration-border hover:decoration-primary/50">Đăng nhập</Link>
             </p>
           </CardFooter>
         </form>

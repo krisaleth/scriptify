@@ -3,187 +3,141 @@ package com.krisaleth.scriptify.service;
 import com.krisaleth.scriptify.dto.UserLoginDto;
 import com.krisaleth.scriptify.dto.UserRegisterDto;
 import com.krisaleth.scriptify.dto.VerifyUserDto;
-import com.krisaleth.scriptify.entity.Role;
-import com.krisaleth.scriptify.entity.Users;
+import com.krisaleth.scriptify.entity.tktRole;
+import com.krisaleth.scriptify.entity.tktUsers;
 import com.krisaleth.scriptify.repository.UsersRepository;
-
 import jakarta.mail.MessagingException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class AuthenticationService {
+
     private final UsersRepository usersRepository;
-
     private final PasswordEncoder passwordEncoder;
-
     private final AuthenticationManager authenticationManager;
-
     private final EmailService emailService;
-
-    public AuthenticationService(
-            UsersRepository usersRepository,
-            PasswordEncoder passwordEncoder,
-            AuthenticationManager authenticationManager,
-            EmailService emailService
-    ) {
-        this.usersRepository = usersRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
-        this.emailService = emailService;
-    }
+    private final CloudStorageService cloudStorageService;
 
     @Transactional
-    public Users signUp(UserRegisterDto input) {
-        // 1. Khởi tạo đối tượng User với các thông tin cơ bản
-        Users users = new Users();
+    public tktUsers signUp(UserRegisterDto input) {
+        tktUsers user = new tktUsers();
         String nickname = input.getNickname();
+
         if (nickname == null || nickname.isBlank()) {
             nickname = input.getEmail().split("@")[0];
         }
-        if (usersRepository.existsByNickname(nickname)) {
+
+        if (usersRepository.existsByTktNickname(nickname)) {
             nickname = nickname + System.currentTimeMillis() % 1000;
         }
-        users.setNickname(nickname);
 
-        if (usersRepository.findByEmail(input.getEmail()).isPresent()) {
-            throw new RuntimeException("Email này đã được sử dụng rồi bồ ơi!");
+        user.setNickname(nickname);
+
+        if (usersRepository.existsByTktEmail(input.getEmail())) {
+            throw new RuntimeException("Email này đã được sử dụng rồi bạn ơi!");
         }
-        users.setEmail(input.getEmail());
 
-        users.setPassword(passwordEncoder.encode(input.getPassword()));
+        user.setEmail(input.getEmail());
+        user.setPassword(passwordEncoder.encode(input.getPassword()));
+        user.setRole(tktRole.USER);
+        user.setVerificationCode(generateVerificationCode());
+        user.setVerificationExpiration(LocalDateTime.now().plusMinutes(10));
+        user.setEnabled(false);
 
-        users.setRole(Role.USER);
-        users.setVerificationCode(generateVerificationCode());
-        users.setVerificationExpiration(LocalDateTime.now().plusMinutes(10));
-        users.setEnabled(false);
-
-        // 2. Xử lý lưu Avatar (nếu có)
         if (input.getAvatarFile() != null && !input.getAvatarFile().isEmpty()) {
-            try {
-                // Lấy đường dẫn gốc của project để tránh mkdirs bị ignore hoặc tạo sai chỗ
-                String projectDir = System.getProperty("user.dir");
-
-                // Thống nhất dùng folder "uploads/avatars" bên trong project
-                String relativePath = "uploads" + File.separator + "avatars";
-                File dir = new File(projectDir, relativePath);
-
-                // Tạo thư mục nếu chưa tồn tại (tạo cả folder cha nếu cần)
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-
-                // Tạo tên file duy nhất
-                String fileName = System.currentTimeMillis() + "_" + input.getAvatarFile().getOriginalFilename();
-
-                // Lưu file vật lý dùng resolve để tự động xử lý dấu gạch chéo
-                Path filePath = dir.toPath().resolve(fileName);
-                Files.copy(input.getAvatarFile().getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-                // LƯU Ý: Set đường dẫn vào DB khớp với pattern của WebConfig
-                // WebConfig bồ config là /uploads/** nên ở đây phải bắt đầu bằng /uploads/
-                users.setAvatarUrl("/uploads/avatars/" + fileName);
-
-            } catch (IOException e) {
-                throw new RuntimeException("Lỗi khi lưu file ảnh: " + e.getMessage());
-            }
+            String cloudPath = cloudStorageService.uploadFile(input.getAvatarFile(), "avatars");
+            user.setAvatarUrl(cloudPath);
         } else {
-            // Ảnh mặc định - bồ nhớ bỏ 1 file default-avatar.png vào folder uploads/avatars nhé
-            users.setAvatarUrl("/uploads/avatars/default-avatar.png");
+            user.setAvatarUrl("assets/default-avatar.png");
         }
 
-        // 3. Gửi mail và lưu vào DB
-        sendVerificationEmail(users);
-        return usersRepository.save(users);
+        sendVerificationEmail(user);
+        return usersRepository.save(user);
     }
 
-    public Users authenticate(UserLoginDto input) {
-        Users users = usersRepository.findByEmail(input.getEmail()).orElseThrow(() -> new RuntimeException("User not found"));
+    public tktUsers authenticate(UserLoginDto input) {
+        tktUsers user = usersRepository.findByTktEmail(input.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        input.getEmail(), input.getPassword()
-                )
+                new UsernamePasswordAuthenticationToken(input.getEmail(), input.getPassword())
         );
 
-        if (!users.isEnabled()) {
+        if (!user.isEnabled()) {
+            throw new RuntimeException("Account not verified!");
+        }
+        return user;
+    }
+
+    @Transactional
+    public void verifyUser(VerifyUserDto input) {
+        tktUsers user = usersRepository.findByTktEmail(input.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        
+        if (!user.isEnabled()) {
             throw new RuntimeException("Account not verified!");
         }
 
-        return users;
-    }
-
-    public void verifyUser(VerifyUserDto input) {
-        Optional<Users> optionalUsers = usersRepository.findByEmail(input.getEmail());
-        if (optionalUsers.isPresent()) {
-            Users users = optionalUsers.get();
-            if (users.getVerificationExpiration().isBefore(LocalDateTime.now())) {
-                throw new RuntimeException("Verification has expired!");
-            }
-            if (users.getVerificationCode().equals(input.getVerificationCode())) {
-                users.setEnabled(true);
-                users.setVerificationCode(null);
-                users.setVerificationExpiration(null);
-                usersRepository.save(users);
-            } else {
-                throw new RuntimeException("Invalid verification code!");
-            }
+        if (user.getVerificationExpiration().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Verification has expired!");
         }
-        else {
-            throw new RuntimeException("User not found");
+
+        if (user.getVerificationCode().equals(input.getVerificationCode())) {
+            user.setEnabled(true);
+            user.setVerificationCode(null);
+            user.setVerificationExpiration(null);
+            usersRepository.save(user);
+        } else {
+            throw new RuntimeException("Invalid verification code!");
         }
     }
 
+    @Transactional
     public void resendVerificationCode(String email) {
-        Optional<Users> optionalUsers = usersRepository.findByEmail(email);
-        if (optionalUsers.isPresent()) {
-            Users users = optionalUsers.get();
-            if (users.isEnabled()) {
-                throw new RuntimeException("User is already verified");
-            }
-            users.setVerificationCode(generateVerificationCode());
-            users.setVerificationExpiration(LocalDateTime.now().plusMinutes(10));
-            sendVerificationEmail(users);
-            usersRepository.save(users);
+        tktUsers user = usersRepository.findByTktEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.isEnabled()) {
+            throw new RuntimeException("User is already verified");
         }
-        else {
-            throw new RuntimeException("User not found");
-        }
+
+        user.setVerificationCode(generateVerificationCode());
+        user.setVerificationExpiration(LocalDateTime.now().plusMinutes(10));
+        sendVerificationEmail(user);
+        usersRepository.save(user);
     }
 
-    public void sendVerificationEmail(Users users) {
+    public void sendVerificationEmail(tktUsers user) {
         String subject = "Account Verification";
-        String verificationCode = users.getVerificationCode();
+        String verificationCode = user.getVerificationCode();
         String htmlMessage = "<html>"
+                + "<head><meta charset=\"UTF-8\"></head>"
                 + "<body style=\"font-family: Arial, sans-serif;\">"
                 + "<div style=\"background-color: #f5f5f5; padding: 20px;\">"
-                + "<h2 style=\"color: #333;\">Welcome to our app!</h2>"
-                + "<p style=\"font-size: 16px;\">Please enter the verification code below to continue:</p>"
+                + "<h2 style=\"color: #333;\">Chào mừng đến với Scriptify!</h2>"
+                + "<p style=\"font-size: 16px;\">Mã xác thực của bạn là:</p>"
                 + "<div style=\"background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);\">"
                 + "<h3 style=\"color: #333;\">Verification Code:</h3>"
-                + "<p style=\"font-size: 18px; font-weight: bold; color: #007bff;\">" + verificationCode + "</p>"
+                + "<p style=\"font-size: 24px; font-weight: bold; color: #22c55e;\">" + verificationCode + "</p>"
                 + "</div>"
                 + "</div>"
                 + "</body>"
                 + "</html>";
         try {
-            emailService.sendVerificationEmail(users.getEmail(), subject, htmlMessage);
+            emailService.sendVerificationEmail(user.getEmail(), subject, htmlMessage);
         } catch (MessagingException e) {
             e.printStackTrace();
         }
-
     }
 
     private String generateVerificationCode() {
@@ -192,4 +146,3 @@ public class AuthenticationService {
         return String.valueOf(code);
     }
 }
-
