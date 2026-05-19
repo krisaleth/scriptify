@@ -32,9 +32,7 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
-                // 1. Áp dụng cấu hình CORS mới bên dưới
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                // 2. Disable CSRF vì tui mình dùng JWT/Stateless
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**", "/error").permitAll()
@@ -53,25 +51,17 @@ public class SecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        // ✅ QUAN TRỌNG: Thêm http://localhost (Cổng 80 của Nginx) vào danh sách cho phép
         configuration.setAllowedOrigins(List.of(
-                "http://localhost",       // Cổng 80 Nginx
-                "https://localhost",      // Cổng 443 Nginx
-                "http://localhost:3000",  // Dev mode Frontend trực tiếp
+                "http://localhost",
+                "https://localhost",
+                "http://localhost:3000",
                 "https://localhost:3000"
         ));
 
-        // ✅ Cho phép tất cả các Header phổ biến
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*")); // Cho phép tất cả header để tránh bị chặn
-
-        // ✅ Cho phép gửi kèm Cookie/Credentials (BẮT BUỘC cho cơ chế xác thực của bạn)
+        configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-
-        // Expose Header nếu bạn cần đọc Token từ Header phía Client
         configuration.setExposedHeaders(List.of("Authorization"));
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

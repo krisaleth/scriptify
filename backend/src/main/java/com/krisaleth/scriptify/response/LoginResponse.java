@@ -5,13 +5,13 @@ import com.krisaleth.scriptify.entity.tktUsers; // Import entity User của bạ
 public class LoginResponse {
     private String token;
     private Long expiresIn;
-    private tktUsers user; // ✅ Thêm trường này để Sidebar có data nạp ngay
+    private UserResponse user;
 
     public LoginResponse() {
     }
 
     // Constructor đầy đủ
-    public LoginResponse(String token, Long expiresIn, tktUsers user) {
+    public LoginResponse(String token, Long expiresIn, UserResponse user) {
         this.token = token;
         this.expiresIn = expiresIn;
         this.user = user;
@@ -26,6 +26,6 @@ public class LoginResponse {
     public void setExpiresIn(Long expiresIn) { this.expiresIn = expiresIn; }
 
     // ✅ Getter/Setter cho User
-    public tktUsers getUser() { return user; }
-    public void setUser(tktUsers user) { this.user = user; }
+    public UserResponse getUser() { return user; }
+    public void setUser(UserResponse user) { this.user = user; }
 }

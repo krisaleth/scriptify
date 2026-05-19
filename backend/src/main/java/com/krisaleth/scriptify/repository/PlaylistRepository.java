@@ -34,4 +34,6 @@ public interface PlaylistRepository extends JpaRepository<tktPlaylist, Long> {
     boolean isSongInPlaylist(@Param("playlistId") Long playlistId, @Param("songId") Long songId);
 
     List<tktPlaylist> findTop5ByTktIsPublicTrueOrderByTktCreatedAtDesc();
+
+    List<tktPlaylist> findByTktSongs_TktId(Long songId);
 }

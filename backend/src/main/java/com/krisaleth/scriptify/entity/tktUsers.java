@@ -1,7 +1,6 @@
 package com.krisaleth.scriptify.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -66,7 +65,8 @@ public class tktUsers implements UserDetails {
     private List<tktPlaylist> tktPlaylists = new ArrayList<>();
 
     @ManyToMany
-    @JsonIgnoreProperties
+    @Getter
+    @JsonIgnore
     @JoinTable(
             name = "tkt_user_favourites",
             joinColumns = @JoinColumn(name = "tkt_user_id"),

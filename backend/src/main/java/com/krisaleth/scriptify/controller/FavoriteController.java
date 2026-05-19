@@ -23,10 +23,11 @@ public class FavoriteController {
         return ResponseEntity.ok(usersService.getFavoriteSongs(auth.getName()));
     }
 
-    // Nút Like/Unlike bài hát
     @PostMapping("/{songId}")
     public ResponseEntity<Void> toggleLike(@PathVariable Long songId, Authentication auth) {
         usersService.toggleFavorite(auth.getName(), songId);
         return ResponseEntity.ok().build();
     }
+
+
 }

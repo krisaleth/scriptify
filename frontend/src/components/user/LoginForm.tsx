@@ -8,7 +8,6 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner"; 
 import { useAuthStore } from "@/store/useAuthStore";
 
-// Route qua Proxy Nginx nội bộ
 const API_BASE = "/api";
 
 export function LoginForm() {
@@ -16,7 +15,6 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Lấy hàm setUser để nạp data vào Zustand Persist (LocalStorage)
   const setUser = useAuthStore((state) => state.setUser);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -33,15 +31,13 @@ export function LoginForm() {
       const loginResponse = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // BẮT BUỘC: Để nhận HttpOnly Cookie JWT từ Backend
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
       const loginData = await loginResponse.json();
 
       if (loginResponse.ok) {
-        // BƯỚC 2: NẠP USER TỪ RESPONSE VÀO STORE
-        // Dựa trên tab Network của bạn, loginData đã có object { user: { ... } }
         if (loginData.user) {
           setUser(loginData.user); 
 
@@ -51,11 +47,10 @@ export function LoginForm() {
           navigate("/"); 
         } else {
           console.error("Scriptify: Login thành công nhưng response thiếu object 'user'");
-          setError("Dữ liệu phản hồi từ Cloud bị thiếu.");
+          setError("Dữ liệu phản hồi bị thiếu.");
         }
       } else {
-        // Xử lý lỗi xác thực OTP hoặc sai pass
-        if (loginData.message === "Account not verified!" || loginData.code === "ACCOUNT_NOT_VERIFIED") {
+        if (loginData.message === "User is disabled" || loginData.code === "ACCOUNT_NOT_VERIFIED") {
           toast.warning("Tài khoản chưa xác thực", {
             description: "Đang chuyển bạn đến hệ thống xác nhận OTP..."
           });
@@ -73,9 +68,7 @@ export function LoginForm() {
   };
 
   return (
-    // Thay bg-black thành bg-background
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 transition-colors duration-300">
-      {/* Đổi bg-zinc-950, text-white, border-green... thành màu Theme */}
       <Card className="w-full max-w-md border-border bg-card text-card-foreground shadow-2xl shadow-primary/10 rounded-[2.5rem] overflow-hidden border-t-primary/50 border-t-8 transition-colors duration-300">
         <CardHeader className="space-y-2 text-center pt-12 px-10">
           <CardTitle className="text-5xl font-black italic tracking-tighter text-primary uppercase leading-none transition-colors">
@@ -112,9 +105,8 @@ export function LoginForm() {
             </div>
 
             {error && (
-              // Đổi đỏ cứng thành biến destructive
-              <div className="mt-4 rounded-2xl bg-destructive/10 p-4 text-[10px] font-black text-destructive border border-destructive/20 animate-in fade-in slide-in-from-top-1 text-center uppercase italic tracking-widest transition-colors">
-                ⚠ {error}
+              <div className="mt-4 rounded-2xl bg-red-500/5 p-4 text-[10px] font-black text-red-500 border border-red-500/10 animate-in fade-in slide-in-from-top-1 text-center uppercase italic tracking-widest">
+                {error}
               </div>
             )}
           </CardContent>
@@ -134,7 +126,6 @@ export function LoginForm() {
             </Button>
             <p className="text-muted-foreground text-center text-[10px] font-black uppercase tracking-widest italic">
               Chưa có tài khoản?{" "}
-              {/* Link cũng đổi màu tương ứng */}
               <Link to="/register" className="text-foreground hover:text-primary transition-colors underline underline-offset-4 decoration-border">Tham gia Scriptify</Link>
             </p>
           </CardFooter>

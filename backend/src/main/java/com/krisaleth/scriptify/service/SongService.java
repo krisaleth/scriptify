@@ -1,10 +1,10 @@
 package com.krisaleth.scriptify.service;
 
 import com.krisaleth.scriptify.entity.tktArtist;
+import com.krisaleth.scriptify.entity.tktPlaylist;
 import com.krisaleth.scriptify.entity.tktSong;
-import com.krisaleth.scriptify.repository.AlbumRepository;
-import com.krisaleth.scriptify.repository.ArtistRepository;
-import com.krisaleth.scriptify.repository.SongRepository;
+import com.krisaleth.scriptify.entity.tktUsers;
+import com.krisaleth.scriptify.repository.*;
 import com.krisaleth.scriptify.config.FileUtils;
 import com.krisaleth.scriptify.response.SongResponse;
 import jakarta.persistence.EntityNotFoundException;
@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -32,7 +33,9 @@ public class SongService {
     private final SongRepository songRepository;
     private final AlbumRepository albumRepository;
     private final ArtistRepository artistRepository;
-    private final S3Client s3Client; // Inject S3Client đã config
+    private final S3Client s3Client;
+    private final UsersRepository usersRepository;
+    private final PlaylistRepository playlistRepository;
 
     @Value("${r2.bucket-name}")
     private String bucketName;
@@ -123,17 +126,15 @@ public class SongService {
         }
 
         try {
-            // Cập nhật Nhạc
             if (musicFile != null && !musicFile.isEmpty()) {
-                deleteFromR2(existingTktSong.getFilePath()); // Xóa trên Cloud
+                deleteFromR2(existingTktSong.getFilePath());
                 String relativePath = uploadToR2(musicFile, "music");
                 existingTktSong.setFilePath(relativePath);
                 existingTktSong.setDuration(FileUtils.getMp3Duration(musicFile));
             }
 
-            // Cập nhật Ảnh
             if (imageFile != null && !imageFile.isEmpty()) {
-                deleteFromR2(existingTktSong.getImageUrl()); // Xóa trên Cloud
+                deleteFromR2(existingTktSong.getImageUrl());
                 String relativePath = uploadToR2(imageFile, "images");
                 existingTktSong.setImageUrl(relativePath);
             }
@@ -185,6 +186,18 @@ public class SongService {
     public void deleteSong(Long id) {
         tktSong tktSong = songRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy ID: " + id));
+
+        List<tktUsers> userFav = usersRepository.findByTktFavoriteSongs_TktId(id);
+        for (tktUsers user : userFav) {
+            user.getFavoriteSongs().remove(tktSong);
+            usersRepository.save(user);
+        }
+        List<tktPlaylist> playListHaveSong = playlistRepository.findByTktSongs_TktId(id);
+        for (tktPlaylist playlist : playListHaveSong) {
+            playlist.getSongs().remove(tktSong);
+            playlistRepository.save(playlist);
+        }
+
         String musicPath = tktSong.getFilePath();
         String imagePath = tktSong.getImageUrl();
         if (musicPath != null) {

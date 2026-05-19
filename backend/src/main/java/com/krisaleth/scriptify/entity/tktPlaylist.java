@@ -41,6 +41,7 @@ public class tktPlaylist {
     private LocalDateTime tktUpdatedAt;
 
     @ManyToMany
+    @Getter
     @JoinTable(
             name = "tkt_playlist_songs",
             joinColumns = @JoinColumn(name = "tkt_playlist_id"),
