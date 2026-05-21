@@ -40,9 +40,6 @@ public class SongService {
     @Value("${r2.bucket-name}")
     private String bucketName;
 
-    /**
-     * HÀM LƯU FILE LÊN R2 (Thay thế savePhysicalFile)
-     */
     private String uploadToR2(MultipartFile file, String folder) throws IOException {
 
         String originalName = file.getOriginalFilename();
@@ -51,7 +48,6 @@ public class SongService {
             extension = originalName.substring(originalName.lastIndexOf("."));
         }
 
-        // ✅ Tên file mới: folder/uuid.mp3 (Loại bỏ hoàn toàn ký tự lạ/khoảng trắng)
         String fileName = folder + "/" + UUID.randomUUID().toString() + extension;
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -84,6 +80,7 @@ public class SongService {
                 .id(song.getId())
                 .title(song.getTitle())
                 .duration(song.getDuration())
+                .description(song.getDescription())
                 .filePath(song.getFilePath())
                 .imageUrl(song.getImageUrl())
                 .viewCount(song.getViewCount())
@@ -107,12 +104,16 @@ public class SongService {
     }
 
     @Transactional
-    public SongResponse updateSong(Long id, String title, Long artistId, Long albumId, MultipartFile musicFile, MultipartFile imageFile) {
+    public SongResponse updateSong(Long id, String title, String description, Long artistId, Long albumId, MultipartFile musicFile, MultipartFile imageFile) {
         tktSong existingTktSong = songRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy ID: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bài hát: " + id));
 
         if (title != null && !title.isBlank()) {
             existingTktSong.setTitle(title);
+        }
+
+        if (description != null && !description.isBlank()) {
+            existingTktSong.setDescription(description);
         }
 
         if (artistId != null) {
@@ -128,14 +129,14 @@ public class SongService {
         try {
             if (musicFile != null && !musicFile.isEmpty()) {
                 deleteFromR2(existingTktSong.getFilePath());
-                String relativePath = uploadToR2(musicFile, "music");
+                String relativePath = uploadToR2(musicFile, "musics");
                 existingTktSong.setFilePath(relativePath);
                 existingTktSong.setDuration(FileUtils.getMp3Duration(musicFile));
             }
 
             if (imageFile != null && !imageFile.isEmpty()) {
                 deleteFromR2(existingTktSong.getImageUrl());
-                String relativePath = uploadToR2(imageFile, "images");
+                String relativePath = uploadToR2(imageFile, "covers");
                 existingTktSong.setImageUrl(relativePath);
             }
 
@@ -146,7 +147,7 @@ public class SongService {
     }
 
     @Transactional
-    public SongResponse createSong(String title, Long artistId, Long albumId, MultipartFile musicFile, MultipartFile imageFile) {
+    public SongResponse createSong(String title, Long artistId, String description, Long albumId, MultipartFile musicFile, MultipartFile imageFile) {
         tktArtist tktArtist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Nghệ sĩ không tồn tại"));
 
@@ -161,12 +162,13 @@ public class SongService {
 
             String imagePath = "assets/default-cover.png";
             if (imageFile != null && !imageFile.isEmpty()) {
-                imagePath = uploadToR2(imageFile, "images");
+                imagePath = uploadToR2(imageFile, "covers");
             }
 
             tktSong tktSong = new tktSong();
             tktSong.setTitle(title);
             tktSong.setDuration(duration);
+            tktSong.setDescription(description);
             tktSong.setArtist(tktArtist);
             tktSong.setViewCount(0L);
             tktSong.setLikeCount(0);
