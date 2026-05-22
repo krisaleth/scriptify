@@ -113,26 +113,30 @@ public class AuthenticationService {
     }
 
     public void sendVerificationEmail(tktUsers user) {
+        if (user == null || user.getEmail() == null) {
+            // Handle logic lỗi hoặc return tùy thuộc vào controller/service của bạn
+            throw new IllegalArgumentException("Thông tin người dùng hoặc email không hợp lệ");
+        }
+
         String subject = "Account Verification";
         String verificationCode = user.getVerificationCode();
-        String htmlMessage = "<html>"
-                + "<head><meta charset=\"UTF-8\"></head>"
-                + "<body style=\"font-family: Arial, sans-serif;\">"
-                + "<div style=\"background-color: #f5f5f5; padding: 20px;\">"
-                + "<h2 style=\"color: #333;\">Chào mừng đến với Scriptify!</h2>"
-                + "<p style=\"font-size: 16px;\">Mã xác thực của bạn là:</p>"
-                + "<div style=\"background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);\">"
-                + "<h3 style=\"color: #333;\">Verification Code:</h3>"
-                + "<p style=\"font-size: 24px; font-weight: bold; color: #22c55e;\">" + verificationCode + "</p>"
-                + "</div>"
-                + "</div>"
-                + "</body>"
-                + "</html>";
-        try {
-            emailService.sendVerificationEmail(user.getEmail(), subject, htmlMessage);
-        } catch (MessagingException e) {
-            e.printStackTrace();
-        }
+
+        String htmlMessage = """
+        <html>
+        <head><meta charset="UTF-8"></head>
+        <body style="font-family: Arial, sans-serif;">
+            <div style="background-color: #f5f5f5; padding: 20px;">
+                <h2 style="color: #333;">Chào mừng đến với Scriptify!</h2>
+                <p style="font-size: 16px;">Mã xác thực của bạn là:</p>
+                <div style="background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+                    <h3 style="color: #333;">Verification Code:</h3>
+                    <p style="font-size: 24px; font-weight: bold; color: #22c55e;">%s</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(verificationCode); // Ghèn code trực tiếp vào chuỗi HTML công thức %s
+        emailService.sendVerificationEmail(user.getEmail(), subject, htmlMessage);
     }
 
     private String generateVerificationCode() {
