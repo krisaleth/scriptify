@@ -5,10 +5,9 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { apiRequest } from "@/utils/apiClient"; 
 
-// Dùng đường dẫn tương đối để đi xuyên qua Proxy nội bộ Docker
 const API_BASE = "/api"; 
-// Thay đổi biến màu cứng ở input thành màu theme
 const inputClasses = "border-border bg-secondary/50 text-foreground focus-visible:ring-primary/30 focus-visible:border-primary/50 rounded-2xl h-14 transition-all placeholder:text-muted-foreground/50 italic text-sm";
 
 interface EntityDialogProps {
@@ -24,34 +23,24 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
   const [artists, setArtists] = useState<any[]>([]);
   const [albums, setAlbums] = useState<any[]>([]);
   
+ 
   const [formData, setFormData] = useState({
-    title: "", artistId: "", albumId: "", year: "", name: "", bio: ""
+    title: "", artistId: "", albumId: "", year: "", name: "", bio: "", description: ""
   });
   const [files, setFiles] = useState<{ song?: File; image?: File }>({});
 
-  // 1. Hàm load Options (Nghệ sĩ/Album) qua Proxy
   const loadOptions = useCallback(async () => {
-    const fetchOptions = {
-      credentials: "include" as const, 
-    };
-
     if (type === 'music' || type === 'albums') {
       try {
-        const res = await fetch(`${API_BASE}/artists`, fetchOptions);
-        if (res.ok) {
-          const data = await res.json();
-          setArtists(Array.isArray(data) ? data : data.content || []);
-        }
+        const data = await apiRequest(`${API_BASE}/artists`);
+        if (data) setArtists(Array.isArray(data) ? data : data.content || []);
       } catch (e) { console.error("Scriptify: Lỗi tải danh sách nghệ sĩ", e); }
     }
 
     if (type === 'music') {
       try {
-        const res = await fetch(`${API_BASE}/albums?size=100`, fetchOptions);
-        if (res.ok) {
-          const data = await res.json();
-          setAlbums(data.content || []);
-        }
+        const data = await apiRequest(`${API_BASE}/albums?size=100`);
+        if (data) setAlbums(data.content || []);
       } catch (e) { console.error("Scriptify: Lỗi tải danh sách album", e); }
     }
   }, [type]);
@@ -66,10 +55,11 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
           albumId: editItem.album?.id?.toString() || "",
           year: editItem.releaseYear || "",
           name: editItem.name || "",
-          bio: editItem.bio || ""
+          bio: editItem.bio || "",
+          description: editItem.description || "" // Lấy Data nếu đang sửa
         });
       } else {
-        setFormData({ title: "", artistId: "", albumId: "", year: "", name: "", bio: "" });
+        setFormData({ title: "", artistId: "", albumId: "", year: "", name: "", bio: "", description: "" });
       }
       setFiles({});
     }
@@ -87,6 +77,7 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
       body.append("title", formData.title);
       body.append("artistId", formData.artistId);
       if (formData.albumId) body.append("albumId", formData.albumId);
+      if (formData.description) body.append("description", formData.description); // Gửi thêm cái này lên Server
       if (files.song) body.append("songFile", files.song);
       if (files.image) body.append("imageFile", files.image);
     } else if (type === "artists") {
@@ -132,7 +123,6 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* Thay đổi màu nền, viền và text */}
       <DialogContent className="bg-card border-border text-card-foreground max-w-lg rounded-[2.5rem] p-10 shadow-2xl overflow-hidden transition-colors duration-300">
         <form onSubmit={handleSave} className="space-y-8">
           <DialogHeader>
@@ -145,7 +135,7 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
             <div className="h-1 w-20 bg-primary/20 rounded-full mt-2 transition-colors duration-300"></div>
           </DialogHeader>
 
-          <div className="space-y-5">
+          <div className="space-y-5 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
             {(type === 'music' || type === 'albums') && (
               <div className="space-y-2 group">
                 <Label className="text-muted-foreground group-focus-within:text-primary transition-colors font-black text-[10px] uppercase ml-1 italic tracking-widest">Tiêu đề bản phối</Label>
@@ -162,7 +152,6 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
                   onChange={e => setFormData({...formData, artistId: e.target.value, albumId: ""})} 
                   required
                 >
-                  {/* Thay nền của option bằng bg-background */}
                   <option value="" className="bg-background text-muted-foreground italic">-- Lựa chọn nghệ sĩ --</option>
                   {artists.map(a => <option key={a.id} value={a.id} className="bg-background text-foreground">{a.name}</option>)}
                 </select>
@@ -170,20 +159,33 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
             )}
 
             {type === 'music' && (
-              <div className="space-y-2 group">
-                <Label className="text-muted-foreground group-focus-within:text-primary transition-colors font-black text-[10px] uppercase ml-1 italic tracking-widest">Bộ sưu tập Album</Label>
-                <select 
-                  className={`${inputClasses} w-full p-4 outline-none appearance-none disabled:opacity-20 cursor-pointer border border-border shadow-sm`} 
-                  value={formData.albumId} 
-                  onChange={e => setFormData({...formData, albumId: e.target.value})}
-                  disabled={!formData.artistId}
-                >
-                  <option value="" className="bg-background text-muted-foreground italic">-- Không thuộc album nào --</option>
-                  {albums.filter(alb => !formData.artistId || alb.artist?.id === Number(formData.artistId)).map(alb => (
-                    <option key={alb.id} value={alb.id} className="bg-background text-foreground">{alb.title}</option>
-                  ))}
-                </select>
-              </div>
+              <>
+                <div className="space-y-2 group">
+                  <Label className="text-muted-foreground group-focus-within:text-primary transition-colors font-black text-[10px] uppercase ml-1 italic tracking-widest">Bộ sưu tập Album</Label>
+                  <select 
+                    className={`${inputClasses} w-full p-4 outline-none appearance-none disabled:opacity-20 cursor-pointer border border-border shadow-sm`} 
+                    value={formData.albumId} 
+                    onChange={e => setFormData({...formData, albumId: e.target.value})}
+                    disabled={!formData.artistId}
+                  >
+                    <option value="" className="bg-background text-muted-foreground italic">-- Không thuộc album nào --</option>
+                    {albums.filter(alb => !formData.artistId || alb.artist?.id === Number(formData.artistId)).map(alb => (
+                      <option key={alb.id} value={alb.id} className="bg-background text-foreground">{alb.title}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* TRƯỜNG MÔ TẢ ĐƯỢC THÊM VÀO ĐÂY */}
+                <div className="space-y-2 group">
+                  <Label className="text-muted-foreground group-focus-within:text-primary transition-colors font-black text-[10px] uppercase ml-1 italic tracking-widest">Mô tả bài hát</Label>
+                  <textarea 
+                    placeholder="Đôi dòng cảm nhận về bài hát này..." 
+                    value={formData.description} 
+                    onChange={e => setFormData({...formData, description: e.target.value})} 
+                    className={`${inputClasses} h-24 pt-4 resize-none w-full p-4 outline-none border border-border shadow-sm`} 
+                  />
+                </div>
+              </>
             )}
 
             {type === 'artists' && (
@@ -213,7 +215,6 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
               </div>
             )}
 
-            {/* File Upload Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
               {type === 'music' && (
                 <div className="space-y-2 group">
@@ -256,7 +257,6 @@ export function EntityDialog({ open, onOpenChange, type, editItem, onSuccess }: 
             <Button 
               type="submit" 
               disabled={loading} 
-              // Đổi nút lưu thành Primary
               className="w-full bg-primary text-primary-foreground font-black py-8 rounded-[1.5rem] hover:bg-primary/90 transition-all active:scale-95 shadow-xl shadow-primary/20 text-base italic tracking-tighter"
             >
               {loading ? <Loader2 className="animate-spin w-7 h-7" /> : "XÁC NHẬN"}
