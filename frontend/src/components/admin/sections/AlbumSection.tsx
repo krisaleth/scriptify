@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { getResourceUrl } from "@/utils/urlHelper";
-import { apiRequest } from "@/utils/apiClient"; // Dùng apiClient sếp vừa tạo
+import { apiRequest } from "@/utils/apiClient";
 
 interface Props {
-  searchQuery: string; // Nhận keyword từ Dashboard
+  searchQuery: string; 
   refresh: number;
   onEdit: (album: any) => void;
   onDelete: (id: number) => void;
@@ -24,7 +24,6 @@ export function AlbumSection({ searchQuery, refresh, onEdit, onDelete }: Props) 
   const fetchAlbums = useCallback(async () => {
     try {
       setIsLoading(true);
-      // Dùng apiRequest để tự động xử lý Token hết hạn
       const data = await apiRequest(`${API_BASE}/albums?size=100`);
       if (data) {
         setAlbums(data.content || (Array.isArray(data) ? data : []));
@@ -40,12 +39,10 @@ export function AlbumSection({ searchQuery, refresh, onEdit, onDelete }: Props) 
     fetchAlbums();
   }, [refresh, fetchAlbums]);
 
-  // Tự động quay về trang 1 khi gõ tìm kiếm
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
 
-  // Logic tìm kiếm Client-side cực nhanh
   const filteredAlbums = useMemo(() => {
     return albums.filter((album) =>
       album.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -53,7 +50,6 @@ export function AlbumSection({ searchQuery, refresh, onEdit, onDelete }: Props) 
     );
   }, [albums, searchQuery]);
 
-  // Logic Phân trang (Pagination)
   const totalPages = Math.ceil(filteredAlbums.length / ITEMS_PER_PAGE);
 
   const paginatedAlbums = useMemo(() => {
@@ -61,9 +57,12 @@ export function AlbumSection({ searchQuery, refresh, onEdit, onDelete }: Props) 
     return filteredAlbums.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredAlbums, currentPage]);
 
+  // Tính toán số dòng trống để chèn "cột chống"
+  const emptyRows = paginatedAlbums.length > 0 ? ITEMS_PER_PAGE - paginatedAlbums.length : 0;
+
   return (
     <Card className="bg-card border-border overflow-hidden rounded-[2rem] shadow-lg transition-colors duration-300 flex flex-col h-full">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto flex-1">
         <Table>
           <TableHeader className="bg-secondary/50 transition-colors duration-300">
             <TableRow className="border-border text-muted-foreground uppercase text-[10px] font-black tracking-[0.2em] h-14 italic transition-colors duration-300 hover:bg-transparent">
@@ -88,37 +87,49 @@ export function AlbumSection({ searchQuery, refresh, onEdit, onDelete }: Props) 
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedAlbums.map((album) => (
-                <TableRow key={album.id} className="border-border hover:bg-accent transition-colors duration-300 h-20 group">
-                  <TableCell className="text-center">
-                    <img 
-                      src={getResourceUrl(album.coverImageUrl)} 
-                      className="w-12 h-12 inline-block object-cover rounded-lg border border-border group-hover:scale-110 transition-transform shadow-sm"
-                      alt={album.title}
-                      onError={(e) => (e.currentTarget.src = "/assets/default-cover.png")}
-                    />
-                  </TableCell>
-                  <TableCell className="font-black text-foreground uppercase italic transition-colors duration-300">
-                    {album.title}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-[11px] font-black uppercase italic transition-colors duration-300">
-                    {album.artist?.name}
-                  </TableCell>
-                  <TableCell className="text-center font-black text-muted-foreground text-xs transition-colors duration-300">
-                    {album.releaseYear}
-                  </TableCell>
-                  <TableCell className="text-right pr-10">
-                    <div className="flex justify-end gap-2 transition-all">
-                      <Button variant="ghost" size="icon" onClick={() => onEdit(album)} className="text-blue-500 hover:bg-blue-500/10 hover:text-blue-600 rounded-xl h-9 w-9 transition-colors">
-                        <Pencil size={16}/>
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => onDelete(album.id)} className="text-destructive hover:bg-destructive/10 hover:text-destructive rounded-xl h-9 w-9 transition-colors">
-                        <Trash2 size={16}/>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+              <>
+                {/* Render dữ liệu thực */}
+                {paginatedAlbums.map((album) => (
+                  <TableRow key={album.id} className="border-border hover:bg-accent transition-colors duration-300 h-20 group">
+                    <TableCell className="text-center">
+                      <img 
+                        src={getResourceUrl(album.coverImageUrl)} 
+                        className="w-12 h-12 inline-block object-cover rounded-lg border border-border group-hover:scale-110 transition-transform shadow-sm"
+                        alt={album.title}
+                        onError={(e) => (e.currentTarget.src = "/assets/default-cover.png")}
+                      />
+                    </TableCell>
+                    <TableCell className="font-black text-foreground uppercase italic transition-colors duration-300">
+                      {album.title}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-[11px] font-black uppercase italic transition-colors duration-300">
+                      {album.artist?.name}
+                    </TableCell>
+                    <TableCell className="text-center font-black text-muted-foreground text-xs transition-colors duration-300">
+                      {album.releaseYear}
+                    </TableCell>
+                    <TableCell className="text-right pr-10">
+                      <div className="flex justify-end gap-2 transition-all">
+                        <Button variant="ghost" size="icon" onClick={() => onEdit(album)} className="text-blue-500 hover:bg-blue-500/10 hover:text-blue-600 rounded-xl h-9 w-9 transition-colors">
+                          <Pencil size={16}/>
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => onDelete(album.id)} className="text-destructive hover:bg-destructive/10 hover:text-destructive rounded-xl h-9 w-9 transition-colors">
+                          <Trash2 size={16}/>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+
+                {/* Render các dòng ma (Ghost Rows) để lấp đầy bảng */}
+                {emptyRows > 0 && Array.from({ length: emptyRows }).map((_, index) => (
+                  <TableRow key={`empty-${index}`} className="border-transparent hover:bg-transparent pointer-events-none">
+                    <TableCell colSpan={5} className="p-0">
+                      <div className="h-20 w-full" aria-hidden="true"></div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </>
             )}
           </TableBody>
         </Table>

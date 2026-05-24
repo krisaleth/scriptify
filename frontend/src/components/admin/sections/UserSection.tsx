@@ -63,9 +63,12 @@ export function UserSection({ searchQuery, refresh, onDelete }: Props) {
     return filteredUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredUsers, currentPage]);
 
+  // Tính toán số dòng trống để chèn "cột chống"
+  const emptyRows = paginatedUsers.length > 0 ? ITEMS_PER_PAGE - paginatedUsers.length : 0;
+
   return (
     <Card className="bg-card border-border overflow-hidden rounded-[2rem] shadow-lg transition-colors duration-300 flex flex-col h-full">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto flex-1">
         <Table>
           <TableHeader className="bg-secondary/50 transition-colors duration-300">
             <TableRow className="border-border text-muted-foreground uppercase text-[10px] font-black tracking-[0.2em] h-14 italic hover:bg-transparent transition-colors duration-300">
@@ -90,54 +93,66 @@ export function UserSection({ searchQuery, refresh, onDelete }: Props) {
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedUsers.map((userItem) => (
-                <TableRow key={userItem.id} className="border-border hover:bg-accent transition-colors duration-300 h-20 group">
-                  <TableCell className="text-center">
-                    <img 
-                      src={getResourceUrl(userItem.avatarUrl)} 
-                      className="w-10 h-10 inline-block object-cover rounded-full border border-border shadow-sm transition-transform group-hover:scale-110 duration-500"
-                      alt="Avatar"
-                      onError={(e) => {
-                        e.currentTarget.src = "/assets/default-avatar.png";
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell className="font-black text-foreground transition-colors duration-300">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-1.5 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${userItem.role === 'ADMIN' ? 'bg-destructive shadow-[0_0_10px_rgba(var(--destructive),0.5)]' : 'bg-primary'}`}></div>
-                      <span className={`uppercase italic tracking-tighter transition-colors ${userItem.role === 'ADMIN' ? 'group-hover:text-destructive' : 'group-hover:text-primary'}`}>
-                        {userItem.nickname || userItem.username || "Unknown"}
+              <>
+                {/* Dữ liệu thật */}
+                {paginatedUsers.map((userItem) => (
+                  <TableRow key={userItem.id} className="border-border hover:bg-accent transition-colors duration-300 h-20 group">
+                    <TableCell className="text-center">
+                      <img 
+                        src={getResourceUrl(userItem.avatarUrl)} 
+                        className="w-10 h-10 inline-block object-cover rounded-full border border-border shadow-sm transition-transform group-hover:scale-110 duration-500"
+                        alt="Avatar"
+                        onError={(e) => {
+                          e.currentTarget.src = "/assets/default-avatar.png";
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell className="font-black text-foreground transition-colors duration-300">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-1.5 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${userItem.role === 'ADMIN' ? 'bg-destructive shadow-[0_0_10px_rgba(var(--destructive),0.5)]' : 'bg-primary'}`}></div>
+                        <span className={`uppercase italic tracking-tighter transition-colors ${userItem.role === 'ADMIN' ? 'group-hover:text-destructive' : 'group-hover:text-primary'}`}>
+                          {userItem.nickname || userItem.username || "Unknown"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-[11px] font-black italic tracking-wide transition-colors duration-300">
+                      {userItem.email}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className={`px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase border transition-colors duration-300 ${
+                        userItem.role === 'ADMIN' 
+                          ? 'bg-destructive/10 text-destructive border-destructive/20' 
+                          : 'bg-secondary text-muted-foreground border-border'
+                      }`}>
+                        {userItem.role === 'ADMIN' && <ShieldAlert size={10} className="inline mr-1 mb-0.5" />}
+                        {userItem.role}
                       </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-[11px] font-black italic tracking-wide transition-colors duration-300">
-                    {userItem.email}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className={`px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase border transition-colors duration-300 ${
-                      userItem.role === 'ADMIN' 
-                        ? 'bg-destructive/10 text-destructive border-destructive/20' 
-                        : 'bg-secondary text-muted-foreground border-border'
-                    }`}>
-                      {userItem.role === 'ADMIN' && <ShieldAlert size={10} className="inline mr-1 mb-0.5" />}
-                      {userItem.role}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right pr-10">
-                    <div className="flex justify-end transition-all transform translate-x-4 group-hover:translate-x-0">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => onDelete(userItem.id)} 
-                        className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 w-9 rounded-xl transition-colors active:scale-90"
-                        title="Xóa người dùng"
-                      >
-                        <Trash2 size={16} className="stroke-[2.5px]"/>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                    </TableCell>
+                    <TableCell className="text-right pr-10">
+                      <div className="flex justify-end transition-all transform translate-x-4 group-hover:translate-x-0">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => onDelete(userItem.id)} 
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 w-9 rounded-xl transition-colors active:scale-90"
+                          title="Xóa người dùng"
+                        >
+                          <Trash2 size={16} className="stroke-[2.5px]"/>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+
+                {/* Dòng ma (Ghost Rows) để lấp đầy bảng */}
+                {emptyRows > 0 && Array.from({ length: emptyRows }).map((_, index) => (
+                  <TableRow key={`empty-${index}`} className="border-transparent hover:bg-transparent pointer-events-none">
+                    <TableCell colSpan={5} className="p-0">
+                      <div className="h-20 w-full" aria-hidden="true"></div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </>
             )}
           </TableBody>
         </Table>
