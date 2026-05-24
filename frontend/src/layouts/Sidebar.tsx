@@ -167,25 +167,8 @@ export function Sidebar({ onPlayTrack }: { onPlayTrack: (id: number) => void }) 
               <ListMusic size={12} className="text-muted-foreground/80" />
             </div>
             
-            <div className="px-2">
-              <Link
-                to="/playlist/1"
-                className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-br from-primary/10 via-secondary/30 to-background border border-border hover:border-primary/40 transition-all group overflow-hidden relative shadow-sm"
-              >
-                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                
-                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 shadow-inner group-hover:bg-primary transition-colors">
-                  <ListMusic size={18} className="text-primary group-hover:text-primary-foreground transition-colors" />
-                </div>
-                <div className="flex-1 min-w-0 z-10">
-                  <p className="text-sm font-black text-foreground truncate group-hover:text-primary transition-colors italic tracking-tight">
-                    K23CNT2 Mix
-                  </p>
-                  <p className="text-[9px] text-muted-foreground truncate uppercase tracking-widest mt-0.5">
-                    Giai điệu quen thuộc
-                  </p>
-                </div>
-              </Link>
+            <div className="mx-4 p-6 rounded-2xl bg-secondary/20 border border-dashed border-border text-center">
+                 <p className="text-[10px] text-muted-foreground italic">Trống rỗng...</p>
             </div>
           </div>
         )}
