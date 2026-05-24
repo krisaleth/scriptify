@@ -43,12 +43,14 @@ export function AdminDashboard() {
       icon: "warning",
       showCancelButton: true,
       buttonsStyling: false,
+      background: "transparent", // Ép Swal nhường quyền quản lý màu nền cho Tailwind
       customClass: {
-        popup: 'bg-card border border-border text-foreground rounded-[2rem] transition-colors duration-300',
+        popup: 'bg-card border border-border text-foreground rounded-[2rem] shadow-2xl backdrop-blur-xl transition-colors duration-300',
         title: 'text-foreground font-black italic tracking-tighter text-2xl',
         htmlContainer: 'text-muted-foreground font-medium',
-        confirmButton: 'bg-destructive text-destructive-foreground px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs italic hover:bg-destructive/90 transition-all ml-3 shadow-lg',
-        cancelButton: 'bg-secondary text-muted-foreground px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs italic hover:text-foreground hover:bg-secondary/80 transition-all',
+        actions: 'flex gap-4 w-full justify-center mt-6',
+        confirmButton: 'bg-destructive text-destructive-foreground px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs italic hover:bg-destructive/90 transition-all shadow-lg m-0',
+        cancelButton: 'bg-secondary text-foreground px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs italic hover:bg-secondary/80 transition-all border border-border m-0',
       },
       confirmButtonText: "Vâng, xoá nó!",
       cancelButtonText: "Huỷ bỏ",
@@ -68,8 +70,9 @@ export function AdminDashboard() {
             timer: 1500,
             showConfirmButton: false,
             buttonsStyling: false,
+            background: "transparent",
             customClass: {
-              popup: 'bg-card border border-border text-foreground rounded-[2rem] transition-colors duration-300',
+              popup: 'bg-card border border-border text-foreground rounded-[2rem] shadow-2xl backdrop-blur-xl transition-colors duration-300',
               title: 'text-foreground font-black italic tracking-tighter text-2xl',
               htmlContainer: 'text-muted-foreground font-medium',
             }
@@ -116,9 +119,10 @@ export function AdminDashboard() {
               </Button>
             )}
 
+            {/* Đã thêm rounded-xl vào nút Home */}
             <button
               onClick={() => navigate('/')}
-              className="flex items-center justify-center w-12 h-12 bg-secondary border border-border text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 transition-all shadow-lg shrink-0 group"
+              className="flex items-center justify-center w-12 h-12 bg-secondary border border-border text-muted-foreground rounded-xl hover:bg-primary hover:text-primary-foreground hover:scale-105 transition-all shadow-lg shrink-0 group"
               title="Trở về Trang Chủ"
             >
               <Home className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
