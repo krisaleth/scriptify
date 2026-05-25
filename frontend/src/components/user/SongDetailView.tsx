@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useOutletContext } from 'react-router-dom';
-import { Play, Heart, Loader2, Music2, Clock3, Eye, CalendarDays, Share2 } from 'lucide-react';
+import { Play, Heart, Loader2, Music2, Clock3, Eye, CalendarDays, Share2, ListPlus } from 'lucide-react';
 import { getResourceUrl } from "@/utils/urlHelper";
 import { apiRequest } from "@/utils/apiClient";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,6 @@ export function SongDetailView() {
     fetchSongDetails();
   }, [fetchSongDetails]);
 
-  // Format thời gian (Giây -> Phút:Giây)
   const formatDuration = (seconds: number) => {
     if (!seconds) return "--:--";
     const m = Math.floor(seconds / 60);
@@ -48,13 +47,11 @@ export function SongDetailView() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Format ngày tháng
   const formatDate = (dateString: string) => {
     if (!dateString) return "Không rõ";
     return new Date(dateString).toLocaleDateString('vi-VN');
   };
 
-  // --- UI RENDER ---
   if (isLoading) return (
     <div className="flex-1 flex items-center justify-center bg-background min-h-[70vh] transition-colors duration-300">
       <Loader2 className="w-12 h-12 text-primary animate-spin" />
@@ -72,9 +69,7 @@ export function SongDetailView() {
   return (
     <div className="flex-1 overflow-y-auto bg-background pb-32 custom-scrollbar transition-colors duration-300">
       
-      {/* Phần Header / Hero Section */}
       <div className="relative pt-20 pb-12 px-8 overflow-hidden">
-        {/* Ảnh nền làm mờ (Background Blur) */}
         <div 
           className="absolute inset-0 opacity-10 blur-3xl scale-110 saturate-200 transition-all duration-1000"
           style={{ backgroundImage: `url(${getResourceUrl(song.imageUrl)})`, backgroundPosition: 'center', backgroundSize: 'cover' }}
@@ -82,7 +77,6 @@ export function SongDetailView() {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
 
         <div className="relative z-10 flex flex-col md:flex-row items-end gap-10">
-          {/* Bìa bài hát */}
           <div className="w-64 h-64 bg-secondary rounded-3xl shadow-2xl flex items-center justify-center flex-shrink-0 border border-border overflow-hidden animate-in zoom-in duration-700">
             {song.imageUrl ? (
               <img 
@@ -96,7 +90,6 @@ export function SongDetailView() {
             )}
           </div>
 
-          {/* Thông tin chính */}
           <div className="flex-1 w-full animate-in slide-in-from-bottom-8 duration-700">
             <p className="text-[12px] font-black text-muted-foreground uppercase tracking-[0.4em] mb-4 italic font-sans flex items-center gap-2">
               Single <span className="text-primary">•</span> {song.albumTitle || "Không thuộc Album"}
@@ -111,7 +104,6 @@ export function SongDetailView() {
               </div>
             </div>
 
-            {/* Cụm Thống kê (Stats) */}
             <div className="flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">
               <div className="flex items-center gap-1.5 bg-secondary/50 px-3 py-1.5 rounded-lg border border-border backdrop-blur-sm">
                 <Clock3 size={12} className="text-primary" /> {formatDuration(song.duration)}
@@ -130,7 +122,6 @@ export function SongDetailView() {
         </div>
       </div>
 
-      {/*  Action Bar (Thanh công cụ) */}
       <div className="px-8 py-6 flex items-center gap-6 animate-in fade-in duration-1000 delay-300 border-b border-border bg-background/50 backdrop-blur-md sticky top-0 z-20">
         <Button 
           onClick={() => handlePlayTrack(song.id)}
@@ -138,19 +129,21 @@ export function SongDetailView() {
         >
           <Play className="w-8 h-8 ml-1 fill-current" />
         </Button>
-        <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full border border-border hover:border-red-500 hover:text-red-500 transition-colors group">
+        <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full border border-border hover:border-red-500 hover:text-red-500 transition-colors group" title="Yêu thích">
           <Heart className="w-6 h-6 group-hover:fill-current" />
         </Button>
-        <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full border border-border hover:border-primary hover:text-primary transition-colors">
+        <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full border border-border hover:border-primary hover:text-primary transition-colors" title="Thêm vào Playlist">
+          <ListPlus className="w-6 h-6" />
+        </Button>
+        <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full border border-border hover:border-primary hover:text-primary transition-colors" title="Chia sẻ">
           <Share2 className="w-5 h-5" />
         </Button>
       </div>
 
-      {/* Phần Lời tựa / Mô tả (Vừa thêm trong Admin) */}
       {song.description && (
-        <div className="px-8 mt-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500 max-w-4xl">
+        <div className="px-8 mt-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500 w-full">
           <h3 className="text-xl font-black italic uppercase tracking-tight text-foreground mb-4">
-            <span className="text-primary mr-2">#</span>Lời tựa
+            <span className="text-primary mr-2">#</span>Mô tả
           </h3>
           <div className="bg-secondary/20 border border-border rounded-3xl p-8 backdrop-blur-sm">
             <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap font-medium text-sm">
