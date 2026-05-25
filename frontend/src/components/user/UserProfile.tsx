@@ -7,10 +7,14 @@ import { useRef, useState, useEffect } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { getResourceUrl } from "@/utils/urlHelper";
 import { toast } from "sonner";
-
+import { useNavigate, useOutletContext } from "react-router-dom"; 
 // Import các Modal
 import CreatePlaylistModal from "./CreatePlaylistModal";
 import EditProfileModal from "./EditProfileModal";
+
+interface MusicContextType {
+  handlePlayTrack: (trackId: number) => void;
+}
 
 export default function ProfilePage() {
   const playlistScrollRef = useRef<HTMLDivElement>(null);
@@ -21,6 +25,9 @@ export default function ProfilePage() {
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [likedSongs, setLikedSongs] = useState<any[]>([]);
   
+  const navigate = useNavigate(); 
+  const { handlePlayTrack } = useOutletContext<MusicContextType>(); 
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -33,7 +40,7 @@ export default function ProfilePage() {
   };
 
   const handleDeletePlaylist = async (e: React.MouseEvent, playlistId: number, playlistName: string) => {
-    e.stopPropagation();
+    e.stopPropagation(); 
     if (!confirm(`Bạn có chắc muốn xóa playlist "${playlistName}" không?`)) return;
 
     try {
@@ -88,13 +95,11 @@ export default function ProfilePage() {
     <>
       <div className="min-h-screen relative overflow-hidden bg-background selection:bg-primary/30 font-sans transition-colors duration-300">
         
-        {/* Background Gradients: Đổi màu xanh cứng sang CSS Variable màu của Theme */}
         <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full opacity-10 blur-[100px] bg-primary"></div>
         <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full opacity-[0.05] blur-[120px] bg-primary"></div>
 
         <div className="relative z-10 max-w-6xl mx-auto px-8 py-16">
           
-          {/* Profile Header */}
           <motion.div
             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
             className="mb-20 flex flex-col md:flex-row items-center md:items-end gap-10 text-center md:text-left"
@@ -111,7 +116,6 @@ export default function ProfilePage() {
                   onError={(e) => (e.currentTarget.src = '/assets/default-avatar.png')} 
                 />
               </motion.div>
-              {/* Bóng mờ đằng sau Avatar tự động đổi màu theo Primary */}
               <div className="absolute inset-0 -m-2 bg-primary/15 blur-3xl rounded-full -z-0 opacity-50 transition-opacity group-hover:opacity-80"></div>
             </div>
 
@@ -138,7 +142,6 @@ export default function ProfilePage() {
             </div>
           </motion.div>
 
-          {/* Playlists Section */}
           <section className="mb-20">
             <div className="flex items-center justify-between mb-8 group/title">
                <div className="flex items-center gap-4">
@@ -168,14 +171,25 @@ export default function ProfilePage() {
                   <motion.div 
                     key={pl.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
                     whileHover={{ y: -5 }} 
+                    onClick={() => navigate(`/playlist/${pl.id}`)} 
                     className="w-[180px] min-w-[180px] shrink-0 group cursor-pointer relative"
                   >
                     <div className="aspect-square rounded-2xl overflow-hidden mb-3 bg-secondary border border-border relative shadow-lg group-hover:border-primary/30 transition-all">
                       <img src={getResourceUrl(pl.thumbnailUrl)} className="w-full h-full object-cover grayscale-[0.1] group-hover:grayscale-0 transition-all duration-700" alt={pl.name} />
                       <div className="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
-                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                        <button 
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            if(pl.songs && pl.songs.length > 0) {
+                              handlePlayTrack(pl.songs[0].id); // 
+                            } else {
+                              toast.info("Playlist này chưa có bài hát nào!");
+                            }
+                          }} 
+                          className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                        >
                           <Play fill="currentColor" size={16} className="ml-1 text-primary-foreground" />
-                        </div>
+                        </button>
                         <button onClick={(e) => handleDeletePlaylist(e, pl.id, pl.name)} className="w-8 h-8 bg-destructive/20 backdrop-blur-md border border-destructive/50 rounded-full flex items-center justify-center text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all shadow-md">
                           <Trash2 size={14} />
                         </button>
@@ -195,7 +209,6 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          {/* Heart Beats Section */}
           <section>
             <div className="flex items-center gap-4 mb-8 group/title">
                <h2 className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.4em] italic group-hover/title:text-primary transition-colors">Heart Beats</h2>
@@ -203,9 +216,23 @@ export default function ProfilePage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {likedSongs.slice(0, 6).map((song, i) => (
-                <motion.div key={song.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 * i }} className="flex items-center gap-4 p-2.5 rounded-xl bg-secondary/20 hover:bg-accent border border-border transition-all group shadow-sm">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary border border-border shrink-0">
+                <motion.div 
+                  key={song.id} 
+                  initial={{ opacity: 0, x: -10 }} 
+                  animate={{ opacity: 1, x: 0 }} 
+                  transition={{ delay: 0.1 * i }} 
+                  onClick={() => navigate(`/song/${song.id}`)} // 🟢 CHUYỂN TRANG KHI BẤM VÀO BÀI HÁT YÊU THÍCH
+                  className="flex items-center gap-4 p-2.5 rounded-xl bg-secondary/20 hover:bg-accent border border-border transition-all group shadow-sm cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary border border-border shrink-0 relative">
                     <img src={getResourceUrl(song.imageUrl)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    {/* Thêm nút Play đè lên ảnh bài hát yêu thích */}
+                    <div 
+                      onClick={(e) => { e.stopPropagation(); handlePlayTrack(song.id); }} 
+                      className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                    >
+                      <Play className="w-5 h-5 text-primary fill-current ml-0.5" />
+                    </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-foreground font-bold truncate text-[13px] uppercase italic tracking-tight">{song.title}</h4>

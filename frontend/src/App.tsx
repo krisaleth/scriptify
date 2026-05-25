@@ -10,6 +10,7 @@ import { AlbumDetailView } from "@/components/user/AlbumDetailView";
 import { ArtistsView } from "@/components/user/ArtistsView";
 import { FavoritesView } from "@/components/user/FavoritesView";
 import { SongDetailView } from "@/components/user/SongDetailView"; 
+import { PlaylistDetailView } from "@/components/user/PlaylistDetailView"; 
 import ProfilePage from "@/components/user/UserProfile";
 import { Toaster } from "sonner";
 import { GlobalAuthModal } from "@/components/auth/GlobalAuthModal";
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="album/:id" element={<AlbumDetailView />} />
           <Route path="artists" element={<ArtistsView />} />
           <Route path="song/:id" element={<SongDetailView />} /> 
+          <Route path="playlist/:id" element={<PlaylistDetailView />} /> 
           <Route path="disclaimer" element={<DisclaimerPage />} />
 
           <Route 
