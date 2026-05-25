@@ -1,6 +1,6 @@
 import { Play, Music2, Search, Loader2, AlertCircle, Eye, TrendingUp, Users } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { getResourceUrl } from '@/utils/urlHelper';
 
 const API_BASE = "/api";
@@ -27,6 +27,7 @@ interface Artist {
 
 export function ArtistsView() {
   const { handlePlayTrack } = useOutletContext<MusicContextType>();
+  const navigate = useNavigate();
   const [artists, setArtists] = useState<Artist[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -133,9 +134,12 @@ export function ArtistsView() {
 
                     <div className="w-full xl:w-[350px] grid gap-3 shrink-0">
                       {artist.topSongs?.slice(0, 2).map((track) => (
-                        <div key={track.id} onClick={() => handlePlayTrack(track.id)} className="flex items-center gap-4 p-4 bg-background/40 rounded-xl border border-border hover:border-primary/20 transition-all cursor-pointer group/item">
-                          <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 relative shadow-sm border border-border">
+                        <div key={track.id} onClick={() => navigate(`/song/${track.id}`)} className="flex items-center gap-4 p-4 bg-background/40 rounded-xl border border-border hover:border-primary/20 transition-all cursor-pointer group/item">
+                          <div onClick={(e) => { e.stopPropagation(); handlePlayTrack(track.id); }} className="w-12 h-12 rounded-lg overflow-hidden shrink-0 relative shadow-sm border border-border">
                             <img src={getResourceUrl(track.imageUrl)} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/item:opacity-100 flex items-center justify-center transition-all">
+                              <Play size={16} fill="currentColor" className="text-primary ml-0.5" />
+                            </div>
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="text-foreground font-black text-xs truncate uppercase italic tracking-tighter group-hover/item:text-primary transition-colors">{track.title}</p>

@@ -1,18 +1,19 @@
 import { Play, Heart, Search, Loader2, Sparkles, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import { getResourceUrl } from '@/utils/urlHelper';
 import { Song, MusicContextType } from '@/types/song';
-import { apiRequest } from '@/utils/apiClient'; // Import người gác cổng
+import { apiRequest } from '@/utils/apiClient';
 
 const API_BASE = "/api";
 
 export function HomeView() {
   const { handlePlayTrack } = useOutletContext<MusicContextType>();
   const { user, openAuthModal } = useAuthStore();
+  const navigate = useNavigate();
 
   const [songs, setSongs] = useState<Song[]>([]);
   const [favorites, setFavorites] = useState<number[]>([]);
@@ -30,7 +31,6 @@ export function HomeView() {
     }
   };
 
-  // Dùng apiRequest: Không sợ lỗi 400/401
   const fetchOnlyFavorites = useCallback(async () => {
     if (!user) { setFavorites([]); return; }
     const data = await apiRequest(`${API_BASE}/favorites`);
@@ -63,17 +63,16 @@ export function HomeView() {
     const idNum = Number(musicId);
     const isCurrentlyFav = favorites.includes(idNum);
 
-    // Optimistic UI Update
     setFavorites(prev => isCurrentlyFav ? prev.filter(id => id !== idNum) : [...prev, idNum]);
     setSongs(prev => prev.map(s => s.id === idNum ? { 
-      ...s, likeCount: isCurrentlyFav ? (s.likeCount - 1) : (s.likeCount + 1) 
+      ...s, likeCount: isCurrentlyFav ? ((s.likeCount || 0) - 1) : ((s.likeCount || 0) + 1) 
     } : s));
 
     const res = await apiRequest(`${API_BASE}/favorites/${idNum}`, { method: 'POST' });
     if (res !== null) {
       window.dispatchEvent(new Event("favoriteUpdate"));
     } else {
-      fetchOnlyFavorites(); // Revert nếu lỗi
+      fetchOnlyFavorites();
       toast.error("Không thể cập nhật yêu thích!");
     }
   };
@@ -122,7 +121,6 @@ export function HomeView() {
         </div>
       </div>
 
-      {/* THỊNH HÀNH */}
       <div className="px-8 mb-20">
         <div className="flex items-center justify-between mb-8">
           <h3 className="text-2xl font-black text-foreground italic tracking-tighter uppercase flex items-center gap-4 transition-colors">
@@ -141,13 +139,13 @@ export function HomeView() {
                 isFav={favorites.includes(Number(track.id))}
                 onPlay={() => handlePlayTrack(track.id)}
                 onToggleFav={() => toggleFavourite(track.id)}
+                onNavigate={() => navigate(`/song/${track.id}`)}
               />
             </div>
           ))}
         </div>
       </div>
 
-      {/* DÀNH RIÊNG CHO BẠN */}
       <div className="px-8">
         <div className="flex items-center justify-between mb-8">
           <h3 className="text-2xl font-black text-foreground italic tracking-tighter uppercase transition-colors">Dành riêng cho bạn</h3>
@@ -169,6 +167,7 @@ export function HomeView() {
                 isFav={favorites.includes(Number(track.id))}
                 onPlay={() => handlePlayTrack(track.id)}
                 onToggleFav={() => toggleFavourite(track.id)}
+                onNavigate={() => navigate(`/song/${track.id}`)}
               />
             </div>
           ))}
@@ -179,22 +178,27 @@ export function HomeView() {
   );
 }
 
-function TrackCardHorizontal({ track, isFav, onPlay, onToggleFav }: any) {
+function TrackCardHorizontal({ track, isFav, onPlay, onToggleFav, onNavigate }: any) {
   return (
-    <div className="group bg-secondary/30 rounded-2xl p-4 hover:bg-accent transition-all duration-500 flex items-center gap-5 cursor-pointer border border-border hover:border-primary/30 shadow-md relative overflow-hidden">
-      <div className="relative w-16 h-16 flex-shrink-0" onClick={onPlay}>
+    <div 
+      onClick={onNavigate} 
+      className="group bg-secondary/30 rounded-2xl p-4 hover:bg-accent transition-all duration-500 flex items-center gap-5 cursor-pointer border border-border hover:border-primary/30 shadow-md relative overflow-hidden"
+    >
+      <div 
+        className="relative w-16 h-16 flex-shrink-0" 
+        onClick={(e) => { e.stopPropagation(); onPlay(); }}
+      >
         <img 
           src={getResourceUrl(track.imageUrl)} 
           className="w-full h-full object-cover rounded-xl shadow-sm border border-border transition-colors" 
           alt={track.title} 
           onError={(e) => (e.currentTarget.src = "/assets/default-cover.png")} 
         />
-        {/* Giữ nền đen cho overlay để icon luôn nổi bật */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-all rounded-xl backdrop-blur-[1px]">
           <Play className="w-8 h-8 text-primary fill-current drop-shadow-md" />
         </div>
       </div>
-      <div className="flex-1 min-w-0" onClick={onPlay}>
+      <div className="flex-1 min-w-0">
         <h4 className="text-foreground font-black truncate text-sm uppercase italic tracking-tight mb-1 group-hover:text-primary transition-colors">{track.title}</h4>
         <p className="text-[10px] text-muted-foreground truncate font-black uppercase tracking-widest transition-colors">{track.artist?.name}</p>
       </div>
@@ -208,14 +212,19 @@ function TrackCardHorizontal({ track, isFav, onPlay, onToggleFav }: any) {
   );
 }
 
-function TrackCardVertical({ track, isFav, onPlay, onToggleFav }: any) {
+function TrackCardVertical({ track, isFav, onPlay, onToggleFav, onNavigate }: any) {
   return (
-    <div className="group relative bg-secondary/20 p-5 rounded-[2.5rem] hover:bg-accent transition-all duration-500 cursor-pointer border border-transparent hover:border-primary/30 shadow-lg overflow-hidden active:scale-95">
-      <div className="relative aspect-square mb-5 overflow-hidden rounded-[1.5rem] shadow-md" onClick={onPlay}>
+    <div 
+      onClick={onNavigate} 
+      className="group relative bg-secondary/20 p-5 rounded-[2.5rem] hover:bg-accent transition-all duration-500 cursor-pointer border border-transparent hover:border-primary/30 shadow-lg overflow-hidden active:scale-95"
+    >
+      <div className="relative aspect-square mb-5 overflow-hidden rounded-[1.5rem] shadow-md">
         <img src={getResourceUrl(track.imageUrl)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={track.title} onError={(e) => (e.currentTarget.src = "/assets/default-cover.png")} />
-        {/* Giữ nền đen cho overlay để icon luôn nổi bật */}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
-           <button className="w-14 h-14 bg-primary rounded-full flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/40 hover:scale-110 transition-transform translate-y-3 group-hover:translate-y-0 duration-500">
+           <button 
+            onClick={(e) => { e.stopPropagation(); onPlay(); }} 
+            className="w-14 h-14 bg-primary rounded-full flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/40 hover:scale-110 transition-transform translate-y-3 group-hover:translate-y-0 duration-500"
+          >
               <Play size={28} fill="currentColor" className="ml-1" />
            </button>
         </div>
