@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useOutletContext } from 'react-router-dom';
-import { Play, Heart, Loader2, ListMusic, Clock3, Share2, MoreHorizontal, Lock, Globe } from 'lucide-react';
+import { Play, Heart, Loader2, ListMusic, Clock3, Share2, MoreHorizontal, Lock, Globe, Trash2 } from 'lucide-react';
 import { getResourceUrl } from "@/utils/urlHelper";
 import { apiRequest } from "@/utils/apiClient";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/useAuthStore";
+import { toast } from "sonner";
 
 const API_BASE = "/api";
 
@@ -22,6 +23,7 @@ export function PlaylistDetailView() {
   const [playlist, setPlaylist] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // --- FETCH DỮ LIỆU ---
   const fetchPlaylistDetails = useCallback(async () => {
     if (!id) return;
     try {
@@ -41,6 +43,33 @@ export function PlaylistDetailView() {
     fetchPlaylistDetails();
   }, [fetchPlaylistDetails]);
 
+  // --- HÀM XÓA BÀI HÁT KHỎI PLAYLIST ---
+  const handleRemoveSong = async (e: React.MouseEvent, songId: number, songTitle: string) => {
+    e.stopPropagation(); // Ngăn không cho nhảy sang trang chi tiết bài hát
+    if (!confirm(`Xóa "${songTitle}" khỏi playlist này?`)) return;
+
+    try {
+      // Gọi API xóa bài hát (Lưu ý: Chỉnh lại Endpoint cho khớp với Backend nếu cần)
+      const res = await fetch(`${API_BASE}/playlists/${id}/songs/${songId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (res.ok) {
+        toast.success(`Đã xóa "${songTitle}" khỏi playlist!`);
+        // Cập nhật lại UI ngay lập tức (Optimistic Update)
+        setPlaylist((prev: any) => ({
+          ...prev,
+          songs: prev.songs.filter((s: any) => s.id !== songId)
+        }));
+      } else {
+        toast.error("Không thể xóa bài hát lúc này.");
+      }
+    } catch (err) {
+      toast.error("Lỗi kết nối đến máy chủ Cloud!");
+    }
+  };
+
   const formatDuration = (seconds: number) => {
     if (!seconds) return "--:--";
     const m = Math.floor(seconds / 60);
@@ -58,15 +87,20 @@ export function PlaylistDetailView() {
     <div className="flex-1 flex flex-col items-center justify-center bg-background min-h-[70vh]">
       <ListMusic className="w-20 h-20 text-muted-foreground/50 mb-4" />
       <h2 className="text-2xl font-black italic text-muted-foreground uppercase">Playlist không tồn tại</h2>
-      <Button variant="outline" className="mt-4 rounded-xl" onClick={() => navigate(-1)}>Quay lại</Button>
+      <p className="text-muted-foreground/50 text-[10px] uppercase tracking-[0.2em] mt-2 mb-6">Mã ID không có trên hệ thống Cloud</p>
+      <Button variant="outline" className="rounded-xl" onClick={() => navigate(-1)}>Quay lại</Button>
     </div>
   );
 
   const coverImage = playlist.thumbnail || playlist.imageUrl;
+  
+  // Kiểm tra xem User đang đăng nhập có phải là chủ sở hữu Playlist không
+  const isOwner = user && playlist.user && (user.nickname === playlist.user.nickname || user.username === playlist.user.username);
 
   return (
     <div className="flex-1 overflow-y-auto bg-background pb-32 custom-scrollbar transition-colors duration-300">
       
+      {/* --- HEADER --- */}
       <div className="relative pt-20 pb-12 px-8 overflow-hidden">
         <div 
           className="absolute inset-0 opacity-10 blur-3xl scale-110 saturate-200 transition-all duration-1000"
@@ -100,7 +134,7 @@ export function PlaylistDetailView() {
             
             <div className="flex flex-col gap-4 text-sm mb-2">
               {playlist.description && (
-                <p className="text-muted-foreground font-medium text-sm max-w-2xl line-clamp-2">
+                <p className="text-muted-foreground font-medium text-sm w-full">
                   {playlist.description}
                 </p>
               )}
@@ -114,6 +148,7 @@ export function PlaylistDetailView() {
         </div>
       </div>
 
+      {/* --- ACTION BAR --- */}
       <div className="px-8 py-6 flex items-center gap-6 animate-in fade-in duration-1000 delay-300 border-b border-border bg-background/50 backdrop-blur-md sticky top-0 z-20">
         <Button 
           onClick={() => playlist.songs?.[0] && handlePlayTrack(playlist.songs[0].id)}
@@ -130,8 +165,9 @@ export function PlaylistDetailView() {
         </Button>
       </div>
 
+      {/* --- TRACKLIST --- */}
       <div className="px-8 mt-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">
-        <div className="grid grid-cols-[16px_4fr_3fr_1fr_48px] gap-4 px-4 py-2 border-b border-border text-muted-foreground text-[10px] font-black uppercase tracking-[0.25em] mb-4 italic">
+        <div className="grid grid-cols-[16px_4fr_3fr_1fr_80px] gap-4 px-4 py-2 border-b border-border text-muted-foreground text-[10px] font-black uppercase tracking-[0.25em] mb-4 italic">
           <div>#</div>
           <div>Giai điệu</div>
           <div>Nghệ sĩ</div>
@@ -151,7 +187,7 @@ export function PlaylistDetailView() {
             {playlist.songs.map((track: any, index: number) => (
               <div 
                 key={track.id} 
-                className="grid grid-cols-[16px_4fr_3fr_1fr_48px] gap-4 px-4 py-3 rounded-2xl hover:bg-accent transition-all group items-center border border-transparent hover:border-border cursor-pointer"
+                className="grid grid-cols-[16px_4fr_3fr_1fr_80px] gap-4 px-4 py-3 rounded-2xl hover:bg-accent transition-all group items-center border border-transparent hover:border-border cursor-pointer"
                 onClick={() => navigate(`/song/${track.id}`)}
               >
                 <div className="text-muted-foreground font-black text-xs group-hover:text-primary transition-colors italic">
@@ -181,10 +217,21 @@ export function PlaylistDetailView() {
                   {track.duration ? formatDuration(track.duration) : "--:--"}
                 </div>
 
-                <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-primary transition-colors">
+                <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity gap-2">
+                  <button onClick={(e) => e.stopPropagation()} className="p-2 text-muted-foreground hover:text-primary transition-colors" title="Thích">
                     <Heart className="w-4 h-4" />
                   </button>
+                  
+                  {/* Nút xóa: Chỉ hiện khi user là chủ sở hữu */}
+                  {isOwner && (
+                    <button 
+                      onClick={(e) => handleRemoveSong(e, track.id, track.title)} 
+                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors" 
+                      title="Xóa khỏi Playlist"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
