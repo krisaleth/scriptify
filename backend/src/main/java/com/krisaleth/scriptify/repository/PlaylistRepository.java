@@ -16,6 +16,8 @@ import java.util.Optional;
 public interface PlaylistRepository extends JpaRepository<tktPlaylist, Long> {
 
     @EntityGraph(attributePaths = {"tktUsers"})
+    tktPlaylist findByTktId(Long id);
+
     List<tktPlaylist> findByTktUsers_TktId(Long userId);
 
     Page<tktPlaylist> findByTktIsPublicTrue(Pageable pageable);

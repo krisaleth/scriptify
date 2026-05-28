@@ -4,6 +4,7 @@ import com.krisaleth.scriptify.dto.PlaylistCreateDto;
 import com.krisaleth.scriptify.dto.PlaylistUpdateDto;
 import com.krisaleth.scriptify.entity.tktPlaylist;
 import com.krisaleth.scriptify.entity.tktUsers;
+import com.krisaleth.scriptify.repository.PlaylistRepository;
 import com.krisaleth.scriptify.repository.UsersRepository;
 import com.krisaleth.scriptify.response.PlaylistResponse;
 import com.krisaleth.scriptify.service.PlaylistService;
@@ -26,6 +27,7 @@ import java.util.List;
 public class PlaylistController {
     private final PlaylistService playlistService;
     private final UsersRepository usersRepository;
+    private final PlaylistRepository playlistRepository;
 
     private tktUsers getCurrentUser(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -60,6 +62,11 @@ public class PlaylistController {
             Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(playlistService.create(dto, getCurrentUser(auth)));
+    }
+
+    @GetMapping(value = "/{id}")
+    public ResponseEntity<PlaylistResponse> getPlayList(Long id) {
+        return ResponseEntity.ok(playlistService.getPlaylist(id));
     }
 
     /**

@@ -125,6 +125,12 @@ public class PlaylistService {
         return convertToResponse(playlist);
     }
 
+    @Transactional(readOnly = true)
+    public PlaylistResponse getPlaylist(Long id) {
+        return convertToResponse(playlistRepository.findByTktId(id));
+    }
+
+
     @Transactional
     public PlaylistResponse update(Long playlistId, PlaylistUpdateDto dto, tktUsers user) {
         tktPlaylist playlist = getForOwner(playlistId, user);
