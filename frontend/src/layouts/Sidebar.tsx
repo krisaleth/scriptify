@@ -14,6 +14,7 @@ export function Sidebar({ onPlayTrack }: { onPlayTrack: (id: number) => void }) 
   const logout = useAuthStore((state) => state.logout);
   
   const [favouriteTracks, setFavouriteTracks] = useState<any[]>([]);
+  const [myPlaylists, setMyPlaylists] = useState<any[]>([]); // State lưu danh sách Playlist
   const [isLightMode, setIsLightMode] = useState(false);
 
   useEffect(() => {
@@ -54,11 +55,26 @@ export function Sidebar({ onPlayTrack }: { onPlayTrack: (id: number) => void }) 
     }
   }, [user]);
 
+  // Hàm kéo danh sách Playlist của User
+  const fetchPlaylists = useCallback(async () => {
+    if (!user) return;
+    try {
+      const response = await fetch(`${API_BASE}/playlists/me`, { credentials: "include" });
+      if (response.ok) {
+        const data = await response.json();
+        setMyPlaylists(data);
+      }
+    } catch (err) {
+      console.error("Scriptify: Playlist sync failed.");
+    }
+  }, [user]);
+
   useEffect(() => {
     fetchFavs();
+    fetchPlaylists(); // Gọi hàm lấy Playlist
     window.addEventListener('favoriteUpdate', fetchFavs);
     return () => window.removeEventListener('favoriteUpdate', fetchFavs);
-  }, [fetchFavs]);
+  }, [fetchFavs, fetchPlaylists]);
 
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -160,19 +176,41 @@ export function Sidebar({ onPlayTrack }: { onPlayTrack: (id: number) => void }) 
           )}
         </nav>
 
+        {/* 🟢 KHU VỰC PLAYLISTS */}
         {user && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between px-4 mb-1">
+          <div className="space-y-1">
+            <div className="flex items-center justify-between px-4 mb-3">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest italic">Playlists</p>
               <ListMusic size={12} className="text-muted-foreground/80" />
             </div>
             
-            <div className="mx-4 p-6 rounded-2xl bg-secondary/20 border border-dashed border-border text-center">
+            {myPlaylists.length > 0 ? (
+              <div className="space-y-0.5 px-1 max-h-[250px] overflow-y-auto custom-scrollbar-hidden">
+                {myPlaylists.map((pl) => (
+                  <button key={pl.id} onClick={() => navigate(`/playlist/${pl.id}`)} className="flex items-center gap-3 w-full p-2 rounded-xl text-left hover:bg-accent transition-all group">
+                    <div className="w-10 h-10 rounded-lg bg-secondary overflow-hidden flex items-center justify-center shrink-0 border border-border">
+                      {pl.thumbnailUrl || pl.imageUrl ? (
+                        <img src={getResourceUrl(pl.thumbnailUrl || pl.imageUrl)} className="w-full h-full object-cover" />
+                      ) : (
+                        <ListMusic size={16} className="text-muted-foreground/80" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">{pl.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{pl.songCount || pl.songs?.length || 0} bài hát</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="mx-4 p-6 rounded-2xl bg-secondary/20 border border-dashed border-border text-center">
                  <p className="text-[10px] text-muted-foreground italic">Trống rỗng...</p>
-            </div>
+              </div>
+            )}
           </div>
         )}
 
+        {/* 🟢 KHU VỰC NHẠC ĐÃ THÍCH */}
         {user && (
           <div className="space-y-1">
             <div className="flex items-center justify-between px-4 mb-3">
