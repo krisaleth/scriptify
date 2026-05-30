@@ -26,7 +26,7 @@ export function PlaylistDetailView() {
     if (!id) return;
     try {
       setIsLoading(true);
-      const data = await apiRequest(`${API_BASE}/playlists/${id}`); // Sửa lại URL nếu Backend yêu cầu (vd: /detail/${id})
+      const data = await apiRequest(`${API_BASE}/playlists/${id}`); // Sửa URL nếu Backend đổi
       if (data) setPlaylist(data);
     } catch (err) {
       console.error("Scriptify: Lỗi tải playlist", err);
@@ -66,7 +66,7 @@ export function PlaylistDetailView() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-[70vh] bg-background transition-colors duration-300">
+      <div className="flex-1 flex items-center justify-center min-h-screen bg-background transition-colors duration-300">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
       </div>
     );
@@ -167,12 +167,24 @@ export function PlaylistDetailView() {
                     </button>
                   </div>
                   
-                  <div className="flex flex-col min-w-0">
-                    <div className="text-foreground font-black text-sm truncate group-hover:text-primary transition-colors uppercase italic tracking-tight">
-                        {track.title}
+                  <div className="flex flex-col min-w-0 md:flex-row md:items-center md:gap-4">
+                     {/* 🟢 KHUNG ẢNH THU NHỎ NẾU SẾP MUỐN */}
+                    <div className="w-10 h-10 overflow-hidden rounded-md border border-border shrink-0 hidden md:block">
+                        <img 
+                            src={getResourceUrl(track.imageUrl)} 
+                            className="w-full h-full object-cover" 
+                            alt={track.title}
+                            onError={(e) => e.currentTarget.src = "/assets/default-cover.png"}
+                        />
                     </div>
-                    <div className="text-[10px] text-muted-foreground truncate font-black uppercase tracking-widest mt-0.5 transition-colors">
-                        {track.artist?.name || "Unknown"}
+                    
+                    <div className="flex flex-col min-w-0">
+                        <div className="text-foreground font-black text-sm truncate group-hover:text-primary transition-colors uppercase italic tracking-tight">
+                            {track.title}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground truncate font-black uppercase tracking-widest mt-0.5 transition-colors">
+                            {track.artist?.name || "Unknown"}
+                        </div>
                     </div>
                   </div>
 
