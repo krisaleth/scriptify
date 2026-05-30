@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useOutletContext } from 'react-router-dom';
-import { Play, Heart, Loader2, ListMusic, Clock3, Share2, MoreHorizontal, Lock, Globe, Trash2 } from 'lucide-react';
-import { getResourceUrl } from "@/utils/urlHelper";
-import { apiRequest } from "@/utils/apiClient";
-import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/store/useAuthStore";
+import { ArrowLeft, Play, Heart, Loader2, Music, Trash2, Globe, Lock } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
+import { getResourceUrl } from '@/utils/urlHelper';
+import { apiRequest } from '@/utils/apiClient';
+import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from "sonner";
 
 const API_BASE = "/api";
@@ -19,19 +17,17 @@ export function PlaylistDetailView() {
   const navigate = useNavigate();
   const { handlePlayTrack } = useOutletContext<MusicContextType>();
   const { user } = useAuthStore();
-  
+
   const [playlist, setPlaylist] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- FETCH DỮ LIỆU ---
+  // 1. Fetch chi tiết Playlist
   const fetchPlaylistDetails = useCallback(async () => {
     if (!id) return;
     try {
       setIsLoading(true);
-      const data = await apiRequest(`${API_BASE}/playlists/${id}`);
-      if (data) {
-        setPlaylist(data);
-      }
+      const data = await apiRequest(`${API_BASE}/playlists/${id}`); // Sửa lại URL nếu Backend yêu cầu (vd: /detail/${id})
+      if (data) setPlaylist(data);
     } catch (err) {
       console.error("Scriptify: Lỗi tải playlist", err);
     } finally {
@@ -43,13 +39,12 @@ export function PlaylistDetailView() {
     fetchPlaylistDetails();
   }, [fetchPlaylistDetails]);
 
-  // --- HÀM XÓA BÀI HÁT KHỎI PLAYLIST ---
+  // 2. Xóa bài hát khỏi Playlist
   const handleRemoveSong = async (e: React.MouseEvent, songId: number, songTitle: string) => {
-    e.stopPropagation(); // Ngăn không cho nhảy sang trang chi tiết bài hát
+    e.stopPropagation(); 
     if (!confirm(`Xóa "${songTitle}" khỏi playlist này?`)) return;
 
     try {
-      // Gọi API xóa bài hát (Lưu ý: Chỉnh lại Endpoint cho khớp với Backend nếu cần)
       const res = await fetch(`${API_BASE}/playlists/${id}/songs/${songId}`, {
         method: 'DELETE',
         credentials: 'include'
@@ -57,7 +52,6 @@ export function PlaylistDetailView() {
 
       if (res.ok) {
         toast.success(`Đã xóa "${songTitle}" khỏi playlist!`);
-        // Cập nhật lại UI ngay lập tức (Optimistic Update)
         setPlaylist((prev: any) => ({
           ...prev,
           songs: prev.songs.filter((s: any) => s.id !== songId)
@@ -70,173 +64,149 @@ export function PlaylistDetailView() {
     }
   };
 
-  const formatDuration = (seconds: number) => {
-    if (!seconds) return "--:--";
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[70vh] bg-background transition-colors duration-300">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-  if (isLoading) return (
-    <div className="flex-1 flex items-center justify-center bg-background min-h-[70vh] transition-colors duration-300">
-      <Loader2 className="w-12 h-12 text-primary animate-spin" />
-    </div>
-  );
-
-  if (!playlist) return (
-    <div className="flex-1 flex flex-col items-center justify-center bg-background min-h-[70vh]">
-      <ListMusic className="w-20 h-20 text-muted-foreground/50 mb-4" />
-      <h2 className="text-2xl font-black italic text-muted-foreground uppercase">Playlist không tồn tại</h2>
-      <p className="text-muted-foreground/50 text-[10px] uppercase tracking-[0.2em] mt-2 mb-6">Mã ID không có trên hệ thống Cloud</p>
-      <Button variant="outline" className="rounded-xl" onClick={() => navigate(-1)}>Quay lại</Button>
-    </div>
-  );
+  if (!playlist) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center bg-background gap-4 p-8 text-center min-h-[70vh] transition-colors duration-300">
+        <p className="text-muted-foreground text-xl font-bold uppercase tracking-widest italic">Playlist này không tồn tại!</p>
+        <button onClick={() => navigate(-1)} className="text-primary hover:text-primary/80 font-black transition-all uppercase underline decoration-primary/30 underline-offset-8">
+          ← Quay lại
+        </button>
+      </div>
+    );
+  }
 
   const coverImage = playlist.thumbnail || playlist.imageUrl;
-  
-  // Kiểm tra xem User đang đăng nhập có phải là chủ sở hữu Playlist không
   const isOwner = user && playlist.user && (user.nickname === playlist.user.nickname || user.username === playlist.user.username);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background pb-32 custom-scrollbar transition-colors duration-300">
-      
-      {/* --- HEADER --- */}
-      <div className="relative pt-20 pb-12 px-8 overflow-hidden">
-        <div 
-          className="absolute inset-0 opacity-10 blur-3xl scale-110 saturate-200 transition-all duration-1000"
-          style={{ backgroundImage: `url(${getResourceUrl(coverImage)})`, backgroundPosition: 'center', backgroundSize: 'cover' }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+    <div className="flex-1 overflow-y-auto bg-gradient-to-b from-muted/30 to-background pb-32 custom-scrollbar transition-colors duration-300">
+      {/* Header Section */}
+      <div className="bg-gradient-to-b from-primary/10 to-transparent px-8 pt-8 pb-8 transition-colors duration-300">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6 group bg-secondary/50 w-fit px-4 py-1.5 rounded-full border border-border"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span className="text-xs font-bold uppercase italic">Quay lại</span>
+        </button>
 
-        <div className="relative z-10 flex flex-col md:flex-row items-end gap-10">
-          <div className="w-52 h-52 md:w-64 md:h-64 bg-secondary rounded-3xl shadow-2xl flex items-center justify-center flex-shrink-0 border border-border overflow-hidden animate-in zoom-in duration-700">
+        <div className="flex flex-col md:flex-row items-center md:items-end gap-8 max-w-6xl mx-auto">
+          <div className="w-64 h-64 flex-shrink-0 shadow-2xl rounded-3xl overflow-hidden group border border-border transition-colors bg-secondary flex items-center justify-center">
             {coverImage ? (
-              <img 
-                src={getResourceUrl(coverImage)} 
+              <img
+                src={getResourceUrl(coverImage)}
                 alt={playlist.name}
-                className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                onError={(e) => e.currentTarget.src = "/assets/default-cover.png"}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                onError={(e) => (e.currentTarget.src = "/assets/default-cover.png")}
               />
             ) : (
-              <ListMusic className="w-24 h-24 text-muted-foreground drop-shadow-md" />
+              <Music className="w-24 h-24 text-muted-foreground drop-shadow-md" />
             )}
           </div>
-
-          <div className="flex-1 w-full animate-in slide-in-from-bottom-8 duration-700">
-            <p className="text-[12px] font-black text-muted-foreground uppercase tracking-[0.4em] mb-4 italic font-sans flex items-center gap-2">
-              Playlist <span className="text-primary">•</span> 
-              {playlist.isPublic ? <Globe size={14} className="text-blue-400"/> : <Lock size={14} className="text-muted-foreground"/>}
-              {playlist.isPublic ? "Công khai" : "Riêng tư"}
+          
+          <div className="flex flex-col items-center md:items-start flex-1 w-full">
+            <p className="text-[10px] font-black text-primary mb-2 uppercase tracking-[0.4em] italic transition-colors flex items-center gap-2">
+              Playlist 
+              <span className="text-muted-foreground">•</span>
+              {playlist.isPublic ? <Globe size={12} className="text-blue-400"/> : <Lock size={12} className="text-muted-foreground"/>}
+              <span className="text-muted-foreground">{playlist.isPublic ? "Công khai" : "Riêng tư"}</span>
             </p>
-            <h1 className="text-5xl lg:text-7xl font-black text-foreground mb-6 tracking-tighter italic uppercase leading-none font-sans line-clamp-2 drop-shadow-lg">
+            <h1 className="text-5xl md:text-7xl font-black text-foreground mb-4 tracking-tighter leading-none text-center md:text-left uppercase italic transition-colors line-clamp-2">
               {playlist.name}
             </h1>
             
-            <div className="flex flex-col gap-4 text-sm mb-2">
-              {playlist.description && (
-                <p className="text-muted-foreground font-medium text-sm w-full">
-                  {playlist.description}
-                </p>
-              )}
-              <div className="flex items-center gap-2 text-foreground font-black uppercase italic tracking-widest text-xs">
-                Tạo bởi: <span className="text-primary">{playlist.user?.nickname || playlist.user?.username || "Người dùng"}</span>
-                <span className="text-muted-foreground mx-2">•</span>
-                <span className="text-muted-foreground">{playlist.songs?.length || 0} bài hát</span>
-              </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 font-black uppercase tracking-tight italic transition-colors">
+              Tạo bởi: 
+              <span className="text-foreground transition-colors ml-1">
+                {playlist.user?.nickname || playlist.user?.username || 'Người dùng'}
+              </span>
+              <span className="opacity-50 mx-2">•</span>
+              <span className="text-primary transition-colors">{playlist.songs?.length || 0} Bài hát</span>
             </div>
+
+            <button
+              onClick={() => playlist.songs?.length > 0 && handlePlayTrack(playlist.songs[0].id)}
+              disabled={!playlist.songs?.length}
+              className="w-16 h-16 bg-primary rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-xl hover:bg-primary/90 active:scale-95 group disabled:opacity-50 disabled:hover:scale-100"
+            >
+              <Play className="w-8 h-8 text-primary-foreground ml-1 fill-current group-hover:scale-110 transition-transform" />
+            </button>
           </div>
         </div>
       </div>
 
-      {/* --- ACTION BAR --- */}
-      <div className="px-8 py-6 flex items-center gap-6 animate-in fade-in duration-1000 delay-300 border-b border-border bg-background/50 backdrop-blur-md sticky top-0 z-20">
-        <Button 
-          onClick={() => playlist.songs?.[0] && handlePlayTrack(playlist.songs[0].id)}
-          disabled={!playlist.songs?.length}
-          className="w-16 h-16 rounded-full bg-primary text-primary-foreground hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(var(--primary),0.3)] flex items-center justify-center p-0 disabled:opacity-50"
-        >
-          <Play className="w-8 h-8 ml-1 fill-current" />
-        </Button>
-        <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full border border-border hover:border-primary hover:text-primary transition-colors group">
-          <Share2 className="w-5 h-5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full border border-border hover:border-primary hover:text-primary transition-colors group">
-          <MoreHorizontal className="w-6 h-6" />
-        </Button>
-      </div>
-
-      {/* --- TRACKLIST --- */}
-      <div className="px-8 mt-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">
-        <div className="grid grid-cols-[16px_4fr_3fr_1fr_80px] gap-4 px-4 py-2 border-b border-border text-muted-foreground text-[10px] font-black uppercase tracking-[0.25em] mb-4 italic">
-          <div>#</div>
-          <div>Giai điệu</div>
-          <div>Nghệ sĩ</div>
-          <div className="flex justify-center"><Clock3 className="w-4 h-4" /></div>
-          <div></div>
-        </div>
-
-        {!playlist.songs || playlist.songs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 bg-secondary/20 rounded-[3rem] border border-dashed border-border">
-            <ListMusic className="w-16 h-16 text-muted-foreground/30 mb-4" />
-            <p className="text-muted-foreground/70 font-black uppercase text-[10px] tracking-[0.3em] text-center italic">
-              Playlist này chưa có bài hát nào...
-            </p>
+      {/* Tracks List */}
+      <div className="px-8 mt-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-[40px_1fr_120px] px-4 py-2 border-b border-border text-muted-foreground text-[10px] font-black uppercase tracking-widest mb-4 italic transition-colors">
+            <span>#</span>
+            <span>Giai điệu & Nghệ sĩ</span>
+            <div className="flex justify-end pr-4 italic">Streams</div>
           </div>
-        ) : (
+
           <div className="space-y-1">
-            {playlist.songs.map((track: any, index: number) => (
-              <div 
-                key={track.id} 
-                className="grid grid-cols-[16px_4fr_3fr_1fr_80px] gap-4 px-4 py-3 rounded-2xl hover:bg-accent transition-all group items-center border border-transparent hover:border-border cursor-pointer"
-                onClick={() => navigate(`/song/${track.id}`)}
-              >
-                <div className="text-muted-foreground font-black text-xs group-hover:text-primary transition-colors italic">
-                   <span className="group-hover:hidden">{index + 1}</span>
-                   <button onClick={(e) => { e.stopPropagation(); handlePlayTrack(track.id); }}>
-                    <Play className="w-3.5 h-3.5 hidden group-hover:block fill-current text-primary cursor-pointer" />
-                   </button>
-                </div>
-                
-                <div className="flex items-center gap-4 min-w-0">
-                  <img 
-                    src={getResourceUrl(track.imageUrl)} 
-                    className="w-10 h-10 object-cover rounded-lg shadow-sm border border-border" 
-                    alt={track.title}
-                    onError={(e) => e.currentTarget.src = "/assets/default-cover.png"}
-                  />
-                  <div className="min-w-0">
-                    <h4 className="text-foreground font-black truncate text-sm uppercase tracking-tight italic group-hover:text-primary transition-colors">{track.title}</h4>
+            {playlist.songs && playlist.songs.length > 0 ? (
+              playlist.songs.map((track: any, index: number) => (
+                <div
+                  key={track.id}
+                  className="grid grid-cols-[40px_1fr_120px] items-center gap-4 px-4 py-3 rounded-2xl hover:bg-accent transition-colors duration-300 group cursor-pointer border border-transparent hover:border-border"
+                  onClick={() => navigate(`/song/${track.id}`)}
+                >
+                  <div className="flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                    <span className="group-hover:hidden text-[10px] font-black italic">{index + 1}</span>
+                    <button onClick={(e) => { e.stopPropagation(); handlePlayTrack(track.id); }}>
+                       <Play className="w-4 h-4 hidden group-hover:block fill-current" />
+                    </button>
+                  </div>
+                  
+                  <div className="flex flex-col min-w-0">
+                    <div className="text-foreground font-black text-sm truncate group-hover:text-primary transition-colors uppercase italic tracking-tight">
+                        {track.title}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground truncate font-black uppercase tracking-widest mt-0.5 transition-colors">
+                        {track.artist?.name || "Unknown"}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 text-muted-foreground font-black text-[10px] pr-4 italic uppercase tracking-widest transition-colors">
+                    <span className="tabular-nums opacity-60 mr-2">{(track.viewCount || 0).toLocaleString()}</span>
+                    
+                    {/* Các Action ẩn hiện khi hover */}
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={(e) => e.stopPropagation()} className="p-2 hover:text-primary transition-colors rounded-lg">
+                        <Heart size={14} />
+                      </button>
+                      
+                      {isOwner && (
+                        <button 
+                          onClick={(e) => handleRemoveSong(e, track.id, track.title)} 
+                          className="p-2 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                <div className="text-muted-foreground text-[10px] font-black uppercase tracking-widest truncate hidden md:block group-hover:text-foreground/70 transition-colors italic">
-                  {track.artist?.name || "Unknown"}
-                </div>
-
-                <div className="flex justify-center text-muted-foreground font-black text-[10px] tabular-nums">
-                  {track.duration ? formatDuration(track.duration) : "--:--"}
-                </div>
-
-                <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity gap-2">
-                  <button onClick={(e) => e.stopPropagation()} className="p-2 text-muted-foreground hover:text-primary transition-colors" title="Thích">
-                    <Heart className="w-4 h-4" />
-                  </button>
-                  
-                  {/* Nút xóa: Chỉ hiện khi user là chủ sở hữu */}
-                  {isOwner && (
-                    <button 
-                      onClick={(e) => handleRemoveSong(e, track.id, track.title)} 
-                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors" 
-                      title="Xóa khỏi Playlist"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/50 transition-colors">
+                <Music size={48} className="mb-4 opacity-50" />
+                <p className="font-black italic text-[10px] uppercase tracking-widest opacity-80 text-center">
+                    Playlist này trống rỗng... <br/>Thêm bài hát để khuấy động ngay!
+                </p>
               </div>
-            ))}
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
