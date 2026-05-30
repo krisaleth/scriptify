@@ -53,9 +53,6 @@ public class PlaylistController {
         return ResponseEntity.ok(playlistService.listPublicPlaylists(pageable));
     }
 
-    /**
-     * ✅ TẠO PLAYLIST: Chuyển sang @ModelAttribute để nhận File Thumbnail
-     */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<PlaylistResponse> createPlaylist(
             @ModelAttribute PlaylistCreateDto dto,
@@ -65,17 +62,14 @@ public class PlaylistController {
     }
 
     @GetMapping(value = "/{id}")
-    public ResponseEntity<PlaylistResponse> getPlayList(Long id) {
+    public ResponseEntity<PlaylistResponse> getPlayList(@PathVariable("id") Long id) {
         return ResponseEntity.ok(playlistService.getPlaylist(id));
     }
 
-    /**
-     * ✅ CẬP NHẬT PLAYLIST: Hỗ trợ đổi ảnh bìa hoặc đổi tên/mô tả
-     */
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<PlaylistResponse> updatePlaylist(
             @PathVariable Long id,
-            @ModelAttribute PlaylistUpdateDto dto, // Đổi từ @RequestBody
+            @ModelAttribute PlaylistUpdateDto dto,
             Authentication auth) {
         return ResponseEntity.ok(playlistService.update(id, dto, getCurrentUser(auth)));
     }
@@ -86,7 +80,6 @@ public class PlaylistController {
         return ResponseEntity.noContent().build();
     }
 
-    // --- QUẢN LÝ BÀI HÁT TRONG PLAYLIST (Các API này không dùng File nên giữ nguyên) ---
 
     @PostMapping("/{id}/songs/{songId}")
     public ResponseEntity<PlaylistResponse> addSongToPlaylist(

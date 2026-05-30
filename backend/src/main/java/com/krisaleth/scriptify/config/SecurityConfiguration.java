@@ -55,7 +55,8 @@ public class SecurityConfiguration {
                 "http://localhost",
                 "https://localhost",
                 "http://localhost:3000",
-                "https://localhost:3000"
+                "https://localhost:3000",
+                "http://xcode.id.vn"
         ));
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));

@@ -91,6 +91,7 @@ services:
 networks:
   scriptify-network:
     driver: bridge
+    name: scriptify-network
 
 volumes:
   mysql-data:

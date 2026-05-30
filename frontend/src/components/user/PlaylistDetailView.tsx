@@ -21,12 +21,14 @@ export function PlaylistDetailView() {
   const [playlist, setPlaylist] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Fetch chi tiết Playlist
   const fetchPlaylistDetails = useCallback(async () => {
     if (!id) return;
     try {
       setIsLoading(true);
-      const data = await apiRequest(`${API_BASE}/playlists/${id}`); // Sửa URL nếu Backend đổi
+      const data = await apiRequest(`${API_BASE}/playlists/${id}`, {
+        method: 'GET',
+        credentials: 'include'
+      });
       if (data) setPlaylist(data);
     } catch (err) {
       console.error("Scriptify: Lỗi tải playlist", err);
@@ -39,7 +41,6 @@ export function PlaylistDetailView() {
     fetchPlaylistDetails();
   }, [fetchPlaylistDetails]);
 
-  // 2. Xóa bài hát khỏi Playlist
   const handleRemoveSong = async (e: React.MouseEvent, songId: number, songTitle: string) => {
     e.stopPropagation(); 
     if (!confirm(`Xóa "${songTitle}" khỏi playlist này?`)) return;
@@ -54,10 +55,11 @@ export function PlaylistDetailView() {
         toast.success(`Đã xóa "${songTitle}" khỏi playlist!`);
         setPlaylist((prev: any) => ({
           ...prev,
-          songs: prev.songs.filter((s: any) => s.id !== songId)
+          songs: prev.songs.filter((s: any) => s.id !== songId),
+          songCount: (prev.songCount || 1) - 1
         }));
       } else {
-        toast.error("Không thể xóa bài hát lúc này.");
+        toast.error("Không thể xóa bài hát lúc này sếp ơi.");
       }
     } catch (err) {
       toast.error("Lỗi kết nối đến máy chủ Cloud!");
@@ -75,7 +77,7 @@ export function PlaylistDetailView() {
   if (!playlist) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-background gap-4 p-8 text-center min-h-[70vh] transition-colors duration-300">
-        <p className="text-muted-foreground text-xl font-bold uppercase tracking-widest italic">Playlist này không tồn tại!</p>
+        <p className="text-muted-foreground text-xl font-bold uppercase tracking-widest italic">Playlist này không tồn tại trong hệ thống!</p>
         <button onClick={() => navigate(-1)} className="text-primary hover:text-primary/80 font-black transition-all uppercase underline decoration-primary/30 underline-offset-8">
           ← Quay lại
         </button>
@@ -83,12 +85,11 @@ export function PlaylistDetailView() {
     );
   }
 
-  const coverImage = playlist.thumbnail || playlist.imageUrl;
-  const isOwner = user && playlist.user && (user.nickname === playlist.user.nickname || user.username === playlist.user.username);
+  const coverImage = playlist.thumbnailUrl;
+  const isOwner = user && playlist.userNickname && (user.nickname === playlist.userNickname || user.username === playlist.userNickname);
 
   return (
     <div className="flex-1 overflow-y-auto bg-gradient-to-b from-muted/30 to-background pb-32 custom-scrollbar transition-colors duration-300">
-      {/* Header Section */}
       <div className="bg-gradient-to-b from-primary/10 to-transparent px-8 pt-8 pb-8 transition-colors duration-300">
         <button
           onClick={() => navigate(-1)}
@@ -116,8 +117,8 @@ export function PlaylistDetailView() {
             <p className="text-[10px] font-black text-primary mb-2 uppercase tracking-[0.4em] italic transition-colors flex items-center gap-2">
               Playlist 
               <span className="text-muted-foreground">•</span>
-              {playlist.isPublic ? <Globe size={12} className="text-blue-400"/> : <Lock size={12} className="text-muted-foreground"/>}
-              <span className="text-muted-foreground">{playlist.isPublic ? "Công khai" : "Riêng tư"}</span>
+              {playlist.public ? <Globe size={12} className="text-blue-400"/> : <Lock size={12} className="text-muted-foreground"/>}
+              <span className="text-muted-foreground">{playlist.public ? "Công khai" : "Riêng tư"}</span>
             </p>
             <h1 className="text-5xl md:text-7xl font-black text-foreground mb-4 tracking-tighter leading-none text-center md:text-left uppercase italic transition-colors line-clamp-2">
               {playlist.name}
@@ -126,10 +127,10 @@ export function PlaylistDetailView() {
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 font-black uppercase tracking-tight italic transition-colors">
               Tạo bởi: 
               <span className="text-foreground transition-colors ml-1">
-                {playlist.user?.nickname || playlist.user?.username || 'Người dùng'}
+                {playlist.userNickname || 'Người dùng Scriptify'}
               </span>
               <span className="opacity-50 mx-2">•</span>
-              <span className="text-primary transition-colors">{playlist.songs?.length || 0} Bài hát</span>
+              <span className="text-primary transition-colors">{playlist.songCount || 0} Bài hát</span>
             </div>
 
             <button
@@ -143,7 +144,6 @@ export function PlaylistDetailView() {
         </div>
       </div>
 
-      {/* Tracks List */}
       <div className="px-8 mt-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-[40px_1fr_120px] px-4 py-2 border-b border-border text-muted-foreground text-[10px] font-black uppercase tracking-widest mb-4 italic transition-colors">
@@ -168,7 +168,6 @@ export function PlaylistDetailView() {
                   </div>
                   
                   <div className="flex flex-col min-w-0 md:flex-row md:items-center md:gap-4">
-                     {/* 🟢 KHUNG ẢNH THU NHỎ NẾU SẾP MUỐN */}
                     <div className="w-10 h-10 overflow-hidden rounded-md border border-border shrink-0 hidden md:block">
                         <img 
                             src={getResourceUrl(track.imageUrl)} 
@@ -183,7 +182,7 @@ export function PlaylistDetailView() {
                             {track.title}
                         </div>
                         <div className="text-[10px] text-muted-foreground truncate font-black uppercase tracking-widest mt-0.5 transition-colors">
-                            {track.artist?.name || "Unknown"}
+                            {track.artistName || "Nghệ sĩ ẩn danh"}
                         </div>
                     </div>
                   </div>
@@ -191,7 +190,6 @@ export function PlaylistDetailView() {
                   <div className="flex items-center justify-end gap-3 text-muted-foreground font-black text-[10px] pr-4 italic uppercase tracking-widest transition-colors">
                     <span className="tabular-nums opacity-60 mr-2">{(track.viewCount || 0).toLocaleString()}</span>
                     
-                    {/* Các Action ẩn hiện khi hover */}
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={(e) => e.stopPropagation()} className="p-2 hover:text-primary transition-colors rounded-lg">
                         <Heart size={14} />
