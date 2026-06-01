@@ -1,6 +1,6 @@
 import { Play, Music2, Search, Loader2, AlertCircle, Eye, TrendingUp, Users } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { getResourceUrl } from '@/utils/urlHelper';
 
 const API_BASE = "/api";
@@ -27,6 +27,7 @@ interface Artist {
 
 export function ArtistsView() {
   const { handlePlayTrack } = useOutletContext<MusicContextType>();
+  const navigate = useNavigate();
   const [artists, setArtists] = useState<Artist[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -71,10 +72,7 @@ export function ArtistsView() {
   );
 
   return (
-    // FIX: padding-bottom (pb-20) vừa đủ để không bị che bởi Music Player mà không dư thừa
     <div className="w-full h-full overflow-y-auto overflow-x-hidden bg-background pb-20 custom-scrollbar select-none transition-colors duration-300">
-      
-      {/* Header & Search */}
       <div className="relative px-6 md:px-10 pt-16 pb-8 overflow-hidden transition-colors duration-300">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-primary/10 to-transparent pointer-events-none transition-colors duration-300"></div>
         <div className="relative z-10">
@@ -95,8 +93,6 @@ export function ArtistsView() {
       </div>
 
       <div className="px-6 md:px-10 space-y-16">
-        
-        {/* 1. SPOTLIGHT */}
         {!searchQuery && spotlightArtists.length > 0 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             <div className="flex items-center gap-4">
@@ -118,7 +114,6 @@ export function ArtistsView() {
                     </div>
                     
                     <div className="flex-1 text-center xl:text-left min-w-0">
-                        {/* FIX 1: Dùng whitespace-nowrap hoặc font-size responsive để không rớt 1 chữ cái */}
                         <h4 className="text-4xl md:text-5xl lg:text-6xl font-black text-foreground uppercase italic tracking-tighter leading-[0.9] mb-4 overflow-hidden text-ellipsis whitespace-nowrap xl:whitespace-normal transition-colors duration-300">
                           {artist.name}
                         </h4>
@@ -139,9 +134,12 @@ export function ArtistsView() {
 
                     <div className="w-full xl:w-[350px] grid gap-3 shrink-0">
                       {artist.topSongs?.slice(0, 2).map((track) => (
-                        <div key={track.id} onClick={() => handlePlayTrack(track.id)} className="flex items-center gap-4 p-4 bg-background/40 rounded-xl border border-border hover:border-primary/20 transition-all cursor-pointer group/item">
-                          <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 relative shadow-sm border border-border">
+                        <div key={track.id} onClick={() => navigate(`/song/${track.id}`)} className="flex items-center gap-4 p-4 bg-background/40 rounded-xl border border-border hover:border-primary/20 transition-all cursor-pointer group/item">
+                          <div onClick={(e) => { e.stopPropagation(); handlePlayTrack(track.id); }} className="w-12 h-12 rounded-lg overflow-hidden shrink-0 relative shadow-sm border border-border">
                             <img src={getResourceUrl(track.imageUrl)} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/item:opacity-100 flex items-center justify-center transition-all">
+                              <Play size={16} fill="currentColor" className="text-primary ml-0.5" />
+                            </div>
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="text-foreground font-black text-xs truncate uppercase italic tracking-tighter group-hover/item:text-primary transition-colors">{track.title}</p>
@@ -157,7 +155,6 @@ export function ArtistsView() {
           </div>
         )}
 
-        {/* 2. ALL ARTISTS GRID */}
         <div className="space-y-8">
           <div className="flex items-center justify-between border-b border-border pb-4 transition-colors duration-300">
             <div className="flex items-center gap-3">
@@ -166,7 +163,6 @@ export function ArtistsView() {
             </div>
           </div>
           
-          {/* FIX 2: Loại bỏ khoảng trắng ở cuối bằng cách dùng h-fit và tối ưu gap */}
           <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-6 w-full h-fit">
             {filteredArtists.map((artist) => (
               <div 

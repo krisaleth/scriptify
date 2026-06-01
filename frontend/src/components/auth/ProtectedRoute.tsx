@@ -8,7 +8,6 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (!user) {
-      // Khi guest cố tình vào path này, mình tự động mở modal cho họ
       openAuthModal();
     }
   }, [user, openAuthModal]);

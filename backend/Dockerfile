@@ -7,7 +7,5 @@ FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
-RUN mkdir -p /app/uploads/images /app/uploads/songs
-
 EXPOSE 8443
 ENTRYPOINT ["java", "-jar", "app.jar"]

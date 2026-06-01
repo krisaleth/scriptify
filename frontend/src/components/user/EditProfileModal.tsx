@@ -70,7 +70,6 @@ export default function EditProfileModal({ isOpen, mode, onClose }: Props) {
           setUser(updatedUser);
           toast.success("Hồ sơ đã được cập nhật!");
         } else {
-          // Bỏ icon emoji màu xanh cứng
           toast.success("Đổi mật khẩu thành công!");
         }
         onClose();
@@ -95,10 +94,8 @@ export default function EditProfileModal({ isOpen, mode, onClose }: Props) {
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            // Chuyển màu nền sang theme card
             className="relative w-full max-w-md bg-card border border-border rounded-[2.5rem] p-8 shadow-2xl overflow-hidden transition-colors duration-300"
           >
-            {/* Ánh sáng nền tỏa ra theo màu Primary */}
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 blur-[80px] rounded-full transition-colors" />
 
             <div className="flex justify-between items-center mb-8">

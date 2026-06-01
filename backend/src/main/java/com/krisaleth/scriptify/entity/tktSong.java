@@ -23,6 +23,9 @@ public class tktSong {
     @Column(nullable = false)
     private String tktTitle;
 
+    @Column(columnDefinition = "TEXT")
+    private String tktDescription;
+
     private int tktDuration;
 
     @Column(nullable = false)

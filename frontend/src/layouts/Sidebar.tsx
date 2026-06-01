@@ -1,5 +1,5 @@
 import { NavLink, Link, useNavigate } from "react-router-dom";
-import { Home, Library, Heart, User, Music2, LogOut, Mic2, ShieldCheck, LayoutDashboard, Sun, Moon } from 'lucide-react';
+import { Home, Library, Heart, User, Music2, LogOut, Mic2, ShieldCheck, LayoutDashboard, Sun, Moon, ListMusic } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from "@/store/useAuthStore";
 import { getResourceUrl } from "@/utils/urlHelper";
@@ -14,17 +14,14 @@ export function Sidebar({ onPlayTrack }: { onPlayTrack: (id: number) => void }) 
   const logout = useAuthStore((state) => state.logout);
   
   const [favouriteTracks, setFavouriteTracks] = useState<any[]>([]);
-  // State để theo dõi chế độ nền hiện tại
+  const [myPlaylists, setMyPlaylists] = useState<any[]>([]); // State lưu danh sách Playlist
   const [isLightMode, setIsLightMode] = useState(false);
 
-  // Kiểm tra xem app đang ở chế độ nào khi vừa load xong
   useEffect(() => {
     setIsLightMode(document.documentElement.classList.contains('light'));
   }, []);
 
-  // Hàm xử lý việc chuyển đổi bật/tắt Light mode
   const toggleTheme = () => {
-    // Logic chuẩn: Tự động đổi class 'dark' ở thẻ HTML cha
     const hasDarkMode = document.documentElement.classList.toggle('dark');
     setIsLightMode(!hasDarkMode);
   };
@@ -58,11 +55,26 @@ export function Sidebar({ onPlayTrack }: { onPlayTrack: (id: number) => void }) 
     }
   }, [user]);
 
+  // Hàm kéo danh sách Playlist của User
+  const fetchPlaylists = useCallback(async () => {
+    if (!user) return;
+    try {
+      const response = await fetch(`${API_BASE}/playlists/me`, { credentials: "include" });
+      if (response.ok) {
+        const data = await response.json();
+        setMyPlaylists(data);
+      }
+    } catch (err) {
+      console.error("Scriptify: Playlist sync failed.");
+    }
+  }, [user]);
+
   useEffect(() => {
     fetchFavs();
+    fetchPlaylists(); // Gọi hàm lấy Playlist
     window.addEventListener('favoriteUpdate', fetchFavs);
     return () => window.removeEventListener('favoriteUpdate', fetchFavs);
-  }, [fetchFavs]);
+  }, [fetchFavs, fetchPlaylists]);
 
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -95,9 +107,7 @@ export function Sidebar({ onPlayTrack }: { onPlayTrack: (id: number) => void }) 
   return (
     <div className="w-64 bg-background border-r border-border flex flex-col h-full font-sans select-none relative z-50 shadow-2xl">
       
-      {/* 🟢 User Profile Header & Theme Switcher */}
       <div className="p-6 flex flex-col gap-4">
-        {/* Nút Đổi màu nền (Theme Switcher) */}
         <div className="flex justify-end">
           <button
             onClick={toggleTheme}
@@ -108,7 +118,6 @@ export function Sidebar({ onPlayTrack }: { onPlayTrack: (id: number) => void }) 
           </button>
         </div>
 
-        {/* Thông tin User */}
         {!user ? (
           <Link to="/login" className="flex items-center gap-4 p-4 rounded-2xl bg-secondary/30 border border-border hover:border-primary/50 transition-all group">
             <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
@@ -144,8 +153,7 @@ export function Sidebar({ onPlayTrack }: { onPlayTrack: (id: number) => void }) 
         )}
       </div>
 
-      {/* 🟢 Navigation Menu */}
-      <div className="px-3 flex-1 overflow-y-auto space-y-8 custom-scrollbar">
+      <div className="px-3 flex-1 overflow-y-auto space-y-6 custom-scrollbar pb-6">
         <nav className="space-y-1">
           <p className="px-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 italic">Khám phá</p>
           
@@ -168,15 +176,50 @@ export function Sidebar({ onPlayTrack }: { onPlayTrack: (id: number) => void }) 
           )}
         </nav>
 
+        {/* 🟢 KHU VỰC PLAYLISTS */}
         {user && (
           <div className="space-y-1">
             <div className="flex items-center justify-between px-4 mb-3">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest italic">Thư viện</p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest italic">Playlists</p>
+              <ListMusic size={12} className="text-muted-foreground/80" />
+            </div>
+            
+            {myPlaylists.length > 0 ? (
+              <div className="space-y-0.5 px-1 max-h-[250px] overflow-y-auto custom-scrollbar-hidden">
+                {myPlaylists.map((pl) => (
+                  <button key={pl.id} onClick={() => navigate(`/playlist/${pl.id}`)} className="flex items-center gap-3 w-full p-2 rounded-xl text-left hover:bg-accent transition-all group">
+                    <div className="w-10 h-10 rounded-lg bg-secondary overflow-hidden flex items-center justify-center shrink-0 border border-border">
+                      {pl.thumbnailUrl || pl.imageUrl ? (
+                        <img src={getResourceUrl(pl.thumbnailUrl || pl.imageUrl)} className="w-full h-full object-cover" />
+                      ) : (
+                        <ListMusic size={16} className="text-muted-foreground/80" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">{pl.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{pl.songCount || pl.songs?.length || 0} bài hát</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="mx-4 p-6 rounded-2xl bg-secondary/20 border border-dashed border-border text-center">
+                 <p className="text-[10px] text-muted-foreground italic">Trống rỗng...</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 🟢 KHU VỰC NHẠC ĐÃ THÍCH */}
+        {user && (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between px-4 mb-3">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest italic">Nhạc đã thích</p>
               <Music2 size={12} className="text-muted-foreground/80" />
             </div>
             
             {favouriteTracks.length > 0 ? (
-              <div className="space-y-0.5 px-1 max-h-[300px] overflow-y-auto custom-scrollbar-hidden">
+              <div className="space-y-0.5 px-1 max-h-[250px] overflow-y-auto custom-scrollbar-hidden">
                 {favouriteTracks.map((track) => (
                   <button key={track.id} onClick={() => onPlayTrack(track.id)} className="flex items-center gap-3 w-full p-2 rounded-xl text-left hover:bg-accent transition-all group">
                     <div className="w-10 h-10 rounded-lg bg-secondary overflow-hidden flex items-center justify-center shrink-0 border border-border">
@@ -202,8 +245,7 @@ export function Sidebar({ onPlayTrack }: { onPlayTrack: (id: number) => void }) 
         )}
       </div>
 
-      {/* 🟢 Footer Actions */}
-      <div className="p-4 mt-auto space-y-1 border-t border-border">
+      <div className="p-4 mt-auto space-y-1 border-t border-border bg-background/95 backdrop-blur-sm z-10">
         <NavLink to="/disclaimer" className={navLinkClass}>
            {({ isActive }) => renderNavLinkContent(isActive, ShieldCheck, "Bản quyền")}
         </NavLink>

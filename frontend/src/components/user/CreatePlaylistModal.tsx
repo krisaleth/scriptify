@@ -52,7 +52,6 @@ export default function CreatePlaylistModal({ isOpen, onClose, onSuccess }: Prop
       });
 
       if (response.ok) {
-        // Đã bỏ icon emoji
         toast.success("Đã tạo Playlist mới!");
         setName("");
         setDescription("");
@@ -85,10 +84,8 @@ export default function CreatePlaylistModal({ isOpen, onClose, onSuccess }: Prop
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            // Chuyển màu nền cứng thành bg-card
             className="relative w-full max-w-md bg-card border border-border rounded-[2.5rem] p-8 shadow-2xl overflow-hidden transition-colors duration-300"
           >
-            {/* Glow effect ăn theo màu primary */}
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 blur-[80px] rounded-full transition-colors" />
 
             <div className="flex justify-between items-center mb-8">

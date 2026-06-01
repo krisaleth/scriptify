@@ -115,6 +115,11 @@
 			<version>2.5.0</version>
 			<scope>compile</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.resend</groupId>
+			<artifactId>resend-java</artifactId>
+			<version>LATEST</version>
+		</dependency>
 	</dependencies>
 
 	<build>

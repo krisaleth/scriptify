@@ -48,7 +48,7 @@ public class AuthenticationController {
                 .secure(true)
                 .path("/")
                 .maxAge(expirationMillis / 1000)
-                .sameSite("Lax")
+                .sameSite("None")
                 .build();
 
         LoginResponse loginResponse = new LoginResponse();
@@ -90,7 +90,7 @@ public class AuthenticationController {
     public ResponseEntity<?> verifyUser(VerifyUserDto verifyUserDto) {
         try {
             authenticationService.verifyUser(verifyUserDto);
-            return ResponseEntity.ok("Account verified successfully");
+            return ResponseEntity.ok("Tài khoản xác thực thành công");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -100,7 +100,7 @@ public class AuthenticationController {
     public ResponseEntity<?> resendVerificationCode(@RequestParam String email) {
         try {
             authenticationService.resendVerificationCode(email);
-            return ResponseEntity.ok("Verification code sent");
+            return ResponseEntity.ok("Mã OTP đã được gửi");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -115,11 +115,13 @@ public class AuthenticationController {
     public ResponseEntity<?> logout() {
         ResponseCookie cookie = ResponseCookie.from("jwt", "")
                 .httpOnly(true)
+                .secure(true)
                 .path("/")
                 .maxAge(0)
+                .sameSite("None")
                 .build();
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body("Đã đăng xuất thành công");
+                .body("Đã đăng xuất thành công sếp ơi!");
     }
 }

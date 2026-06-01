@@ -1,31 +1,29 @@
 import { ArrowLeft, Play, Heart, Loader2, Music } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { getResourceUrl } from '@/utils/urlHelper';
 
-// ĐỔI SANG ĐƯỜNG DẪN TƯƠNG ĐỐI: Để đi qua Vite Proxy/Nginx
 const API_BASE = "/api";
 
 interface MusicContextType {
   handlePlayTrack: (trackId: number) => void;
-  allSongs: any[];
 }
 
 export function AlbumDetailView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { handlePlayTrack, allSongs } = useOutletContext<MusicContextType>();
+  const { handlePlayTrack } = useOutletContext<MusicContextType>();
 
   const [album, setAlbum] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Fetch chi tiết Album qua Proxy
+  // 1. Fetch chi tiết Album qua Proxy (Nhận đầy đủ dữ liệu từ Backend mới)
   useEffect(() => {
     const fetchAlbumDetail = async () => {
       try {
         setIsLoading(true);
         const res = await fetch(`${API_BASE}/albums/${id}`, {
-          credentials: "include" // Gửi kèm Cookie để BE nhận diện
+          credentials: "include"
         });
         if (res.ok) {
           const data = await res.json();
@@ -40,15 +38,12 @@ export function AlbumDetailView() {
     fetchAlbumDetail();
   }, [id]);
 
-  // 2. Lọc danh sách bài hát thuộc album
-  const tracks = useMemo(() => {
-    if (!allSongs) return [];
-    return allSongs.filter(track => track.album?.id === Number(id));
-  }, [allSongs, id]);
+  // 2. KHÔNG CẦN DÙNG useMemo ĐỂ LỌC TOÀN CỤC NỮA! 
+  // Lấy thẳng danh sách songs từ DTO Backend trả về, đảm bảo an toàn dữ liệu.
+  const tracks = album?.songs || [];
 
   if (isLoading) {
     return (
-      // ✅ Thêm transition-colors để lật mode mượt lúc đang loading
       <div className="flex-1 flex items-center justify-center min-h-screen bg-background transition-colors duration-300">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
       </div>
@@ -57,7 +52,6 @@ export function AlbumDetailView() {
 
   if (!album) {
     return (
-      // ✅ Thêm transition-colors
       <div className="flex-1 flex flex-col items-center justify-center bg-background gap-4 p-8 text-center transition-colors duration-300">
         <p className="text-muted-foreground text-xl font-bold uppercase tracking-widest italic">Album này không tồn tại trong Cloud!</p>
         <button onClick={() => navigate('/albums')} className="text-primary hover:text-primary/80 font-black transition-all uppercase underline decoration-primary/30 underline-offset-8">
@@ -68,7 +62,6 @@ export function AlbumDetailView() {
   }
 
   return (
-    // ✅ Thêm transition-colors vào wrapper chính
     <div className="flex-1 overflow-y-auto bg-gradient-to-b from-muted/30 to-background pb-32 custom-scrollbar transition-colors duration-300">
       {/* Header Section */}
       <div className="bg-gradient-to-b from-primary/10 to-transparent px-8 pt-8 pb-8 transition-colors duration-300">
@@ -103,7 +96,8 @@ export function AlbumDetailView() {
               <span className="opacity-50">•</span>
               <span>{album.releaseYear || '2026'}</span>
               <span className="opacity-50">•</span>
-              <span className="text-primary transition-colors">{tracks.length} Tracks</span>
+              {/* Sử dụng biến songCount từ AlbumResponse */}
+              <span className="text-primary transition-colors">{album.songCount || 0} Tracks</span>
             </div>
 
             <button
@@ -127,7 +121,7 @@ export function AlbumDetailView() {
 
           <div className="space-y-1">
             {tracks.length > 0 ? (
-              tracks.map((track, index) => (
+              tracks.map((track: any, index: number) => (
                 <div
                   key={track.id}
                   className="grid grid-cols-[40px_1fr_120px] items-center gap-4 px-4 py-3 rounded-2xl hover:bg-accent transition-colors duration-300 group cursor-pointer border border-transparent hover:border-border"
@@ -143,7 +137,8 @@ export function AlbumDetailView() {
                         {track.title}
                     </div>
                     <div className="text-[10px] text-muted-foreground truncate font-black uppercase tracking-widest mt-0.5 transition-colors">
-                        {track.artist?.name}
+                        {/* Vì SongShortResponse chỉ cần trả về artistName từ Album hoặc lấy trực tiếp tên artist của Album trên FE */}
+                        {album.artist?.name}
                     </div>
                   </div>
 
@@ -157,7 +152,7 @@ export function AlbumDetailView() {
               <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/50 transition-colors">
                 <Music size={48} className="mb-4 opacity-50" />
                 <p className="font-black italic text-[10px] uppercase tracking-widest opacity-80 text-center">
-                    Giai điệu đang được tuồn vào Cloud... <br/>Vui lòng quay lại sau!
+                    Album này chưa có bài hát nào... <br/>Vui lòng bổ sung sau sếp ơi!
                 </p>
               </div>
             )}

@@ -9,6 +9,8 @@ import { AlbumsView } from "@/components/user/AlbumsView";
 import { AlbumDetailView } from "@/components/user/AlbumDetailView";
 import { ArtistsView } from "@/components/user/ArtistsView";
 import { FavoritesView } from "@/components/user/FavoritesView";
+import { SongDetailView } from "@/components/user/SongDetailView"; 
+import { PlaylistDetailView } from "@/components/user/PlaylistDetailView"; 
 import ProfilePage from "@/components/user/UserProfile";
 import { Toaster } from "sonner";
 import { GlobalAuthModal } from "@/components/auth/GlobalAuthModal";
@@ -18,7 +20,6 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 export default function App() {
   return (
     <>
-      {/* 1. Cấu hình Toaster cho toàn bộ App */}
       <Toaster 
         theme="system" 
         position="top-right" 
@@ -57,9 +58,10 @@ export default function App() {
           <Route path="albums" element={<AlbumsView />} />
           <Route path="album/:id" element={<AlbumDetailView />} />
           <Route path="artists" element={<ArtistsView />} />
+          <Route path="song/:id" element={<SongDetailView />} /> 
+          <Route path="playlist/:id" element={<PlaylistDetailView />} /> 
           <Route path="disclaimer" element={<DisclaimerPage />} />
 
-          {/* ✅ Route Trang cá nhân mới thêm */}
           <Route 
             path="profile" 
             element={

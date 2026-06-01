@@ -42,12 +42,18 @@ export function AdminDashboard() {
       text: "Thao tác này sẽ xoá vĩnh viễn dữ liệu và không thể hoàn tác!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33", 
-      cancelButtonColor: "#3085d6",
+      buttonsStyling: false,
+      background: "transparent", // Ép Swal nhường quyền quản lý màu nền cho Tailwind
+      customClass: {
+        popup: 'bg-card border border-border text-foreground rounded-[2rem] shadow-2xl backdrop-blur-xl transition-colors duration-300',
+        title: 'text-foreground font-black italic tracking-tighter text-2xl',
+        htmlContainer: 'text-muted-foreground font-medium',
+        actions: 'flex gap-4 w-full justify-center mt-6',
+        confirmButton: 'bg-destructive text-destructive-foreground px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs italic hover:bg-destructive/90 transition-all shadow-lg m-0',
+        cancelButton: 'bg-secondary text-foreground px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs italic hover:bg-secondary/80 transition-all border border-border m-0',
+      },
       confirmButtonText: "Vâng, xoá nó!",
       cancelButtonText: "Huỷ bỏ",
-      background: "#1f2937", 
-      color: "#fff"
     });
 
     if (result.isConfirmed) {
@@ -63,8 +69,13 @@ export function AdminDashboard() {
             icon: "success",
             timer: 1500,
             showConfirmButton: false,
-            background: "#1f2937",
-            color: "#fff"
+            buttonsStyling: false,
+            background: "transparent",
+            customClass: {
+              popup: 'bg-card border border-border text-foreground rounded-[2rem] shadow-2xl backdrop-blur-xl transition-colors duration-300',
+              title: 'text-foreground font-black italic tracking-tighter text-2xl',
+              htmlContainer: 'text-muted-foreground font-medium',
+            }
           });
           triggerRefresh();
         } else {
@@ -81,28 +92,24 @@ export function AdminDashboard() {
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300 p-6 md:p-10 selection:bg-primary/30">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* HEADER AREA */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
-          
           <div>
-            <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter flex items-center gap-3 text-primary">
+            <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter flex items-center gap-3 text-primary transition-colors duration-300">
               <ShieldCheck className="w-10 h-10 drop-shadow-md" /> 
               ADMIN
             </h1>
-            <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.4em] italic mt-1 ml-14">
+            <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.4em] italic mt-1 ml-14 transition-colors duration-300">
               Cloud Control
             </p>
           </div>
 
           <div className="flex items-center gap-4 w-full lg:w-auto">
-            {/* THANH SEARCH */}
             <AdminSearchControl 
               placeholder={searchPlaceholder} 
               onSearch={setSearchQuery} 
               tabValue={mainTab} 
             />
 
-            {/* NÚT THÊM */}
             {mainTab !== "user" && (
               <Button 
                 onClick={() => { setEditItem(null); setDialogOpen(true); }}
@@ -112,10 +119,10 @@ export function AdminDashboard() {
               </Button>
             )}
 
-            {/* ✅ NÚT HOME (Dùng thẻ HTML thuần để chống lỗi) */}
+            {/* Đã thêm rounded-xl vào nút Home */}
             <button
               onClick={() => navigate('/')}
-              className="flex items-center justify-center w-12 h-12 bg-secondary border border-border text-foreground rounded-xl hover:bg-primary hover:text-primary-foreground hover:scale-105 transition-all shadow-lg shrink-0 group"
+              className="flex items-center justify-center w-12 h-12 bg-secondary border border-border text-muted-foreground rounded-xl hover:bg-primary hover:text-primary-foreground hover:scale-105 transition-all shadow-lg shrink-0 group"
               title="Trở về Trang Chủ"
             >
               <Home className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
@@ -123,16 +130,15 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* TABS & SECTIONS */}
         <Tabs value={mainTab} onValueChange={setMainTab} className="space-y-6">
-          <TabsList className="bg-secondary/50 border border-border p-1.5 rounded-2xl h-14 w-full justify-start overflow-x-auto no-scrollbar sm:w-auto">
-            <TabsTrigger value="music" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Nhạc</TabsTrigger>
-            <TabsTrigger value="artists" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Nghệ sĩ</TabsTrigger>
-            <TabsTrigger value="albums" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Albums</TabsTrigger>
-            <TabsTrigger value="user" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Users</TabsTrigger>
+          <TabsList className="bg-secondary/50 border border-border p-1.5 rounded-2xl h-14 w-full justify-start overflow-x-auto no-scrollbar sm:w-auto transition-colors duration-300">
+            <TabsTrigger value="music" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300">Nhạc</TabsTrigger>
+            <TabsTrigger value="artists" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300">Nghệ sĩ</TabsTrigger>
+            <TabsTrigger value="albums" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300">Albums</TabsTrigger>
+            <TabsTrigger value="user" className="px-8 rounded-xl font-black uppercase italic text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300">Users</TabsTrigger>
           </TabsList>
 
-          <div className="bg-secondary/20 rounded-[2.5rem] border border-border p-8 min-h-[600px] backdrop-blur-md shadow-lg relative">
+          <div className="bg-secondary/20 rounded-[2.5rem] border border-border p-8 min-h-[600px] backdrop-blur-md shadow-lg relative transition-colors duration-300">
             <TabsContent value="music" className="mt-0 outline-none">
               <SongSection 
                 searchQuery={searchQuery} 

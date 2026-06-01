@@ -59,25 +59,27 @@ public class SongController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SongResponse> createSong(
             @RequestParam("title") String title,
+            @RequestParam(value = "description", required = false) String description,
             @RequestParam("artistId") Long artistId,
             @RequestParam(value = "albumId", required = false) Long albumId,
             @RequestParam("songFile") MultipartFile musicFile,
-            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
+            @RequestParam(value = "imageFile") MultipartFile imageFile) {
 
-        SongResponse savedSong = songService.createSong(title, artistId, albumId, musicFile, imageFile);
+        SongResponse savedSong = songService.createSong(title, artistId, description, albumId, musicFile, imageFile);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedSong);
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SongResponse> updateSong(
             @PathVariable Long id,
-            @RequestParam(value = "title", required = false) String title,
-            @RequestParam(value = "artistId", required = false) Long artistId,
+            @RequestParam(value = "title") String title,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "artistId") Long artistId,
             @RequestParam(value = "albumId", required = false) Long albumId,
-            @RequestParam(value = "songFile", required = false) MultipartFile musicFile,
-            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
+            @RequestParam(value = "songFile") MultipartFile musicFile,
+            @RequestParam(value = "imageFile") MultipartFile imageFile) {
 
-        SongResponse updatedSong = songService.updateSong(id, title, artistId, albumId, musicFile, imageFile);
+        SongResponse updatedSong = songService.updateSong(id, title, description, artistId, albumId, musicFile, imageFile);
         return ResponseEntity.ok(updatedSong);
     }
 

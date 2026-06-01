@@ -39,10 +39,10 @@ export function MusicPlayer(props: MusicPlayerProps) {
   };
 
   return (
-    <footer className="h-24 bg-background/95 backdrop-blur-md border-t border-border px-6 flex items-center justify-between z-50">
+    <footer className="h-24 bg-background/95 backdrop-blur-md border-t border-border px-6 flex items-center justify-between z-50 transition-colors duration-300">
       {/* TRÁI: THÔNG TIN BÀI HÁT ĐANG PHÁT */}
       <div className="flex items-center gap-4 w-[30%] min-w-0">
-        <div className="w-14 h-14 bg-secondary rounded-xl overflow-hidden flex-shrink-0 border border-border shadow-lg relative group">
+        <div className="w-14 h-14 bg-secondary rounded-xl overflow-hidden flex-shrink-0 border border-border shadow-lg relative group transition-colors duration-300">
           {hasActiveSong ? (
             <img 
               src={getResourceUrl(currentSong.imageUrl)} 
@@ -63,7 +63,7 @@ export function MusicPlayer(props: MusicPlayerProps) {
           <div className="text-sm font-black truncate uppercase italic tracking-tighter text-foreground hover:text-primary transition-colors cursor-default">
             {currentSong?.title || "Scriptify Sẵn sàng"}
           </div>
-          <div className="text-[10px] text-muted-foreground truncate font-bold uppercase tracking-[0.2em] mt-0.5 opacity-70">
+          <div className="text-[10px] text-muted-foreground truncate font-bold uppercase tracking-[0.2em] mt-0.5 opacity-70 transition-colors">
             {currentSong?.artist?.name || "Chọn giai điệu của bạn"}
           </div>
         </div>
@@ -75,15 +75,24 @@ export function MusicPlayer(props: MusicPlayerProps) {
         !hasActiveSong ? 'opacity-30 pointer-events-none scale-95' : 'opacity-100'
       )}>
         <div className="flex items-center gap-8">
-          <button 
-            onClick={props.onToggleShuffle} 
-            className={cn(
-              "transition-all hover:scale-110 active:scale-90 p-1 rounded-full", 
-              isShuffle ? 'text-primary drop-shadow-md' : 'text-muted-foreground hover:text-foreground'
+          
+          {/* NÚT SHUFFLE (MIX BÀI) ĐÃ ĐƯỢC NÂNG CẤP */}
+          <div className="relative flex flex-col items-center justify-center">
+            <button 
+              onClick={props.onToggleShuffle} 
+              className={cn(
+                "transition-all hover:scale-110 active:scale-90 p-1.5 rounded-full", 
+                isShuffle ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              )}
+              title="Trộn bài"
+            >
+              <Shuffle size={16}/>
+            </button>
+            {/* Chấm tròn chỉ thị trạng thái bật */}
+            {isShuffle && (
+              <div className="absolute -bottom-2 w-1 h-1 bg-primary rounded-full shadow-[0_0_5px_rgba(var(--primary),0.8)]" />
             )}
-          >
-            <Shuffle size={16}/>
-          </button>
+          </div>
           
           <button onClick={props.onPrevious} className="text-muted-foreground hover:text-foreground transition-all hover:scale-125 active:scale-90">
             <SkipBack size={22} fill="currentColor"/>
@@ -100,20 +109,29 @@ export function MusicPlayer(props: MusicPlayerProps) {
             <SkipForward size={22} fill="currentColor"/>
           </button>
           
-          <button 
-            onClick={props.onToggleRepeat} 
-            className={cn(
-              "transition-all hover:scale-110 active:scale-90 p-1 rounded-full", 
-              isRepeat ? 'text-primary drop-shadow-md' : 'text-muted-foreground hover:text-foreground'
+          {/* NÚT REPEAT (LẶP LẠI) ĐÃ ĐƯỢC NÂNG CẤP */}
+          <div className="relative flex flex-col items-center justify-center">
+            <button 
+              onClick={props.onToggleRepeat} 
+              className={cn(
+                "transition-all hover:scale-110 active:scale-90 p-1.5 rounded-full", 
+                isRepeat ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              )}
+              title="Lặp lại"
+            >
+              <Repeat size={16}/>
+            </button>
+             {/* Chấm tròn chỉ thị trạng thái bật */}
+            {isRepeat && (
+              <div className="absolute -bottom-2 w-1 h-1 bg-primary rounded-full shadow-[0_0_5px_rgba(var(--primary),0.8)]" />
             )}
-          >
-            <Repeat size={16}/>
-          </button>
+          </div>
+
         </div>
 
         {/* Thanh Thời gian (Progress) */}
         <div className="flex items-center gap-3 w-full group/progress">
-          <span className="text-[9px] text-muted-foreground font-black w-10 text-right tabular-nums tracking-tighter opacity-100 transition-opacity">
+          <span className="text-[9px] text-muted-foreground font-black w-10 text-right tabular-nums tracking-tighter opacity-100 transition-colors">
             {formatTime(currentTime)}
           </span>
           <Slider
@@ -123,7 +141,7 @@ export function MusicPlayer(props: MusicPlayerProps) {
             onValueChange={(val) => props.onSeek(val[0])}
             className="flex-1 cursor-pointer"
           />
-          <span className="text-[9px] text-muted-foreground font-black w-10 tabular-nums tracking-tighter">
+          <span className="text-[9px] text-muted-foreground font-black w-10 tabular-nums tracking-tighter transition-colors">
             {formatTime(duration)}
           </span>
         </div>

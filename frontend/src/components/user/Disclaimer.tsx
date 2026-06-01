@@ -7,9 +7,7 @@ const DisclaimerPage = () => {
   const navigate = useNavigate();
 
   return (
-    // ✅ Chèn thêm transition-colors duration-300 để lật mode mượt mà
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/30 relative overflow-x-hidden transition-colors duration-300">
-      {/* Nút quay lại cho Mobile */}
       <button 
         onClick={() => navigate(-1)}
         className="absolute top-6 left-6 p-3 rounded-full bg-secondary border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-all z-50 md:hidden active:scale-90"
@@ -17,7 +15,6 @@ const DisclaimerPage = () => {
         <ChevronLeft className="w-6 h-6" />
       </button>
 
-      {/* Background Decor - Hiệu ứng ánh sáng mờ */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none transition-colors duration-300">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] transition-colors duration-300" />
         <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] transition-colors duration-300" />
@@ -40,10 +37,7 @@ const DisclaimerPage = () => {
           </h1>
         </header>
 
-        {/* Content Grid */}
         <div className="grid gap-6 animate-in fade-in slide-in-from-bottom-4 delay-200 duration-1000">
-          
-          {/* Card 01: Project Purpose */}
           <section className="p-8 rounded-[2rem] bg-secondary/40 border border-border group hover:border-primary/30 transition-all duration-500">
             <div className="flex flex-col md:flex-row items-start gap-6">
               <div className="p-3 rounded-xl bg-background border border-border group-hover:scale-110 transition-all duration-500 shrink-0">
@@ -60,7 +54,6 @@ const DisclaimerPage = () => {
             </div>
           </section>
 
-          {/* Card 02: Copyright */}
           <section className="p-8 rounded-[2rem] bg-secondary/40 border border-border group hover:border-primary/30 transition-all duration-500">
             <div className="flex flex-col md:flex-row items-start gap-6">
               <div className="p-3 rounded-xl bg-background border border-border group-hover:scale-110 transition-all duration-500 shrink-0">
@@ -77,7 +70,6 @@ const DisclaimerPage = () => {
             </div>
           </section>
 
-          {/* Card 03: Takedown Policy (Special focus) */}
           <section className="p-8 rounded-[2rem] bg-secondary/60 border border-primary/20 relative overflow-hidden group hover:bg-primary/5 transition-all duration-500">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
               <ShieldAlert className="w-32 h-32 text-primary transition-colors" />
@@ -108,7 +100,7 @@ const DisclaimerPage = () => {
         {/* Footer */}
         <footer className="mt-24 pt-12 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6 transition-colors">
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60 italic text-center transition-colors">
-            © {currentYear} Scriptify Project // Developed by Krisaleth
+            © {currentYear} Scriptify Project // Developed by KNTam, NVKhai and NMTuan
           </p>
           <button 
             onClick={() => navigate("/")}

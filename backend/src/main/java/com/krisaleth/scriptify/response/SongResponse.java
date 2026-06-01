@@ -1,5 +1,6 @@
 package com.krisaleth.scriptify.response;
 
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +15,7 @@ public class SongResponse {
     private Long id;
     private String title;
     private int duration;
+    private String description;
     private String filePath;
     private String imageUrl;
     private Long viewCount;

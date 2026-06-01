@@ -45,7 +45,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String jwt = null;
         String userEmail = null;
 
-        // 1. ƯU TIÊN: Tìm Token trong Cookies (Dành cho trình duyệt)
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
                 if ("jwt".equals(cookie.getName())) {
@@ -55,7 +54,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        // 2. DỰ PHÒNG: Tìm Token trong Header Authorization (Dành cho Postman/Mobile)
         if (jwt == null) {
             final String authHeader = request.getHeader("Authorization");
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -63,7 +61,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        // Nếu không thấy Token ở cả 2 nơi, cho đi tiếp (Anonymous)
         if (jwt == null) {
             filterChain.doFilter(request, response);
             return;
@@ -85,10 +82,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-
             filterChain.doFilter(request, response);
         } catch (ExpiredJwtException e) {
-            // Log lỗi để sếp dễ soi trên con LOQ
+            System.err.println("Scriptify Security: Lỗi xác thực Token ngầm -> " + e.getMessage());
             SecurityContextHolder.clearContext();
             handlerExceptionResolver.resolveException(request, response, null, e);
         }

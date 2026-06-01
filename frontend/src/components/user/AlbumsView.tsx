@@ -4,7 +4,6 @@ import { useNavigate, useOutletContext } from 'react-router-dom';
 import { getResourceUrl } from '@/utils/urlHelper';
 import { MusicContextType } from '@/types/song';
 
-// ĐỔI SANG ĐƯỜNG DẪN TƯƠNG ĐỐI: Để đi qua Vite Proxy/Nginx né lỗi SSL
 const API_BASE = "/api";
 
 export function AlbumsView() {
@@ -15,19 +14,17 @@ export function AlbumsView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Fetch danh sách Album qua Proxy với cơ chế Cookie
   const fetchAlbums = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`${API_BASE}/albums?size=50`, {
         method: "GET",
-        credentials: "include", // Gửi kèm HttpOnly Cookie qua Proxy
+        credentials: "include",
       });
       
       if (!response.ok) throw new Error("Không thể kết nối đến máy chủ Cloud");
       
       const data = await response.json();
-      // Xử lý cả PageImpl (.content) hoặc mảng thuần tùy theo Backend trả về
       setAlbums(data.content || (Array.isArray(data) ? data : []));
     } catch (err: any) {
       console.error("Scriptify: Lỗi fetch album qua Proxy:", err.message);
@@ -40,7 +37,6 @@ export function AlbumsView() {
     fetchAlbums();
   }, [fetchAlbums]);
 
-  // 2. Logic lọc tìm kiếm
   const filteredAlbums = useMemo(() => {
     const query = searchQuery.toLowerCase();
     return albums.filter((album) => 
@@ -51,7 +47,6 @@ export function AlbumsView() {
 
   if (isLoading) {
     return (
-      // ✅ Đã chèn transition-colors vào màn hình Loading
       <div className="flex-1 flex items-center justify-center bg-background min-h-screen transition-colors duration-300">
         <Loader2 className="w-12 h-12 text-primary animate-spin" />
       </div>
@@ -59,9 +54,7 @@ export function AlbumsView() {
   }
 
   return (
-    // ✅ Chèn transition-colors vào wrapper tổng
     <div className="flex-1 overflow-y-auto bg-background pb-32 custom-scrollbar transition-colors duration-300">
-      {/* Header Flat Design */}
       <div className="pt-12 pb-8 px-8">
         <h2 className="text-4xl font-black text-foreground mb-2 tracking-tighter uppercase italic transition-colors">Albums</h2>
         <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em] italic transition-colors">Khám phá những tuyệt phẩm từ Scriptify Cloud</p>
@@ -82,7 +75,6 @@ export function AlbumsView() {
         {filteredAlbums.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
             {filteredAlbums.map((album) => {
-              // Tìm bài hát đầu tiên để Play nhanh ngay tại Card
               const firstTrackInAlbum = allSongs?.find(s => s.album?.id === album.id);
 
               return (
@@ -99,7 +91,6 @@ export function AlbumsView() {
                       onError={(e) => (e.currentTarget.src = "/assets/default-cover.png")}
                     />
                     
-                    {/* Nút Play nhanh */}
                     {firstTrackInAlbum && (
                       <button
                         onClick={(e) => {
@@ -133,7 +124,7 @@ export function AlbumsView() {
         ) : (
           <div className="flex flex-col items-center justify-center py-32 bg-secondary/20 rounded-3xl border border-dashed border-border transition-colors">
             <Music size={48} className="mb-4 text-muted-foreground/30 animate-pulse transition-colors" />
-            <p className="text-muted-foreground font-black uppercase text-[10px] tracking-widest italic transition-colors">Hệ thống Cloud chưa tìm thấy dữ liệu</p>
+            <p className="text-muted-foreground font-black uppercase text-[10px] tracking-widest italic transition-colors">Hệ thống chưa tìm thấy dữ liệu</p>
           </div>
         )}
       </div>

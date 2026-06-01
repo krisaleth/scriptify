@@ -7,6 +7,7 @@ import com.krisaleth.scriptify.entity.tktSong;
 import com.krisaleth.scriptify.entity.tktUsers;
 import com.krisaleth.scriptify.repository.PlaylistRepository;
 import com.krisaleth.scriptify.repository.SongRepository;
+import com.krisaleth.scriptify.response.PlaylistResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,22 +40,54 @@ public class PlaylistService {
 
     private static final int MAX_SONGS_PER_PLAYLIST = 200;
 
+    private PlaylistResponse convertToResponse(tktPlaylist playlist) {
+        if (playlist == null) return null;
+
+        // 1. Map thông tin danh sách bài hát (Rút gọn tối đa chống loop JSON)
+        List<PlaylistResponse.SongShortResponse> songShorts = (playlist.getSongs() != null)
+                ? playlist.getSongs().stream()
+                .map(song -> PlaylistResponse.SongShortResponse.builder()
+                        .id(song.getId())
+                        .title(song.getTitle())
+                        .imageUrl(song.getImageUrl())
+                        .duration(song.getDuration())
+                        .artistName(song.getArtist() != null ? song.getArtist().getName() : "Unknown Artist")
+                        .build())
+                .toList()
+                : java.util.Collections.emptyList();
+
+        // 2. Đóng gói dữ liệu trả về cho Frontend (Bỏ hoàn toàn tkt)
+        return PlaylistResponse.builder()
+                .id(playlist.getId())
+                .name(playlist.getName())
+                .description(playlist.getDescription())
+                .thumbnailUrl(playlist.getThumbnailUrl() != null ? playlist.getThumbnailUrl() : "assets/default-playlist.png")
+                .isPublic(playlist.getIsPublic())
+                .userId(playlist.getUsers() != null ? playlist.getUsers().getId() : null)
+                .userNickname(playlist.getUsers() != null ? playlist.getUsers().getNickname() : "Unknown")
+                .songCount(songShorts.size())
+                .songs(songShorts)
+                .createdAt(playlist.getCreatedAt())
+                .updatedAt(playlist.getUpdatedAt())
+                .build();
+    }
+
     @Transactional(readOnly = true)
-    public List<tktPlaylist> listMyPlaylists(tktUsers user) {
+    public List<PlaylistResponse> listMyPlaylists(tktUsers user) {
         if (user == null || user.getId() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập");
         }
-        return playlistRepository.findByTktUsers_TktId(user.getId());
+        return playlistRepository.findByTktUsers_TktId(user.getId()).stream().map(this::convertToResponse).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public Page<tktPlaylist> listPublicPlaylists(Pageable pageable) {
-        return playlistRepository.findByTktIsPublicTrue(pageable);
+    public Page<PlaylistResponse> listPublicPlaylists(Pageable pageable) {
+        return playlistRepository.findByTktIsPublicTrue(pageable).map(this::convertToResponse);
     }
 
     @Transactional(readOnly = true)
-    public Page<tktPlaylist> searchPublicPlaylists(String query, Pageable pageable) {
-        return playlistRepository.findByTktNameContainingIgnoreCaseAndTktIsPublicTrue(query, pageable);
+    public Page<PlaylistResponse> searchPublicPlaylists(String query, Pageable pageable) {
+        return playlistRepository.findByTktNameContainingIgnoreCaseAndTktIsPublicTrue(query, pageable).map(this::convertToResponse);
     }
 
     @Transactional(readOnly = true)
@@ -63,7 +97,7 @@ public class PlaylistService {
     }
 
     @Transactional
-    public tktPlaylist create(PlaylistCreateDto dto, tktUsers user) {
+    public PlaylistResponse create(PlaylistCreateDto dto, tktUsers user) {
         tktPlaylist playlist = new tktPlaylist();
         playlist.setName(dto.getName());
         playlist.setDescription(dto.getDescription());
@@ -86,13 +120,19 @@ public class PlaylistService {
 
         if (dto.getSongIds() != null && !dto.getSongIds().isEmpty()) {
             addSongsInternal(playlist, dto.getSongIds());
-            return playlistRepository.save(playlist);
+            return convertToResponse(playlistRepository.save(playlist));
         }
-        return playlist;
+        return convertToResponse(playlist);
     }
 
+    @Transactional(readOnly = true)
+    public PlaylistResponse getPlaylist(Long id) {
+        return convertToResponse(playlistRepository.findByTktId(id));
+    }
+
+
     @Transactional
-    public tktPlaylist update(Long playlistId, PlaylistUpdateDto dto, tktUsers user) {
+    public PlaylistResponse update(Long playlistId, PlaylistUpdateDto dto, tktUsers user) {
         tktPlaylist playlist = getForOwner(playlistId, user);
 
         if (dto.getName() != null) playlist.setName(dto.getName());
@@ -109,7 +149,7 @@ public class PlaylistService {
             }
         }
 
-        return playlistRepository.save(playlist);
+        return convertToResponse(playlistRepository.save(playlist));
     }
 
     @Transactional
@@ -120,7 +160,7 @@ public class PlaylistService {
     }
 
     @Transactional
-    public tktPlaylist addSong(Long playlistId, tktUsers user, Long songId) {
+    public PlaylistResponse addSong(Long playlistId, tktUsers user, Long songId) {
         tktPlaylist playlist = getForOwner(playlistId, user);
         if (playlistRepository.isSongInPlaylist(playlistId, songId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Bài hát đã có trong Playlist");
@@ -133,18 +173,18 @@ public class PlaylistService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bài hát"));
 
         playlist.getSongs().add(song);
-        return playlistRepository.save(playlist);
+        return convertToResponse(playlistRepository.save(playlist));
     }
 
     @Transactional
-    public tktPlaylist removeSong(Long playlistId, tktUsers user, Long songId) {
+    public PlaylistResponse removeSong(Long playlistId, tktUsers user, Long songId) {
         tktPlaylist playlist = getForOwner(playlistId, user);
         if (!playlistRepository.isSongInPlaylist(playlistId, songId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Bài hát không có trong playlist");
         }
         tktSong song = songRepository.findById(songId).orElseThrow();
         playlist.getSongs().remove(song);
-        return playlistRepository.save(playlist);
+        return convertToResponse(playlistRepository.save(playlist));
     }
 
     private void addSongsInternal(tktPlaylist playlist, List<Long> songIds) {
@@ -158,7 +198,7 @@ public class PlaylistService {
     }
 
     private String uploadToR2(MultipartFile file) throws IOException {
-        String fileName = "playlists/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String fileName = "playlists/" + UUID.randomUUID() + "_" + file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf("."));
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(fileName)
@@ -173,7 +213,7 @@ public class PlaylistService {
         try {
             s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(relativePath).build());
         } catch (Exception e) {
-            System.err.println("Lỗi xóa file R2: " + relativePath);
+            System.err.println("Lỗi xóa file: " + relativePath);
         }
     }
 }
